@@ -18,6 +18,8 @@ from urllib3.util.retry import Retry
 from promptflow.evals._version import VERSION
 from promptflow._sdk.entities import Run
 
+LOGGER = logging.getLogger(__name__)
+
 # Handle optional import. The azure libraries are only present if
 # promptflow-azure is installed.
 try:
@@ -28,9 +30,12 @@ except (ModuleNotFoundError, ImportError):
     # If the above mentioned modules cannot be imported, we are running
     # in local mode and MLClient in the constructor will be None, so
     # we will not arrive to Azure-dependent code.
-    pass
-
-LOGGER = logging.getLogger(__name__)
+    LOGGER.warning(
+        "azure-ai-ml cannot be imported. "
+        "The results will be saved locally, but will not be logged to Azure. "
+        "To log results to azure please install promptflow-evals with the command "
+        "pip install promptflow-evals[azure]"
+        )
 
 
 @dataclasses.dataclass

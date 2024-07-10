@@ -11,7 +11,6 @@ from promptflow.evals.evaluators import (
 
 
 @pytest.mark.usefixtures("recording_injection", "vcr_recording")
-@pytest.mark.e2etest
 class TestBuiltInEvaluators:
     @pytest.mark.localtest
     def test_individual_evaluator_prompt_based(self, model_config):
@@ -33,6 +32,7 @@ class TestBuiltInEvaluators:
         assert score is not None
         assert score["gpt_fluency"] > 0.0
 
+    @pytest.mark.azuretest
     def test_individual_evaluator_service_based(self, project_scope, azure_cred):
         eval_fn = ViolenceEvaluator(project_scope, azure_cred)
         score = eval_fn(
@@ -44,6 +44,7 @@ class TestBuiltInEvaluators:
         assert score["violence_score"] < 1.0
         assert score["violence_reason"], "violence_reason must not be None or empty."
 
+    @pytest.mark.azuretest
     @pytest.mark.skip(reason="Not working in ci pipeline. For local run.")
     def test_content_safety_service_unavailable(self, project_scope, azure_cred):
         eval_fn = ViolenceEvaluator(project_scope, azure_cred)
@@ -76,6 +77,7 @@ class TestBuiltInEvaluators:
         assert score["gpt_similarity"] > 0.0
         assert score["f1_score"] > 0.0
 
+    @pytest.mark.azuretest
     def test_composite_evaluator_content_safety(self, project_scope, azure_cred):
         safety_eval = ContentSafetyEvaluator(project_scope, parallel=False, credential=azure_cred)
         score = safety_eval(
@@ -160,6 +162,7 @@ class TestBuiltInEvaluators:
         assert score["evaluation_per_turn"]["gpt_retrieval"] is not None
         assert len(score["evaluation_per_turn"]["gpt_retrieval"]["score"]) == turn_count
 
+    @pytest.mark.azuretest
     @pytest.mark.parametrize(
         "eval_last_turn, parallel",
         [

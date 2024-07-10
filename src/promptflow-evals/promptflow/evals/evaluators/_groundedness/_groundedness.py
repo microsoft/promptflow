@@ -75,10 +75,7 @@ class GroundednessEvaluator:
             raise ValueError("Both 'answer' and 'context' must be non-empty strings.")
 
         # Run the evaluation flow
-        try:
-            llm_output = self._flow(answer=answer, context=context)
-        except BaseException as e:
-            print(e)
+        llm_output = self._flow(answer=answer, context=context)
 
         score = np.nan
         if llm_output:

@@ -80,7 +80,6 @@ def _get_run_from_run_history(flow_run_id, ml_client, project_scope):
 
 
 @pytest.mark.usefixtures("recording_injection")
-@pytest.mark.e2etest
 class TestEvaluate:
     @pytest.mark.localtest
     def test_evaluate_with_groundedness_evaluator(self, model_config, data_file):
@@ -119,6 +118,7 @@ class TestEvaluate:
         assert row_result_df["outputs.f1_score.f1_score"][2] == 1
         assert result["studio_url"] is None
 
+    @pytest.mark.azuretest
     @pytest.mark.skip(reason="Failed in CI pipeline. Pending for investigation.")
     def test_evaluate_with_content_safety_evaluator(self, project_scope, data_file, azure_cred):
         input_data = pd.read_json(data_file, lines=True)
@@ -306,6 +306,7 @@ class TestEvaluate:
         assert "answer.length" in metrics.keys()
         assert "f1_score.f1_score" in metrics.keys()
 
+    @pytest.mark.azuretest
     def test_evaluate_track_in_cloud(
         self,
         questions_file,
@@ -349,6 +350,7 @@ class TestEvaluate:
         assert remote_run["runMetadata"]["properties"]["runType"] == "eval_run"
         assert remote_run["runMetadata"]["displayName"] == evaluation_name
 
+    @pytest.mark.azuretest
     def test_evaluate_track_in_cloud_no_target(
         self,
         data_file,
@@ -441,6 +443,7 @@ class TestEvaluate:
         if aggregate_return_json:
             assert "answer_length.median" in result["metrics"].keys()
 
+    @pytest.mark.localtest
     @pytest.mark.skip(reason="TODO: Add test back")
     def test_prompty_with_threadpool_implementation(self):
         pass

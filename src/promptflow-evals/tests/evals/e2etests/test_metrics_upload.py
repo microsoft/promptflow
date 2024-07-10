@@ -48,7 +48,7 @@ def setup_data(azure_ml_client, project_scope):
 
 
 @pytest.mark.usefixtures("model_config", "recording_injection", "project_scope")
-@pytest.mark.e2etest
+@pytest.mark.azuretest
 class TestMetricsUpload(object):
     """End to end tests to check how the metrics were uploaded to cloud."""
 
