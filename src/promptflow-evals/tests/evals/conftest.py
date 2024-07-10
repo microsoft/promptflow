@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Dict
 from unittest.mock import patch
 
-import jwt
 import pytest
 
 from pytest_mock import MockerFixture
@@ -40,6 +39,7 @@ except ImportError as e:
 # Import of optional packages
 AZURE_INSTALLED = True
 try:
+    import jwt
     from azure.ai.ml._ml_client import MLClient
 except ImportError:
     AZURE_INSTALLED = False
