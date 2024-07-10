@@ -11,15 +11,24 @@ import uuid
 from typing import Any, Dict, Optional, Type
 from urllib.parse import urlparse
 
-from azure.storage.blob import BlobServiceClient
+
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from promptflow.evals._version import VERSION
 from promptflow._sdk.entities import Run
 
-from azure.ai.ml.entities._credentials import AccountKeyConfiguration
-from azure.ai.ml.entities._datastore.datastore import Datastore
+# Handle optional import. The azure libraries are only present if
+# promptflow-azure is installed.
+try:
+    from azure.ai.ml.entities._credentials import AccountKeyConfiguration
+    from azure.ai.ml.entities._datastore.datastore import Datastore
+    from azure.storage.blob import BlobServiceClient
+except (ModuleNotFoundError, ImportError):
+    # If the above mentioned modules cannot be imported, we are running
+    # in local mode and MLClient in the constructor will be None, so
+    # we will not arrive to Azure-dependent code.
+    pass
 
 LOGGER = logging.getLogger(__name__)
 
@@ -382,7 +391,7 @@ class EvalRun(metaclass=Singleton):
         if response.status_code != 200:
             self._log_warning('register artifact', response)
 
-    def _get_datastore_credential(self, datastore: Datastore):
+    def _get_datastore_credential(self, datastore: "Datastore"):
         # Reference the logic in azure.ai.ml._artifact._artifact_utilities
         # https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/ml/azure-ai-ml/azure/ai/ml/_artifacts/_artifact_utilities.py#L103
         credential = datastore.credentials

@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import jwt
 import pytest
-from azure.ai.ml._ml_client import MLClient
+
 from pytest_mock import MockerFixture
 
 from promptflow.client import PFClient
@@ -20,8 +20,8 @@ try:
     from promptflow.recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
 except ImportError as e:
     print(f"Failed to import promptflow-recording: {e}")
-
     # Run test in empty mode if promptflow-recording is not installed
+
     def recording_array_reset():
         pass
 
@@ -37,6 +37,12 @@ except ImportError as e:
     def is_replay():
         return False
 
+# Import of optional packages
+AZURE_INSTALLED = True
+try:
+    from azure.ai.ml._ml_client import MLClient
+except ImportError:
+    AZURE_INSTALLED = False
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../../.."
 CONNECTION_FILE = (PROMPTFLOW_ROOT / "promptflow-evals/connections.json").resolve().absolute().as_posix()
@@ -147,12 +153,15 @@ def mock_validate_trace_destination():
 @pytest.fixture
 def azure_ml_client(project_scope: Dict):
     """The fixture, returning MLClient"""
-    return MLClient(
-        subscription_id=project_scope["subscription_id"],
-        resource_group_name=project_scope["resource_group_name"],
-        workspace_name=project_scope["project_name"],
-        credential=get_cred(),
-    )
+    if AZURE_INSTALLED:
+        return MLClient(
+            subscription_id=project_scope["subscription_id"],
+            resource_group_name=project_scope["resource_group_name"],
+            workspace_name=project_scope["project_name"],
+            credential=get_cred(),
+        )
+    else:
+        return None
 
 
 @pytest.fixture
