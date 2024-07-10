@@ -66,6 +66,7 @@ class JailbreakAdversarialSimulator:
             credential = DefaultAzureCredential()
         elif "credential" in azure_ai_project:
             credential = azure_ai_project["credential"]
+        self.credential = credential
         self.azure_ai_project = azure_ai_project
         self.token_manager = ManagedIdentityAPITokenManager(
             token_scope=TokenScope.DEFAULT_AZURE_MANAGEMENT,
