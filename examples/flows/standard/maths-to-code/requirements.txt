@@ -2,3 +2,4 @@ langchain
 sympy
 promptflow[azure]
 promptflow-tools
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
