@@ -11,7 +11,6 @@ import uuid
 from typing import Any, Dict, Optional, Type
 from urllib.parse import urlparse
 
-
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -19,6 +18,7 @@ from promptflow.evals._version import VERSION
 from promptflow._sdk.entities import Run
 
 LOGGER = logging.getLogger(__name__)
+
 
 # Handle optional import. The azure libraries are only present if
 # promptflow-azure is installed.
