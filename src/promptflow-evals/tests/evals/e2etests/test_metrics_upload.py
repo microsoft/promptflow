@@ -10,8 +10,12 @@ from promptflow.evals.evaluate import _utils as ev_utils
 from promptflow.evals.evaluate._eval_run import EvalRun
 from promptflow.evals.evaluate._evaluate import evaluate
 from promptflow.evals.evaluators._f1_score._f1_score import F1ScoreEvaluator
-from promptflow.recording.record_mode import is_live
 from promptflow.tracing import _start_trace
+try:
+    from promptflow.recording.record_mode import is_live
+except ModuleNotFoundError:
+    # The file is being imported by the local test
+    pass
 
 
 @pytest.fixture
