@@ -6,6 +6,7 @@ Please add an informative description that covers that changes made by the pull 
 - [ ] **The pull request does not introduce [breaking changes].**
 - [ ] **CHANGELOG is updated for new features, bug fixes or other significant changes.**
 - [ ] **I have read the [contribution guidelines](../CONTRIBUTING.md).**
+- [ ] **I confirm that all new dependencies are compatible with the MIT license.**
 - [ ] **Create an issue and link to the pull request to get dedicated review from promptflow team. Learn more: [suggested workflow](../CONTRIBUTING.md#suggested-workflow).**
 
 ## General Guidelines and Best Practices
