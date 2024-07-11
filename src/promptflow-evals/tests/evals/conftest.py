@@ -332,7 +332,7 @@ def tenant_id() -> str:
 def variable_recorder():
     if pytest.is_record or pytest.is_replay:
         from promptflow.recording.azure import VariableRecorder
-    
+
         yield VariableRecorder()
     else:
         yield None
