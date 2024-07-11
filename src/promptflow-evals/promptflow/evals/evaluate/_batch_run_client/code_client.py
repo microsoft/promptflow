@@ -12,7 +12,7 @@ from promptflow.contracts.types import AttrDict
 from promptflow.evals.evaluate._utils import _apply_column_mapping, _has_aggregator, load_jsonl
 from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
-from ..._constants import PF_BATCH_TIMEOUT_DEFAULT, PF_BATCH_TIMEOUT_SEC
+from ..._constants import PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_SEC_DEFAULT
 
 LOGGER = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class CodeRun:
         self.aggregated_metrics = aggregated_metrics
 
     def get_result_df(self, exclude_inputs=False):
-        batch_run_timeout = get_int_env_var(PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_DEFAULT)
+        batch_run_timeout = get_int_env_var(PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_SEC_DEFAULT)
         result_df = self.run.result(timeout=batch_run_timeout)
         if exclude_inputs:
             result_df = result_df.drop(columns=[col for col in result_df.columns if col.startswith("inputs.")])
@@ -33,7 +33,7 @@ class CodeRun:
 
     def get_aggregated_metrics(self):
         try:
-            batch_run_timeout = get_int_env_var(PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_DEFAULT)
+            batch_run_timeout = get_int_env_var(PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_SEC_DEFAULT)
             aggregated_metrics = (
                 self.aggregated_metrics.result(timeout=batch_run_timeout)
                 if self.aggregated_metrics is not None
