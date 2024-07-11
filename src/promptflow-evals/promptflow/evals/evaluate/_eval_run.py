@@ -313,7 +313,7 @@ class EvalRun(contextlib.AbstractContextManager):
         """
         Check that the run is in the correct state and log worning if it is not.
 
-        :param action: Action, whcih caused this check. For example if it is "log artifact",
+        :param action: Action, which caused this check. For example if it is "log artifact",
                        the log message will start "Unable to log artifact."
         :type action: str
         :return: boolean saying if run is in the correct state.
