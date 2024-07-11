@@ -302,6 +302,8 @@ def azure_cred():
 
 @pytest.fixture(scope=package_scope_in_live_mode())
 def user_object_id() -> str:
+    if not AZURE_INSTALLED:
+        return ""
     if pytest.is_replay:
         from promptflow.recording.azure import SanitizedValues
 
@@ -314,6 +316,8 @@ def user_object_id() -> str:
 
 @pytest.fixture(scope=package_scope_in_live_mode())
 def tenant_id() -> str:
+    if not AZURE_INSTALLED:
+        return ""
     if pytest.is_replay:
         from promptflow.recording.azure import SanitizedValues
 
