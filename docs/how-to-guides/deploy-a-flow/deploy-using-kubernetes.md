@@ -170,7 +170,7 @@ For example, if you are deploying your PromptFlow to multiple environments you m
 
 Using the example yaml above, where `CONNECTION_NAME` is `open_ai_connection` and the field to override is `api_key`, the environment varible name would be `OPEN_AI_CONNECTION_API_KEY`. If you need to override the `api_base` field, the environment variable would be `OPEN_AI_CONNECTION_API_BASE`.
 
-PromptFlow will attempt to retrieve `api_key` and `api_base` from the environment variable `OPEN_AI_CONNECTION_API_KEY` and `OPEN_AI_CONNECTION_API_BASE` by default. If these enviroment variables are not set, PromptFlow will fallback to the original values found in your `connection.yaml`.
+PromptFlow will attempt to retrieve `api_key` and `api_base` from the environment variable `OPEN_AI_CONNECTION_API_KEY` and `OPEN_AI_CONNECTION_API_BASE` by default. If these environment variables are not set, PromptFlow will fallback to the original values found in your `connection.yaml`.
 
 You can set these values when deploying the container by passing these values in via `spec.containers[].env`:
 
