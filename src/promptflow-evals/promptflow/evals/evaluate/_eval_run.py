@@ -22,7 +22,6 @@ LOGGER = logging.getLogger(__name__)
 
 # Handle optional import. The azure libraries are only present if
 # promptflow-azure is installed.
-_AZURE_IMPORTED = True
 try:
     from azure.ai.ml.entities._credentials import AccountKeyConfiguration
     from azure.ai.ml.entities._datastore.datastore import Datastore
@@ -133,11 +132,10 @@ class EvalRun(metaclass=Singleton):
         self._is_promptflow_run: bool = promptflow_run is not None
         self._is_broken = False
         if self._tracking_uri is None:
-            if self._tracking_uri:
-                LOGGER.warning(
-                    "tracking_uri was not provided, "
-                    "The results will be saved locally, but will not be logged to Azure."
-                )
+            LOGGER.warning(
+                "tracking_uri was not provided, "
+                "The results will be saved locally, but will not be logged to Azure."
+            )
             self._url_base = None
             self._is_broken = True
             self.info = RunInfo.generate(run_name)
