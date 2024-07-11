@@ -99,6 +99,7 @@ class TaskSimulator:
 
     async def __call__(
         self,
+        *,
         target: callable,
         max_conversation_turns: int = 5,
         user_persona: List[Dict] = [],
@@ -107,6 +108,7 @@ class TaskSimulator:
         query_response_generating_prompty: str = None,
         user_simulator_prompty: str = None,
         api_call_delay_sec: float = 1,
+        **kwargs,
     ):
         if num_queries != len(user_persona):
             num_queries = len(user_persona)
@@ -116,10 +118,15 @@ class TaskSimulator:
         if not query_response_generating_prompty:
             current_dir = os.path.dirname(__file__)
             prompty_path = os.path.join(current_dir, "_prompty", "task_query_response.prompty")
-        else:
-            raise NotImplementedError("Custom prompty not supported yet")
-        try:
             _flow = load_flow(source=prompty_path, model=prompty_model_config)
+        else:
+            query_response_generating_prompty_kwargs = {**kwargs}
+            _flow = load_flow(
+                source=query_response_generating_prompty,
+                model=prompty_model_config,
+                **query_response_generating_prompty_kwargs,
+            )
+        try:
             query_responses = _flow(
                 text=text,
                 num_queries=num_queries,
@@ -131,6 +138,9 @@ class TaskSimulator:
             query_response_list = json.loads(query_responses)
         except Exception as e:
             print("Something went wrong parsing the prompty output")
+            import pdb
+
+            pdb.set_trace()
             raise e
         i = 0
         all_conversations = []

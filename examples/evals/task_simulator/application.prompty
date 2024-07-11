@@ -1,0 +1,31 @@
+---
+name: ApplicationPrompty
+description: Simulates an application
+model:
+  api: chat
+  configuration:
+    type: azure_openai
+    azure_deployment: ${env:AZURE_DEPLOYMENT}
+    api_key: ${env:AZURE_OPENAI_API_KEY}
+    azure_endpoint: ${env:AZURE_OPENAI_ENDPOINT}
+  parameters:
+    temperature: 0.0
+    top_p: 1.0
+    presence_penalty: 0
+    frequency_penalty: 0
+    response_format:
+      type: text
+
+inputs:
+  conversation_history:
+    type: dict
+  query:
+    type: string
+
+---
+system:
+You are a helpful assistant and you're helping with the user's query. Keep the conversation engaging and interesting.
+This is the user's query: {{ query }}
+
+Output with a string that continues the conversation, responding to the latest message from the user, given the conversation history:
+{{ conversation_history }}
