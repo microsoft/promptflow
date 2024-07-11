@@ -1,6 +1,7 @@
 import json
 import os
 import pathlib
+import time
 
 import numpy as np
 import pandas as pd
@@ -158,6 +159,7 @@ class TestEvaluate:
         assert 0 <= metrics.get("content_safety.self_harm_defect_rate") <= 1
         assert 0 <= metrics.get("content_safety.hate_unfairness_defect_rate") <= 1
 
+    @pytest.mark.performance_test
     def test_evaluate_with_async_enabled_evaluator(self, model_config, data_file):
         fluency_eval = FluencyEvaluator(model_config)
 
