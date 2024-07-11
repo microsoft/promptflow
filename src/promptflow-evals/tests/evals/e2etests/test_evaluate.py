@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import requests
-from azure.identity import DefaultAzureCredential
 
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluators import ContentSafetyEvaluator, F1ScoreEvaluator, GroundednessEvaluator
@@ -46,6 +45,7 @@ def question_evaluator(question):
 
 def _get_run_from_run_history(flow_run_id, ml_client, project_scope):
     """Get run info from run history"""
+    from azure.identity import DefaultAzureCredential
     token = "Bearer " + DefaultAzureCredential().get_token("https://management.azure.com/.default").token
     headers = {
         "Authorization": token,
