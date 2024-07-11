@@ -13,7 +13,7 @@ html_theme.sidebar_secondary.remove: true
 With prompt flow, you will be able to:
 
 - **Create [flows](./concepts/concept-flows.md)** that link [LLMs](./reference/tools-reference/llm-tool.md), [prompts](./reference/tools-reference/prompt-tool.md), [Python](./reference/tools-reference/python-tool.md) code and other [tools](./concepts/concept-tools.md) together in a executable workflow.
-- **Debug and iterate your flows**, especially the interaction with LLMs with ease.
+- **Debug and iterate your flows**, especially [tracing interaction with LLMs](how-to-guides/tracing/index.md) with ease.
 - **Evaluate your flows**, calculate quality and performance metrics with larger datasets.
 - **Integrate the testing and evaluation into your CI/CD system** to ensure quality of your flow.
 - **Deploy your flows** to the serving platform you choose or integrate into your app's code base easily.
@@ -39,6 +39,7 @@ This documentation site contains guides for prompt flow [sdk, cli](https://pypi.
 - header: "📒 How-to Guides"
   content: "
     Articles guide user to complete a specific task in prompt flow.<br/><br/>
+    - [Tracing](how-to-guides/tracing/index.md)<br/>
     - [Develop a flow](how-to-guides/develop-a-flex-flow/index.md)<br/>
     - [Run and evaluate a flow](how-to-guides/run-and-evaluate-a-flow/index.md)<br/>
     - [Deploy a flow](how-to-guides/deploy-a-flow/index.md)<br/>

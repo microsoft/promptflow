@@ -13,7 +13,7 @@ Install promptflow sdk and other dependencies:
 pip install -r requirements.txt
 ```
 
-Ensure you have put your azure open ai endpoint key in .env file.
+Ensure you have put your azure OpenAI endpoint key in .env file.
 
 ```bash
 cat .env
