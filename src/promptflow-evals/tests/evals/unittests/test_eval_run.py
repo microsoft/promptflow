@@ -23,6 +23,19 @@ def generate_mock_token():
 class TestEvalRun:
     """Unit tests for the eval-run object."""
 
+    _MOCK_CREDS = dict(
+        tracking_uri=(
+            "https://region.api.azureml.ms/mlflow/v2.0/subscriptions"
+            "/000000-0000-0000-0000-0000000/resourceGroups/mock-rg-region"
+            "/providers/Microsoft.MachineLearningServices"
+            "/workspaces/mock-ws-region"
+        ),
+        subscription_id="000000-0000-0000-0000-0000000",
+        group_name="mock-rg-region",
+        workspace_name="mock-ws-region",
+        ml_client=MagicMock(),
+    )
+
     def _get_mock_create_resonse(self, status=200):
         """Return the mock create request"""
         mock_response = MagicMock()
@@ -58,11 +71,7 @@ class TestEvalRun:
         with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
             with EvalRun(
                 run_name=None,
-                tracking_uri="www.microsoft.com",
-                subscription_id="mock",
-                group_name="mock",
-                workspace_name="mock",
-                ml_client=MagicMock(),
+                **TestEvalRun._MOCK_CREDS
             ) as run:
                 if should_raise:
                     with pytest.raises(ValueError) as cm:
@@ -215,16 +224,7 @@ class TestEvalRun:
         mock_session_cls.return_value = mock_session
         with EvalRun(
             run_name="test",
-            tracking_uri=(
-                "https://region.api.azureml.ms/mlflow/v2.0/subscriptions"
-                "/000000-0000-0000-0000-0000000/resourceGroups/mock-rg-region"
-                "/providers/Microsoft.MachineLearningServices"
-                "/workspaces/mock-ws-region"
-            ),
-            subscription_id="000000-0000-0000-0000-0000000",
-            group_name="mock-rg-region",
-            workspace_name="mock-ws-region",
-            ml_client=MagicMock(),
+            **TestEvalRun._MOCK_CREDS
         ) as run:
             pass
         assert run.get_run_history_uri() == (
@@ -278,16 +278,7 @@ class TestEvalRun:
             logger.parent = logging.root
             with EvalRun(
                 run_name="test",
-                tracking_uri=(
-                    "https://region.api.azureml.ms/mlflow/v2.0/subscriptions"
-                    "/000000-0000-0000-0000-0000000/resourceGroups/mock-rg-region"
-                    "/providers/Microsoft.MachineLearningServices"
-                    "/workspaces/mock-ws-region"
-                ),
-                subscription_id="000000-0000-0000-0000-0000000",
-                group_name="mock-rg-region",
-                workspace_name="mock-ws-region",
-                ml_client=MagicMock(),
+                **TestEvalRun._MOCK_CREDS
             ) as run:
                 fn = getattr(run, log_function)
                 if log_function == 'log_artifact':
@@ -325,16 +316,7 @@ class TestEvalRun:
         with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
             with EvalRun(
                 run_name="test",
-                tracking_uri=(
-                    "https://region.api.azureml.ms/mlflow/v2.0/subscriptions"
-                    "/000000-0000-0000-0000-0000000/resourceGroups/mock-rg-region"
-                    "/providers/Microsoft.MachineLearningServices"
-                    "/workspaces/mock-ws-region"
-                ),
-                subscription_id="000000-0000-0000-0000-0000000",
-                group_name="mock-rg-region",
-                workspace_name="mock-ws-region",
-                ml_client=MagicMock(),
+                **TestEvalRun._MOCK_CREDS
             ) as run:
                 logger = logging.getLogger(EvalRun.__module__)
                 # All loggers, having promptflow. prefix will have "promptflow" logger
@@ -407,16 +389,7 @@ class TestEvalRun:
         with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
             run = EvalRun(
                 run_name="test",
-                tracking_uri=(
-                    "https://region.api.azureml.ms/mlflow/v2.0/subscriptions"
-                    "/000000-0000-0000-0000-0000000/resourceGroups/mock-rg-region"
-                    "/providers/Microsoft.MachineLearningServices"
-                    "/workspaces/mock-ws-region"
-                ),
-                subscription_id="000000-0000-0000-0000-0000000",
-                group_name="mock-rg-region",
-                workspace_name="mock-ws-region",
-                ml_client=MagicMock(),
+                **TestEvalRun._MOCK_CREDS,
                 promptflow_run=pf_run_mock
             )
             assert run.status == RunStatus.NOT_STARTED, f'Get {run.status}, expected {RunStatus.NOT_STARTED}'
@@ -462,16 +435,7 @@ class TestEvalRun:
         with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
             with EvalRun(
                 run_name="test",
-                tracking_uri=(
-                    "https://region.api.azureml.ms/mlflow/v2.0/subscriptions"
-                    "/000000-0000-0000-0000-0000000/resourceGroups/mock-rg-region"
-                    "/providers/Microsoft.MachineLearningServices"
-                    "/workspaces/mock-ws-region"
-                ),
-                subscription_id="000000-0000-0000-0000-0000000",
-                group_name="mock-rg-region",
-                workspace_name="mock-ws-region",
-                ml_client=MagicMock(),
+                **TestEvalRun._MOCK_CREDS
             ) as run:
                 run.write_properties_to_run_history({'foo': 'bar'})
         if status_code != 200:
@@ -503,23 +467,25 @@ class TestEvalRun:
         assert "Unable to stop run because the run failed to start." in caplog.records[2].message
 
     @pytest.mark.parametrize(
-        'function_literal,args',
+        'function_literal,args,expected_action',
         [
-            ('write_properties_to_run_history', ({'foo': 'bar'})),
-            ('log_metric', ('foo', 42)),
-            ('log_artifact', ('mock_folder',))
+            ('write_properties_to_run_history', ({'foo': 'bar'}), 'write properties'),
+            ('log_metric', ('foo', 42), 'log metric'),
+            ('log_artifact', ('mock_folder',), 'log artifact')
         ]
     )
-    def test_raises_if_not_started(self, token_mock, caplog, function_literal, args):
+    def test_logs_if_not_started(self, token_mock, caplog, function_literal, args, expected_action):
         """Test that all public functions are raising exception if run is not started."""
+        logger = logging.getLogger(ev_utils.__name__)
+        # All loggers, having promptflow. prefix will have "promptflow" logger
+        # as a parent. This logger does not propagate the logs and cannot be
+        # captured by caplog. Here we will skip this logger to capture logs.
+        logger.parent = logging.root
         run = EvalRun(
             run_name=None,
-            tracking_uri=None,
-            subscription_id='mock',
-            group_name='mock',
-            workspace_name='mock',
-            ml_client=MagicMock()
+            **TestEvalRun._MOCK_CREDS
         )
-        with pytest.raises(ValueError) as cm:
-            getattr(run, function_literal)(*args)
-        assert "The run did not started." in cm.value.args[0]
+        getattr(run, function_literal)(*args)
+        assert len(caplog.records) == 1
+        assert expected_action in caplog.records[0].message, caplog.records[0].message
+        assert "The run did not started." in caplog.records[0].message, caplog.records[0].message

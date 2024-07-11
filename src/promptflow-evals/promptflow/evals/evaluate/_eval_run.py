@@ -196,7 +196,8 @@ class EvalRun(contextlib.AbstractContextManager):
         :type reason: str
         :raises: ValueError if the run is not in ("FINISHED", "FAILED", "KILLED")
         """
-        self._raise_not_started_nay_be()
+        if not self._check_state_and_log('stop run'):
+            return
         if self._is_promptflow_run:
             # This run is already finished, we just add artifacts/metrics to it.
             self._status = RunStatus.TERMINATED
@@ -207,9 +208,6 @@ class EvalRun(contextlib.AbstractContextManager):
             )
         if self._status == RunStatus.TERMINATED:
             LOGGER.warning("Unable to stop run because it was already terminated.")
-            return
-        if self._status == RunStatus.BROKEN:
-            LOGGER.warning("Unable to stop run because the run failed to start.")
             return
         url = f"https://{self._url_base}/mlflow/v2.0" f"{self._get_scope()}/api/2.0/mlflow/runs/update"
         body = {
@@ -311,16 +309,24 @@ class EvalRun(contextlib.AbstractContextManager):
             f"{response.text=}."
         )
 
-    def _raise_not_started_nay_be(self) -> None:
+    def _check_state_and_log(self, action : str) -> bool:
         """
-        Raise value error if the run was not started.
+        Check that the run is in the correct state and log worning if it is not.
 
-        :raises: ValueError
+        :param action: Action, whcih caused this check. For example if it is "log artifact",
+                       the log message will start "Unable to log artifact."
+        :type action: str
+        :return: boolean saying if run is in the correct state.
         """
         if self._status == RunStatus.NOT_STARTED:
-            raise ValueError(
-                "The run did not started. "
+            LOGGER.warning(
+                f"Unable to {action}. The run did not started. "
                 "Please start the run by calling start_run method.")
+            return False
+        if self._status == RunStatus.BROKEN:
+            LOGGER.warning(f"Unable to {action} because the run failed to start.")
+            return False
+        return True
 
     def log_artifact(self, artifact_folder: str, artifact_name: str = EVALUATION_ARTIFACT) -> None:
         """
@@ -332,9 +338,7 @@ class EvalRun(contextlib.AbstractContextManager):
         :param artifact_folder: The folder with artifacts to be uploaded.
         :type artifact_folder: str
         """
-        self._raise_not_started_nay_be()
-        if self._status == RunStatus.BROKEN:
-            LOGGER.warning("Unable to log artifact because the run failed to start.")
+        if not self._check_state_and_log('log artifact'):
             return
         # Check if artifact dirrectory is empty or does not exist.
         if not os.path.isdir(artifact_folder):
@@ -421,9 +425,7 @@ class EvalRun(contextlib.AbstractContextManager):
         :param value: The valure to be logged.
         :type value: float
         """
-        self._raise_not_started_nay_be()
-        if self._status == RunStatus.BROKEN:
-            LOGGER.warning("Unable to log metric because the run failed to start.")
+        if not self._check_state_and_log('log metric'):
             return
         body = {
             "run_uuid": self.info.run_id,
@@ -448,9 +450,7 @@ class EvalRun(contextlib.AbstractContextManager):
         :param properties: The properties to be written to run history.
         :type properties: dict
         """
-        self._raise_not_started_nay_be()
-        if self._status == RunStatus.BROKEN:
-            LOGGER.warning("Unable to write properties because the run failed to start.")
+        if not self._check_state_and_log('write properties'):
             return
         # update host to run history and request PATCH API
         response = self.request_with_retry(
