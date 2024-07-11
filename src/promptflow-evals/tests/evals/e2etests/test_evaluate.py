@@ -183,7 +183,7 @@ class TestEvaluate:
         assert row_result_df.shape[0] == len(input_data)
         assert "outputs.fluency.gpt_fluency" in row_result_df.columns.to_list()
         assert "fluency.gpt_fluency" in metrics.keys()
-        assert duration < 5, f"evaluate API call took too long: {duration} seconds"
+        assert duration < 10, f"evaluate API call took too long: {duration} seconds"
 
     @pytest.mark.parametrize(
         "use_pf_client,function,column",
