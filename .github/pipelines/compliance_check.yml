@@ -86,12 +86,30 @@ steps:
       Write-Host "##########################################"
       Write-Host "- promptflow-tracing:"
       Set-Location "$(sourceLocation)/src/promptflow-tracing/"
+      Get-Content pyproject.toml
       toml-to-req --toml-file pyproject.toml --poetry
-      Get-ChildItem
+      Get-Content requirements.txt
+      Write-Host "##########################################"
+      Write-Host "- promptflow-core:"
+      Set-Location "$(sourceLocation)/src/promptflow-core/"
+      Get-Content pyproject.toml
+      toml-to-req --toml-file pyproject.toml --poetry
+      Get-Content requirements.txt
+      Write-Host "##########################################"
+      Write-Host "- promptflow-devkit:"
+      Set-Location "$(sourceLocation)/src/promptflow-devkit/"
+      Get-Content pyproject.toml
+      toml-to-req --toml-file pyproject.toml --poetry
+      Get-Content requirements.txt
+      Write-Host "##########################################"
+      Write-Host "- promptflow-azure:"
+      Set-Location "$(sourceLocation)/src/promptflow-azure/"
+      Get-Content pyproject.toml
+      toml-to-req --toml-file pyproject.toml --poetry
       Get-Content requirements.txt
 
       Write-Host "Removing requirements.txt..."
-      # Remove-Item -Recurse -Force $(sourceLocation)/promptflow/test
+      Get-ChildItem -Path "$(sourceLocation)/src/promptflow/tests" -Recurse -Include requirements.txt | Where-Object { $_.FullName -match "promptflow/test" } | ForEach-Object { Remove-Item -Path $_.FullName -Force }
   displayName: 'Preprocess before CG'
 
 - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
