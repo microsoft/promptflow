@@ -106,7 +106,7 @@ steps:
       Write-Host "##########################################"
 
       Write-Host "Removing requirements.txt..."
-      Set-Location "$(sourceLocation)/src/"
+      Set-Location "$(sourceLocation)/"
       Write-Host "- src/promptflow/tests/*:"
       Get-ChildItem -Path "src/promptflow/tests" -Recurse -Include requirements.txt | ForEach-Object { Remove-Item -Path $_.FullName -Force }
   displayName: 'Preprocess before CG'
