@@ -22,6 +22,7 @@ LOGGER = logging.getLogger(__name__)
 
 # Handle optional import. The azure libraries are only present if
 # promptflow-azure is installed.
+_AZURE_IMPORTED = True
 try:
     from azure.ai.ml.entities._credentials import AccountKeyConfiguration
     from azure.ai.ml.entities._datastore.datastore import Datastore
@@ -30,12 +31,11 @@ except (ModuleNotFoundError, ImportError):
     # If the above mentioned modules cannot be imported, we are running
     # in local mode and MLClient in the constructor will be None, so
     # we will not arrive to Azure-dependent code.
-    LOGGER.warning(
-        "azure-ai-ml cannot be imported. "
-        "The results will be saved locally, but will not be logged to Azure. "
-        "To log results to azure please install promptflow-evals with the command "
-        "pip install promptflow-evals[azure]"
-        )
+
+    # We are not logging the import failure because
+    # - If the project configuration was not provided this import is not needed.
+    # - If the project configuration was provided, the error will be raised by PFClient.
+    pass
 
 
 @dataclasses.dataclass
@@ -133,8 +133,11 @@ class EvalRun(metaclass=Singleton):
         self._is_promptflow_run: bool = promptflow_run is not None
         self._is_broken = False
         if self._tracking_uri is None:
-            LOGGER.warning("tracking_uri was not provided, "
-                           "The results will be saved locally, but will not be logged to Azure.")
+            if self._tracking_uri:
+                LOGGER.warning(
+                    "tracking_uri was not provided, "
+                    "The results will be saved locally, but will not be logged to Azure."
+                )
             self._url_base = None
             self._is_broken = True
             self.info = RunInfo.generate(run_name)
