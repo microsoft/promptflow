@@ -330,9 +330,12 @@ def tenant_id() -> str:
 
 @pytest.fixture(scope=package_scope_in_live_mode())
 def variable_recorder():
-    from promptflow.recording.azure import VariableRecorder
-
-    yield VariableRecorder()
+    if pytest.is_record or pytest.is_replay:
+        from promptflow.recording.azure import VariableRecorder
+    
+        yield VariableRecorder()
+    else:
+        yield None
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
