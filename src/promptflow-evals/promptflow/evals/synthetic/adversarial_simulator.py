@@ -240,6 +240,10 @@ class AdversarialSimulator:
             if "context" in m.full_response:
                 message["context"] = m.full_response["context"]
             messages.append(message)
+        conversation_category = None
+        if "metadata" in template_parameters:
+            if "Category" in template_parameters["metadata"]:
+                conversation_category = template_parameters["metadata"]["Category"]
         template_parameters["metadata"] = {}
         for key in (
             "conversation_starter",
@@ -250,7 +254,8 @@ class AdversarialSimulator:
             "ch_template_placeholder",
         ):
             template_parameters.pop(key, None)
-
+        if conversation_category:
+            template_parameters["category"] = conversation_category
         return {
             "template_parameters": template_parameters,
             "messages": messages,
