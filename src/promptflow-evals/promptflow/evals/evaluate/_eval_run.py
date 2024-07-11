@@ -31,10 +31,10 @@ except (ModuleNotFoundError, ImportError):
     # in local mode and MLClient in the constructor will be None, so
     # we will not arrive to Azure-dependent code.
 
-    # We are not logging the import failure because
+    # We are logging the import failure only if debug logging level is set because:
     # - If the project configuration was not provided this import is not needed.
     # - If the project configuration was provided, the error will be raised by PFClient.
-    pass
+    LOGGER.debug("promptflow.azure is not installed.")
 
 
 @dataclasses.dataclass
