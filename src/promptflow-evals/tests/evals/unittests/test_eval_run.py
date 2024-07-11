@@ -103,7 +103,7 @@ class TestEvalRun:
             run._end_run("KILLED")
             run._end_run("KILLED")
             assert len(caplog.records) == 1
-            assert "Unable to stop run because it was already terminated." in caplog.records[0].message
+            assert "Unable to stop run due to Run status=RunStatus.TERMINATED." in caplog.records[0].message
 
     def test_end_logs_if_fails(self, token_mock, caplog):
         """Test that if the terminal status setting was failed, it is logged."""
@@ -158,17 +158,17 @@ class TestEvalRun:
             # Log artifact
             run.log_artifact("test")
             assert len(caplog.records) == 1
-            assert "Unable to log artifact because the run failed to start." in caplog.records[0].message
+            assert "Unable to log artifact due to Run status=RunStatus.BROKEN." in caplog.records[0].message
             caplog.clear()
             # Log metric
             run.log_metric("a", 42)
             assert len(caplog.records) == 1
-            assert "Unable to log metric because the run failed to start." in caplog.records[0].message
+            assert "Unable to log metric due to Run status=RunStatus.BROKEN." in caplog.records[0].message
             caplog.clear()
             # End run
             run._end_run("FINISHED")
             assert len(caplog.records) == 1
-            assert "Unable to stop run because the run failed to start." in caplog.records[0].message
+            assert "Unable to stop run due to Run status=RunStatus.BROKEN." in caplog.records[0].message
             caplog.clear()
 
     @patch("promptflow.evals.evaluate._eval_run.requests.Session")
@@ -463,8 +463,8 @@ class TestEvalRun:
             run.write_properties_to_run_history({'foo': 'bar'})
         assert len(caplog.records) == 3
         assert "tracking_uri was not provided," in caplog.records[0].message
-        assert "Unable to write properties because the run failed to start." in caplog.records[1].message
-        assert "Unable to stop run because the run failed to start." in caplog.records[2].message
+        assert "Unable to write properties due to Run status=RunStatus.BROKEN." in caplog.records[1].message
+        assert "Unable to stop run due to Run status=RunStatus.BROKEN." in caplog.records[2].message
 
     @pytest.mark.parametrize(
         'function_literal,args,expected_action',
@@ -488,4 +488,25 @@ class TestEvalRun:
         getattr(run, function_literal)(*args)
         assert len(caplog.records) == 1
         assert expected_action in caplog.records[0].message, caplog.records[0].message
-        assert "The run did not started." in caplog.records[0].message, caplog.records[0].message
+        assert f"Unable to {expected_action} due to Run status=RunStatus.NOT_STARTED" in caplog.records[
+            0].message, caplog.records[0].message
+
+    @pytest.mark.parametrize(
+        'status',
+        [RunStatus.STARTED, RunStatus.BROKEN, RunStatus.TERMINATED]
+    )
+    def test_starting_started_run(self, token_mock, status):
+        """Test exception if the run was already started"""
+        run = EvalRun(
+            run_name=None,
+            **TestEvalRun._MOCK_CREDS
+        )
+        mock_session = MagicMock()
+        mock_session.request.return_value = self._get_mock_create_resonse(500 if status == RunStatus.BROKEN else 200)
+        with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
+            run._start_run()
+            if status == RunStatus.TERMINATED:
+                run._end_run('FINISHED')
+        with pytest.raises(RuntimeError) as cm:
+            run._start_run()
+        assert f"Unable to start run due to Run status={status}" in cm.value.args[0], cm.value.args[0]

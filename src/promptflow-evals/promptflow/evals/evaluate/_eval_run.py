@@ -10,7 +10,7 @@ import posixpath
 import requests
 import time
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set
 from urllib.parse import urlparse
 
 from requests.adapters import HTTPAdapter
@@ -142,8 +142,9 @@ class EvalRun(contextlib.AbstractContextManager):
         """
         Start the run, or, if it is not applicable (for example, if tracking is not enabled), mark it as started.
         """
-        if self._status != RunStatus.NOT_STARTED:
-            raise ValueError("The run has already started. Please end this run and to start another one.")
+        self._check_state_and_log('start run',
+                                  {v for v in RunStatus if v != RunStatus.NOT_STARTED},
+                                  True)
         self._status = RunStatus.STARTED
         if self._tracking_uri is None:
             LOGGER.warning("tracking_uri was not provided, "
@@ -196,7 +197,9 @@ class EvalRun(contextlib.AbstractContextManager):
         :type reason: str
         :raises: ValueError if the run is not in ("FINISHED", "FAILED", "KILLED")
         """
-        if not self._check_state_and_log('stop run'):
+        if not self._check_state_and_log('stop run',
+                                         {RunStatus.BROKEN, RunStatus.NOT_STARTED, RunStatus.TERMINATED},
+                                         False):
             return
         if self._is_promptflow_run:
             # This run is already finished, we just add artifacts/metrics to it.
@@ -206,9 +209,6 @@ class EvalRun(contextlib.AbstractContextManager):
             raise ValueError(
                 f"Incorrect terminal status {reason}. " 'Valid statuses are "FINISHED", "FAILED" and "KILLED".'
             )
-        if self._status == RunStatus.TERMINATED:
-            LOGGER.warning("Unable to stop run because it was already terminated.")
-            return
         url = f"https://{self._url_base}/mlflow/v2.0" f"{self._get_scope()}/api/2.0/mlflow/runs/update"
         body = {
             "run_uuid": self.info.run_id,
@@ -309,22 +309,30 @@ class EvalRun(contextlib.AbstractContextManager):
             f"{response.text=}."
         )
 
-    def _check_state_and_log(self, action : str) -> bool:
+    def _check_state_and_log(
+            self,
+            action: str,
+            bad_states: Set[RunStatus],
+            should_raise: bool) -> bool:
         """
         Check that the run is in the correct state and log worning if it is not.
 
         :param action: Action, which caused this check. For example if it is "log artifact",
                        the log message will start "Unable to log artifact."
         :type action: str
+        :param bad_states: The states, considered invalid for given action.
+        :type bad_states: set
+        :param should_raise: Should we raise an error if the bad state has been encountered?
+        :type should_raise: bool
+        :raises: RuntimeError if should_raise is True and invalid state was encountered.
         :return: boolean saying if run is in the correct state.
         """
-        if self._status == RunStatus.NOT_STARTED:
-            LOGGER.warning(
-                f"Unable to {action}. The run did not started. "
-                "Please start the run by calling start_run method.")
-            return False
-        if self._status == RunStatus.BROKEN:
-            LOGGER.warning(f"Unable to {action} because the run failed to start.")
+        if self._status in bad_states:
+            msg = f"Unable to {action} due to Run status={self._status}."
+            if should_raise:
+                raise RuntimeError(msg)
+            else:
+                LOGGER.warning(msg)
             return False
         return True
 
@@ -338,7 +346,7 @@ class EvalRun(contextlib.AbstractContextManager):
         :param artifact_folder: The folder with artifacts to be uploaded.
         :type artifact_folder: str
         """
-        if not self._check_state_and_log('log artifact'):
+        if not self._check_state_and_log('log artifact', {RunStatus.BROKEN, RunStatus.NOT_STARTED}, False):
             return
         # Check if artifact dirrectory is empty or does not exist.
         if not os.path.isdir(artifact_folder):
@@ -425,7 +433,7 @@ class EvalRun(contextlib.AbstractContextManager):
         :param value: The valure to be logged.
         :type value: float
         """
-        if not self._check_state_and_log('log metric'):
+        if not self._check_state_and_log('log metric', {RunStatus.BROKEN, RunStatus.NOT_STARTED}, False):
             return
         body = {
             "run_uuid": self.info.run_id,
@@ -450,7 +458,7 @@ class EvalRun(contextlib.AbstractContextManager):
         :param properties: The properties to be written to run history.
         :type properties: dict
         """
-        if not self._check_state_and_log('write properties'):
+        if not self._check_state_and_log('write properties', {RunStatus.BROKEN, RunStatus.NOT_STARTED}, False):
             return
         # update host to run history and request PATCH API
         response = self.request_with_retry(
