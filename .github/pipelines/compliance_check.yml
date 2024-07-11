@@ -22,9 +22,6 @@ pool:
 steps:
 - checkout: self
 
-- task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
-  displayName: 'Component Detection'
-
 - task: PowerShell@2
   inputs:
     targetType: inline
@@ -74,3 +71,8 @@ steps:
   displayName: 'CredScan'
   inputs:
     scanFolder: '$(sourceLocation)'
+
+- task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+  inputs:
+    sourceScanPath: ../../src/
+  displayName: 'Component Detection'
