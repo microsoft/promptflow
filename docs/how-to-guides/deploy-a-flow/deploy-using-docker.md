@@ -74,8 +74,10 @@ docker build dist -t web-classification-serve
 Run the docker image will start a service to serve the flow inside the container. 
 
 #### Connections
+
 If the service involves connections, all related connections will be exported as yaml files and recreated in containers.
 Secrets in connections won't be exported directly. Instead, we will export them as a reference to environment variables:
+
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
 type: open_ai
@@ -83,7 +85,23 @@ name: open_ai_connection
 module: promptflow.connections
 api_key: ${env:OPEN_AI_CONNECTION_API_KEY} # env reference
 ```
-You'll need to set up the environment variables in the container to make the connections work. For a full list of environment variables see [Load from environment variables](https://microsoft.github.io/promptflow/how-to-guides/manage-connections.html#load-from-environment-variables).
+
+You'll need to set up the environment variables in the container to make the connections work.
+
+For example, if you are deploying your PromptFlow to multiple environments you may have different instances of OpenAI you need to connect to. In your environment variables you can override values found within the `connection.yaml`. To do this, the format of the environment variable name follows the following schema `<CONNECTION_NAME>_<FIELD_NAME>` (in all uppercase).
+
+Using the example yaml above, where `CONNECTION_NAME` is `open_ai_connection` and the field to override is `api_key`, the environment varible name would be `OPEN_AI_CONNECTION_API_KEY`. If you need to override the `api_base` field, the environment variable would be `OPEN_AI_CONNECTION_API_BASE`.
+
+PromptFlow will attempt to retrieve `api_key` and `api_base` from the environment variable `OPEN_AI_CONNECTION_API_KEY` and `OPEN_AI_CONNECTION_API_BASE` by default. If these enviroment variables are not set, PromptFlow will fallback to the original values found in your `connection.yaml`.
+
+You can set these values when running the container using the `--env` flag:
+
+```bash
+docker run -d \
+  --env OPEN_AI_CONNECTION_API_BASE=<OVERRIDE_API_BASE> \
+  --env OPEN_AI_CONNECTION_API_KEY=<OVERRIDE_API_KEY> \
+  web-classification-serve
+```
 
 #### Configuring the run and finish script
 
