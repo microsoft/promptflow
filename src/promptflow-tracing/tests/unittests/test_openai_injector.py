@@ -43,17 +43,19 @@ def test_inject_operation_headers_sync():
 
     if IS_LEGACY_OPENAI:
         headers = "headers"
-        kwargs_1 = {"headers": {"a": 1, "b": 2}}
+        kwargs_1 = {"headers": {"a": 1, "b": 2, "x-ms-useragent": "user_agent_test"}}
         kwargs_2 = {"headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}}
     else:
         headers = "extra_headers"
-        kwargs_1 = {"extra_headers": {"a": 1, "b": 2}}
+        kwargs_1 = {"extra_headers": {"a": 1, "b": 2, "x-ms-useragent": "user_agent_test"}}
         kwargs_2 = {"extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}}
 
     injected_headers = get_aoai_telemetry_headers()
+    user_agent = injected_headers.get("x-ms-useragent", None)
+    assert user_agent is not None
     assert f(a=1, b=2) == {"a": 1, "b": 2, headers: injected_headers}
 
-    merged_headers = {**injected_headers, "a": 1, "b": 2}
+    merged_headers = {**injected_headers, "a": 1, "b": 2, "x-ms-useragent": " ".join([user_agent, "user_agent_test"])}
     assert f(**kwargs_1) == {headers: merged_headers}
 
     aoai_tools_headers = injected_headers.copy()
@@ -70,17 +72,19 @@ async def test_inject_operation_headers_async():
 
     if IS_LEGACY_OPENAI:
         headers = "headers"
-        kwargs_1 = {"headers": {"a": 1, "b": 2}}
+        kwargs_1 = {"headers": {"a": 1, "b": 2, "x-ms-useragent": "user_agent_test"}}
         kwargs_2 = {"headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}}
     else:
         headers = "extra_headers"
-        kwargs_1 = {"extra_headers": {"a": 1, "b": 2}}
+        kwargs_1 = {"extra_headers": {"a": 1, "b": 2, "x-ms-useragent": "user_agent_test"}}
         kwargs_2 = {"extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}}
 
     injected_headers = get_aoai_telemetry_headers()
+    user_agent = injected_headers.get("x-ms-useragent", None)
+    assert user_agent is not None
     assert await f(a=1, b=2) == {"a": 1, "b": 2, headers: injected_headers}
 
-    merged_headers = {**injected_headers, "a": 1, "b": 2}
+    merged_headers = {**injected_headers, "a": 1, "b": 2, "x-ms-useragent": " ".join([user_agent, "user_agent_test"])}
     assert await f(**kwargs_1) == {headers: merged_headers}
 
     aoai_tools_headers = injected_headers.copy()

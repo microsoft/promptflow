@@ -70,7 +70,9 @@ def inject_operation_headers(f):
         injected_headers = get_aoai_telemetry_headers()
         original_headers = kwargs.get("headers" if IS_LEGACY_OPENAI else "extra_headers")
         if original_headers and isinstance(original_headers, dict):
-            injected_headers.update(original_headers)
+            injected_headers.update(
+                {h: " ".join([injected_headers[h], original_headers[h]])
+                    if h in injected_headers else original_headers[h] for h in original_headers.keys()})
         kwargs["headers" if IS_LEGACY_OPENAI else "extra_headers"] = injected_headers
 
     if asyncio.iscoroutinefunction(f):
