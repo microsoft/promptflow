@@ -5,8 +5,8 @@ import logging
 
 import numpy as np
 
-from promptflow._utils.utils import get_int_env_var
 from promptflow.client import PFClient
+from promptflow.evals.evaluate._utils import get_int_env_var
 from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 from ..._constants import PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_SEC_DEFAULT
