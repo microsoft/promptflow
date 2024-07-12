@@ -365,6 +365,15 @@ def vcr_recording(request: pytest.FixtureRequest, user_object_id: str, tenant_id
 
 
 def pytest_collection_modifyitems(items):
+    parents = {}
     for item in items:
-        if item.get_closest_marker('azuretest'):
-            item.own_markers = [marker for marker in item.own_markers if marker.name != 'localtest']
+        # Check if parent contains 'localtest' marker and remove it.
+        if any(mark.name == 'localtest' for mark in item.parent.own_markers) or id(item.parent) in parents:
+            if id(item.parent) not in parents:
+                item.parent.own_markers = [
+                    marker for marker in item.own_markers if getattr(marker, 'name', None) != 'localtest']
+                parents[id(item.parent)] = item.parent
+            if not item.get_closest_marker('azuretest'):
+                # If item's parent was marked as 'localtest', mark the child as such, but not if
+                # it was marked as 'azuretest'.
+                item.add_marker(pytest.mark.localtest)
