@@ -99,9 +99,6 @@ class TaskSimulator:
             user_simulator_prompty_response = json.loads(response)
         except Exception as e:
             print("Something went wrong parsing the user_simulator_prompty_response output")
-            import pdb
-
-            pdb.set_trace()
             raise e
         return user_simulator_prompty_response["content"]
 
