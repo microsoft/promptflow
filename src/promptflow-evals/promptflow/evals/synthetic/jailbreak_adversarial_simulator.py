@@ -2,40 +2,18 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # noqa: E501
-import functools
 import logging
 from typing import Any, Callable, Dict
 
 from azure.identity import DefaultAzureCredential
 
-from promptflow._sdk._telemetry import ActivityType, monitor_operation
 from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario
 
 from ._model_tools import AdversarialTemplateHandler, ManagedIdentityAPITokenManager, RAIClient, TokenScope
+from ._tracing import monitor_adversarial_scenario
 from .adversarial_simulator import AdversarialSimulator
 
 logger = logging.getLogger(__name__)
-
-
-def monitor_adversarial_scenario(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        scenario = str(kwargs.get("scenario", None))
-        max_conversation_turns = kwargs.get("max_conversation_turns", None)
-        max_simulation_results = kwargs.get("max_simulation_results", None)
-        decorated_func = monitor_operation(
-            activity_name="jailbreak.adversarial.simulator.call",
-            activity_type=ActivityType.PUBLICAPI,
-            custom_dimensions={
-                "scenario": scenario,
-                "max_conversation_turns": max_conversation_turns,
-                "max_simulation_results": max_simulation_results,
-            },
-        )(func)
-
-        return decorated_func(*args, **kwargs)
-
-    return wrapper
 
 
 class JailbreakAdversarialSimulator:
@@ -82,7 +60,7 @@ class JailbreakAdversarialSimulator:
         if self.rai_client is None:
             raise ValueError("Simulation options require rai services but ai client is not provided.")
 
-    @monitor_adversarial_scenario
+    @monitor_adversarial_scenario(activity_name="jailbreak.adversarial.simulator.call")
     async def __call__(
         self,
         *,

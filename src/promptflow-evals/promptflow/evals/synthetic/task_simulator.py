@@ -11,8 +11,11 @@ from typing import Any, Dict, List
 from tqdm import tqdm
 
 from promptflow.client import load_flow
+from promptflow.core import AzureOpenAIModelConfiguration
 
+from .._user_agent import USER_AGENT
 from ._conversation.constants import ConversationRole
+from ._tracing import monitor_task_simulator
 
 
 class ConvTurn:
@@ -75,14 +78,17 @@ class TaskSimulator:
 
     async def build_query(self, *, user_persona, conversation_history, user_simulator_prompty):
         # make a call to llm with user_persona and query
-        # return the response
+        prompty_model_config = {"configuration": self.azure_ai_project}
+        prompty_model_config.update(
+            {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
+        ) if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration) else None
         try:
             if not user_simulator_prompty:
                 current_dir = os.path.dirname(__file__)
                 prompty_path = os.path.join(current_dir, "_prompty", "task_simulate_with_persona.prompty")
             else:
                 raise NotImplementedError("Custom prompty not supported yet")
-            _flow = load_flow(source=prompty_path, model={"configuration": self.azure_ai_project})
+            _flow = load_flow(source=prompty_path, model=prompty_model_config)
             response = _flow(user_persona=user_persona, conversation_history=conversation_history)
         except Exception as e:
             print("Something went wrong running the prompty")
@@ -99,6 +105,7 @@ class TaskSimulator:
             raise e
         return user_simulator_prompty_response["content"]
 
+    @monitor_task_simulator
     async def __call__(
         self,
         *,
@@ -117,6 +124,9 @@ class TaskSimulator:
         # if not text or not user_persona:
         #     raise ValueError("Text and persona cannot be empty")
         prompty_model_config = {"configuration": self.azure_ai_project}
+        prompty_model_config.update(
+            {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
+        ) if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration) else None
         if not query_response_generating_prompty:
             current_dir = os.path.dirname(__file__)
             prompty_path = os.path.join(current_dir, "_prompty", "task_query_response.prompty")
