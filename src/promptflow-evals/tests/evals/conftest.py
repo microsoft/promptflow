@@ -362,3 +362,9 @@ def vcr_recording(request: pytest.FixtureRequest, user_object_id: str, tenant_id
         yield recording
     else:
         yield None
+
+
+def pytest_collection_modifyitems(items):
+    for item in items:
+        if item.get_closest_marker('azuretest'):
+            item.own_markers = [marker for marker in item.own_markers if marker.name != 'localtest']
