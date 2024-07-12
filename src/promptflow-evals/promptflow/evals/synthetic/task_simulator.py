@@ -8,6 +8,8 @@ import json
 import os
 from typing import Any, Dict, List
 
+from tqdm import tqdm
+
 from promptflow.client import load_flow
 
 from ._conversation.constants import ConversationRole
@@ -143,10 +145,17 @@ class TaskSimulator:
             pdb.set_trace()
             raise e
         i = 0
+        progress_bar = tqdm(
+            total=len(query_response_list) * len(user_persona),
+            desc="generating simulations",
+            ncols=100,
+            unit="simulations",
+        )
         all_conversations = []
         for query_response_pair in query_response_list:
             query = query_response_pair["q"]
             response = query_response_pair["r"]
+            # TODO: handle index out of range
             user_persona_item = user_persona[i]
             i += 1
             conversation = await self.complete_conversation(
@@ -156,6 +165,7 @@ class TaskSimulator:
                 user_simulator_prompty=user_simulator_prompty,
                 target=target,
                 api_call_delay_sec=api_call_delay_sec,
+                progress_bar=progress_bar,
             )
             all_conversations.append(
                 {
@@ -165,6 +175,7 @@ class TaskSimulator:
                     "$schema": "http://azureml/sdk-2-0/ChatConversation.json",
                 }
             )
+        progress_bar.close()
         return all_conversations
 
     async def complete_conversation(
@@ -176,6 +187,7 @@ class TaskSimulator:
         user_simulator_prompty,
         target,
         api_call_delay_sec,
+        progress_bar,
     ):
         conversation_history = ConvHistory()
         turn = ConvTurn(role=ConversationRole.USER, content=conversation_starter)
@@ -189,11 +201,13 @@ class TaskSimulator:
                 context=None,
             )
             await asyncio.sleep(api_call_delay_sec)
+
             messages_list = response["messages"]
             latest_message = messages_list[-1]
             response_from_target = latest_message["content"]
             turn = ConvTurn(role=ConversationRole.ASSISTANT, content=response_from_target)
             conversation_history.add_to_history(turn)
+            progress_bar.update(1)
             # Check if we have reached max_conversation_turns after appending assistant's response
             if conversation_history.get_length() >= max_conversation_turns:
                 break
@@ -208,5 +222,6 @@ class TaskSimulator:
             # Append user simulator's response
             turn = ConvTurn(role=ConversationRole.USER, content=response_from_user_simulating_prompty)
             conversation_history.add_to_history(turn)
+            progress_bar.update(1)
 
         return conversation_history.to_conv_history()
