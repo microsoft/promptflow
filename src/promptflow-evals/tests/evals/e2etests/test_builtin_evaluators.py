@@ -11,8 +11,8 @@ from promptflow.evals.evaluators import (
 
 
 @pytest.mark.usefixtures("recording_injection", "vcr_recording")
+@pytest.mark.localtest
 class TestBuiltInEvaluators:
-    @pytest.mark.localtest
     def test_individual_evaluator_prompt_based(self, model_config):
         eval_fn = FluencyEvaluator(model_config)
         score = eval_fn(
@@ -22,7 +22,6 @@ class TestBuiltInEvaluators:
         assert score is not None
         assert score["gpt_fluency"] > 1.0
 
-    @pytest.mark.localtest
     def test_individual_evaluator_prompt_based_with_dict_input(self, model_config):
         eval_fn = FluencyEvaluator(model_config)
         score = eval_fn(
@@ -32,7 +31,6 @@ class TestBuiltInEvaluators:
         assert score is not None
         assert score["gpt_fluency"] > 0.0
 
-    @pytest.mark.azuretest
     def test_individual_evaluator_service_based(self, project_scope, azure_cred):
         eval_fn = ViolenceEvaluator(project_scope, azure_cred)
         score = eval_fn(
@@ -44,7 +42,6 @@ class TestBuiltInEvaluators:
         assert score["violence_score"] < 1.0
         assert score["violence_reason"], "violence_reason must not be None or empty."
 
-    @pytest.mark.azuretest
     @pytest.mark.skip(reason="Not working in ci pipeline. For local run.")
     def test_content_safety_service_unavailable(self, project_scope, azure_cred):
         eval_fn = ViolenceEvaluator(project_scope, azure_cred)
@@ -58,7 +55,6 @@ class TestBuiltInEvaluators:
 
         assert "RAI service is not available in this region" in exc_info._excinfo[1].inner_exception.args[0]
 
-    @pytest.mark.localtest
     @pytest.mark.parametrize("parallel", [False, True])
     def test_composite_evaluator_qa(self, model_config, parallel):
         qa_eval = QAEvaluator(model_config, parallel=parallel)
@@ -99,7 +95,6 @@ class TestBuiltInEvaluators:
         assert score["hate_unfairness_score"] < 1.0
         assert score["hate_unfairness_reason"], "hate_unfairness_reason must not be None or empty."
 
-    @pytest.mark.localtest
     @pytest.mark.parametrize(
         "eval_last_turn, parallel",
         [
