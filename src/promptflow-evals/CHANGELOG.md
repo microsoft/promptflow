@@ -1,9 +1,16 @@
-# promptflow-evals package
+# Release History
 
-Please insert change log into "Next Release" ONLY.
+## v0.3.2 (Upcoming)
 
-## Next release
+### Features Added
+
+### Bugs Fixed
+
+### Improvements
 - Exposed batch evaluation run timeout variable via "PF_BATCH_TIMEOUT_SEC" environment variable
 
-## 0.0.1
-- Introduced package
+## v0.3.1 (2022-07-09)
+- This release contains minor bug fixes and improvements.
+
+## v0.3.0 (2024-05-17)
+- Initial release of promptflow-evals package.
