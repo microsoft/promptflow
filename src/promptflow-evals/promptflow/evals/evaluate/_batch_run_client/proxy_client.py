@@ -6,10 +6,7 @@ import logging
 import numpy as np
 
 from promptflow.client import PFClient
-from promptflow.evals.evaluate._utils import get_int_env_var
 from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
-
-from ..._constants import PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_SEC_DEFAULT
 
 LOGGER = logging.getLogger(__name__)
 
@@ -31,13 +28,11 @@ class ProxyClient:
         return ProxyRun(run=eval_future)
 
     def get_details(self, proxy_run, all_results=False):
-        batch_run_timeout = get_int_env_var(PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_SEC_DEFAULT)
-        run = proxy_run.run.result(timeout=batch_run_timeout)
+        run = proxy_run.run.result()
         result_df = self._pf_client.get_details(run, all_results=all_results)
         result_df.replace("(Failed)", np.nan, inplace=True)
         return result_df
 
     def get_metrics(self, proxy_run):
-        batch_run_timeout = get_int_env_var(PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_SEC_DEFAULT)
-        run = proxy_run.run.result(timeout=batch_run_timeout)
+        run = proxy_run.run.result()
         return self._pf_client.get_metrics(run)

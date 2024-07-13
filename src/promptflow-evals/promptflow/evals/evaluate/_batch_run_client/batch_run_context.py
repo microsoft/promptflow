@@ -5,6 +5,7 @@ import os
 
 from promptflow._sdk._constants import PF_FLOW_ENTRY_IN_TMP, PF_FLOW_META_LOAD_IN_SUBPROCESS
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
+from promptflow.evals._constants import PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_SEC_DEFAULT
 from promptflow.tracing._integrations._openai_injector import inject_openai_api, recover_openai_api
 
 from ..._user_agent import USER_AGENT
@@ -25,6 +26,9 @@ class BatchRunContext:
             os.environ[PF_FLOW_ENTRY_IN_TMP] = "true"
             os.environ[PF_FLOW_META_LOAD_IN_SUBPROCESS] = "false"
 
+            if os.environ[PF_BATCH_TIMEOUT_SEC] is None:
+                os.environ[PF_BATCH_TIMEOUT_SEC] = PF_BATCH_TIMEOUT_SEC_DEFAULT
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         if isinstance(self.client, CodeClient):
             recover_openai_api()
@@ -32,3 +36,4 @@ class BatchRunContext:
         if isinstance(self.client, ProxyClient):
             os.environ.pop(PF_FLOW_ENTRY_IN_TMP, None)
             os.environ.pop(PF_FLOW_META_LOAD_IN_SUBPROCESS, None)
+            os.environ.pop(PF_BATCH_TIMEOUT_SEC, None)
