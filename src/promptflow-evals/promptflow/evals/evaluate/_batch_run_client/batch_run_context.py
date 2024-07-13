@@ -26,8 +26,8 @@ class BatchRunContext:
             os.environ[PF_FLOW_ENTRY_IN_TMP] = "true"
             os.environ[PF_FLOW_META_LOAD_IN_SUBPROCESS] = "false"
 
-            if os.environ[PF_BATCH_TIMEOUT_SEC] is None:
-                os.environ[PF_BATCH_TIMEOUT_SEC] = PF_BATCH_TIMEOUT_SEC_DEFAULT
+            if os.environ.get(PF_BATCH_TIMEOUT_SEC) is None:
+                os.environ[PF_BATCH_TIMEOUT_SEC] = str(PF_BATCH_TIMEOUT_SEC_DEFAULT)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if isinstance(self.client, CodeClient):

@@ -6,8 +6,7 @@ import pytest
 from promptflow.client import PFClient
 from promptflow.evals._constants import PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_SEC_DEFAULT
 from promptflow.evals._user_agent import USER_AGENT
-from promptflow.evals.evaluate._batch_run_client import BatchRunContext, CodeClient
-from promptflow.evals.evaluate._batch_run_client.code_client import CodeRun
+from promptflow.evals.evaluate._batch_run_client import BatchRunContext, CodeClient, ProxyClient
 
 
 @pytest.fixture
@@ -18,11 +17,6 @@ def code_client_mock():
 @pytest.fixture
 def pf_client_mock():
     return MagicMock(spec=PFClient)
-
-
-@pytest.fixture
-def code_run_mock():
-    return MagicMock()
 
 
 @pytest.mark.unittest
@@ -59,13 +53,24 @@ class TestBatchRunContext:
 
         mock_recover_openai_api.assert_not_called()
 
-    def test_get_result_timeout(self, code_run_mock):
-        code_run_instance = CodeRun(run=code_run_mock, input_data={})
-        code_run_instance.get_result_df()
+    def test_batch_timeout_default(self):
+        before_timeout = os.environ.get(PF_BATCH_TIMEOUT_SEC)
+        assert before_timeout is None
 
-        code_run_mock.result.assert_called_once_with(timeout=PF_BATCH_TIMEOUT_SEC_DEFAULT)
+        with BatchRunContext(ProxyClient(PFClient)):
+            during_timeout = int(os.environ.get(PF_BATCH_TIMEOUT_SEC))
+            assert during_timeout == PF_BATCH_TIMEOUT_SEC_DEFAULT
 
-        custom_timeout = "100000"
-        os.environ[PF_BATCH_TIMEOUT_SEC] = custom_timeout
-        code_run_instance.get_result_df()
-        code_run_mock.result.assert_called_with(timeout=int(custom_timeout))
+        after_timeout = os.environ.get(PF_BATCH_TIMEOUT_SEC)
+        assert after_timeout is None
+
+    def test_batch_timeout_custom(self):
+        custom_timeout = 10000000
+        os.environ[PF_BATCH_TIMEOUT_SEC] = str(custom_timeout)
+
+        with BatchRunContext(ProxyClient(PFClient)):
+            during_timeout = int(os.environ.get(PF_BATCH_TIMEOUT_SEC))
+            assert during_timeout == custom_timeout
+
+        after_timeout = os.environ.get(PF_BATCH_TIMEOUT_SEC)
+        assert after_timeout is None
