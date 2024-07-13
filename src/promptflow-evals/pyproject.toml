@@ -50,12 +50,14 @@ promptflow-azure = { version = "<2.0.0,>=1.13.0", optional = true} # Needed for 
 
 [tool.poetry.extras]
 azure = [
-    "promptflow-azure" 
+    "promptflow-azure"
 ]
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
 import-linter = "*"
+pylint = "3.0.3"
+azure-pylint-guidelines-checker = {version = "0.3.1", source = "azure-sdk"}
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -65,6 +67,12 @@ pytest-mock = "*"
 pytest-xdist = "*"
 
 # test: pytest and coverage
+
+[[tool.poetry.source]]
+name = "azure-sdk"
+url = "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/"
+priority = "supplemental"
+
 [tool.pytest.ini_options]
 markers = [
   "unittest",
