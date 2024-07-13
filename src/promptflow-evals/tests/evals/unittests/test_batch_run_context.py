@@ -61,6 +61,7 @@ class TestBatchRunContext:
             during_timeout = int(os.environ.get(PF_BATCH_TIMEOUT_SEC))
             assert during_timeout == PF_BATCH_TIMEOUT_SEC_DEFAULT
 
+        # Default timeout should be reset after exiting BatchRunContext
         after_timeout = os.environ.get(PF_BATCH_TIMEOUT_SEC)
         assert after_timeout is None
 
@@ -72,5 +73,6 @@ class TestBatchRunContext:
             during_timeout = int(os.environ.get(PF_BATCH_TIMEOUT_SEC))
             assert during_timeout == custom_timeout
 
-        after_timeout = os.environ.get(PF_BATCH_TIMEOUT_SEC)
-        assert after_timeout is None
+        # Custom timeouts should not be reset after exiting BatchRunContext
+        after_timeout = int(os.environ.get(PF_BATCH_TIMEOUT_SEC))
+        assert after_timeout == custom_timeout

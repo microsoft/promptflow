@@ -36,4 +36,6 @@ class BatchRunContext:
         if isinstance(self.client, ProxyClient):
             os.environ.pop(PF_FLOW_ENTRY_IN_TMP, None)
             os.environ.pop(PF_FLOW_META_LOAD_IN_SUBPROCESS, None)
-            os.environ.pop(PF_BATCH_TIMEOUT_SEC, None)
+
+            if os.environ.get(PF_BATCH_TIMEOUT_SEC) == str(PF_BATCH_TIMEOUT_SEC_DEFAULT):
+                os.environ.pop(PF_BATCH_TIMEOUT_SEC, None)
