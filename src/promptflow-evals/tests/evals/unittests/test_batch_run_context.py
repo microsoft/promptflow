@@ -66,7 +66,7 @@ class TestBatchRunContext:
         assert after_timeout is None
 
     def test_batch_timeout_custom(self):
-        custom_timeout = 10000000
+        custom_timeout = 1000
         os.environ[PF_BATCH_TIMEOUT_SEC] = str(custom_timeout)
 
         with BatchRunContext(ProxyClient(PFClient)):
