@@ -23,7 +23,6 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
           set -xe
-          (cd src/promptflow-evals && poetry install --with dev)
-          (cd src/promptflow-evals && poetry run pip show promptflow-evals)
+          poetry install -C promptflow-evals --with dev
       - name: run pylint and azure-pylint-guidelines-checker
         run: pylint --rcfile="../../pylintrc" src/promptflow-evals
