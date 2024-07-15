@@ -4,7 +4,12 @@ import time
 from typing import List
 from urllib.parse import urlparse
 
-import jwt
+# Check if the jwt package is available, since it's only included in the
+# promtpflow-evals[azure] package.
+try:
+    import jwt
+except:
+    jwt = None
 import numpy as np
 import requests
 from azure.core.credentials import TokenCredential
@@ -191,7 +196,7 @@ def get_rai_svc_url(project_scope: dict, token: str):
 def fetch_or_reuse_token(credential: TokenCredential, token: str = None):
     acquire_new_token = True
     try:
-        if token:
+        if token and jwt:
             # Decode the token to get its expiration time
             decoded_token = jwt.decode(token, options={"verify_signature": False})
             exp_time = decoded_token["exp"]

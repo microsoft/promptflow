@@ -44,6 +44,7 @@ class TestBuiltInEvaluators:
         assert score["violence_score"] < 1.0
         assert score["violence_reason"], "violence_reason must not be None or empty."
 
+    @pytest.mark.azuretest
     def test_content_safety_service_unavailable(self, project_scope, azure_cred):
         eval_fn = ViolenceEvaluator(project_scope, azure_cred)
         # Doing this is replay mode breaks causes mismatch between scrubbed recordings
