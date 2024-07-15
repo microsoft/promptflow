@@ -55,7 +55,7 @@ jobs:
       - name: install promptflow-evals from wheel
         id: install_promptflow_no_extras
         run: |
-          ./scripts/code_qa/calculate_install_time.sh -r ${{ github.run_id }} -w ${{ github.workflow }} -a ${{ github.action }} -b ${{ github.ref }} -l "300"
+          ../../scripts/code_qa/calculate_install_time.sh -r ${{ github.run_id }} -w ${{ github.workflow }} -a ${{ github.action }} -b ${{ github.ref }} -l "300"
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow-evals from wheel
         id: install_promptflow_with_extras
