@@ -58,8 +58,8 @@ python -m pip install "./${pf_evals_wheel}${extras}" --no-cache-dir
 install_time=$((`date +%s` - ${start_tm}))
 packages_installed=$((`python -m pip freeze | wc -l` - packages))
 # Log the install time
-python `dirname "$0"`/report_to_app_insights.py --activity "install_time_s" --value "{\"install_time_s\": ${install_time}, \"number_of_packages_installed\": ${packages_installed}}" --git-hub-action-run-id "${run_id}" --git-hub-workflow "${workflow}" --git-hub-action "${action}" --git-branch "${ref}
-deactivate"
+python `dirname "$0"`/report_to_app_insights.py --activity "install_time_s" --value "{\"install_time_s\": ${install_time}, \"number_of_packages_installed\": ${packages_installed}}" --git-hub-action-run-id "${run_id}" --git-hub-workflow "${workflow}" --git-hub-action "${action}" --git-branch "${ref}"
+deactivate
 rm -rf test_pf_ev
 echo "Installed ${packages_installed} packages per ${install_time} seconds."
 if [ $fail -eq 0 ]; then
