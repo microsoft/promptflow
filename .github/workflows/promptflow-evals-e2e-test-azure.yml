@@ -1,4 +1,4 @@
-name: promptflow-evals-e2e-test
+name: promptflow-evals-e2e-test-azure
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   pull_request:
     paths:
       - src/promptflow-evals/**
-      - .github/workflows/promptflow-evals-e2e-test.yml
+      - .github/workflows/promptflow-evals-e2e-test-azure.yml
   workflow_dispatch:
 
 env:
@@ -83,10 +83,10 @@ jobs:
           creds: ${{ secrets.PF_EVALS_SP_CREDENTIALS }}
           enable-AzPSSession: true
       - name: run e2e tests
-        id: run_all_e2e_tests
+        id: run_e2e_tests_azure
         run: | 
-          poetry run pytest -m e2etest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
-          poetry run python ../../scripts/code_qa/report_to_app_insights.py --activity all_e2e_tests_run_times --junit-xml test-results.xml --git-hub-action-run-id ${{ github.run_id }} --git-hub-workflow ${{ github.workflow }} --git-hub-action ${{ github.action }} --git-branch ${{ github.ref }}
+          poetry run pytest -m azuretest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
+          poetry run python ../../scripts/code_qa/report_to_app_insights.py --activity e2e_tests_azure --junit-xml test-results.xml --git-hub-action-run-id ${{ github.run_id }} --git-hub-workflow ${{ github.workflow }} --git-hub-action ${{ github.action }} --git-branch ${{ github.ref }}
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4
