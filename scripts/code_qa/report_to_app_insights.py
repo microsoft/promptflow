@@ -83,7 +83,6 @@ def main(activity_name: str,
 
     # write information to the application insights.
     logger.info(action, extra={"custom_dimensions": activity_info})
-    print({"custom_dimensions": activity_info})
 
 
 if __name__ == '__main__':
