@@ -76,7 +76,9 @@ class TaskSimulator:
         self.azure_ai_project["api_version"] = "2024-02-15-preview"
         self.credential = credential
 
-    async def build_query(self, *, user_persona, conversation_history, user_simulator_prompty):
+    async def build_query(
+        self, *, user_persona, conversation_history, user_simulator_prompty, user_simulator_prompty_kwargs
+    ):
         # make a call to llm with user_persona and query
         prompty_model_config = {"configuration": self.azure_ai_project}
         prompty_model_config.update(
@@ -86,9 +88,13 @@ class TaskSimulator:
             if not user_simulator_prompty:
                 current_dir = os.path.dirname(__file__)
                 prompty_path = os.path.join(current_dir, "_prompty", "task_simulate_with_persona.prompty")
+                _flow = load_flow(source=prompty_path, model=prompty_model_config)
             else:
-                raise NotImplementedError("Custom prompty not supported yet")
-            _flow = load_flow(source=prompty_path, model=prompty_model_config)
+                _flow = load_flow(
+                    source=user_simulator_prompty,
+                    model=prompty_model_config,
+                    **user_simulator_prompty_kwargs,
+                )
             response = _flow(user_persona=user_persona, conversation_history=conversation_history)
         except Exception as e:
             print("Something went wrong running the prompty")
@@ -114,6 +120,8 @@ class TaskSimulator:
         query_response_generating_prompty: str = None,
         user_simulator_prompty: str = None,
         api_call_delay_sec: float = 1,
+        query_response_generating_prompty_kwargs: Dict[str, Any] = {},
+        user_simulator_prompty_kwargs: Dict[str, Any] = {},
         **kwargs,
     ):
         if num_queries != len(user_persona):
@@ -129,7 +137,8 @@ class TaskSimulator:
             prompty_path = os.path.join(current_dir, "_prompty", "task_query_response.prompty")
             _flow = load_flow(source=prompty_path, model=prompty_model_config)
         else:
-            query_response_generating_prompty_kwargs = {**kwargs}
+            if not query_response_generating_prompty_kwargs:
+                query_response_generating_prompty_kwargs = {**kwargs}
             _flow = load_flow(
                 source=query_response_generating_prompty,
                 model=prompty_model_config,
@@ -170,6 +179,7 @@ class TaskSimulator:
                 max_conversation_turns=max_conversation_turns,
                 user_persona=user_persona_item,
                 user_simulator_prompty=user_simulator_prompty,
+                user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
                 target=target,
                 api_call_delay_sec=api_call_delay_sec,
                 progress_bar=progress_bar,
@@ -192,6 +202,7 @@ class TaskSimulator:
         max_conversation_turns,
         user_persona,
         user_simulator_prompty,
+        user_simulator_prompty_kwargs,
         target,
         api_call_delay_sec,
         progress_bar,
@@ -224,6 +235,7 @@ class TaskSimulator:
                 user_persona=user_persona,
                 conversation_history=conversation_history.to_conv_history(),
                 user_simulator_prompty=user_simulator_prompty,
+                user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
             )
             await asyncio.sleep(api_call_delay_sec)
             # Append user simulator's response
