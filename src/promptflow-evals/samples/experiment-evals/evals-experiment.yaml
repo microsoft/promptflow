@@ -1,0 +1,13 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Experiment.schema.json
+
+description: Basic experiment to run sim and eval
+
+nodes:
+  - name: run_script
+    type: command
+    command: python sim_and_eval.py
+    code: ./experiment
+    inputs:
+      input_path:
+    outputs:
+      output_path:
