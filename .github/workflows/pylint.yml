@@ -19,13 +19,10 @@ jobs:
           python-version: 3.9
 
       - uses: snok/install-poetry@v1
-      - name: install pylint and azure-pylint-guidelines-checker
+      - name: install and run pylint and azure-pylint-guidelines-checker
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
           set -xe
           poetry install -C src/promptflow-evals --with dev
-      - name: Show installed packages
-        run: poetry show -C src/promptflow-evals
-      - name: run pylint and azure-pylint-guidelines-checker
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: pylint --rcfile="../../pylintrc" src/promptflow-evals
+          poetry show -C src/promptflow-evals
+          pylint --rcfile="../../pylintrc" src/promptflow-evals
