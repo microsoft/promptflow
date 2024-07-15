@@ -27,4 +27,4 @@ jobs:
           poetry show -C src/promptflow-evals
       - name: run pylint
         working-directory: ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals
-        run: poetry run pylint --rcfile="../../pylintrc"
+        run: poetry run pylint --rcfile="${{ env.WORKING_DIRECTORY }}/../../pylintrc"
