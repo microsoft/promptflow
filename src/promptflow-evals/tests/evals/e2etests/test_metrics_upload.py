@@ -10,8 +10,12 @@ from promptflow.evals.evaluate import _utils as ev_utils
 from promptflow.evals.evaluate._eval_run import EvalRun
 from promptflow.evals.evaluate._evaluate import evaluate
 from promptflow.evals.evaluators._f1_score._f1_score import F1ScoreEvaluator
-from promptflow.recording.record_mode import is_live
 from promptflow.tracing import _start_trace
+try:
+    from promptflow.recording.record_mode import is_live
+except ModuleNotFoundError:
+    # The file is being imported by the local test
+    pass
 
 
 @pytest.fixture
@@ -38,7 +42,7 @@ def tracking_uri(azure_ml_client, project_scope):
 
 
 @pytest.mark.usefixtures("model_config", "recording_injection", "project_scope")
-@pytest.mark.e2etest
+@pytest.mark.azuretest
 class TestMetricsUpload(object):
     """End to end tests to check how the metrics were uploaded to cloud."""
 
