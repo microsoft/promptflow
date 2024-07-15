@@ -119,10 +119,14 @@ class TestEvaluate:
         assert result["studio_url"] is None
 
     @pytest.mark.azuretest
-    def test_evaluate_with_content_safety_evaluator(self, project_scope, data_file, azure_cred):
+    def test_evaluate_with_content_safety_evaluator(self, project_scope, data_file):
         input_data = pd.read_json(data_file, lines=True)
 
-        content_safety_eval = ContentSafetyEvaluator(project_scope, credential=azure_cred)
+        # CS evaluator tries to store the credential, which breaks multiprocessing at
+        # pickling stage. So we pass None for credential and let child evals
+        # generate a default credential at runtime.
+        # Internal Parallelism is also disabled to avoid faulty recordings.
+        content_safety_eval = ContentSafetyEvaluator(project_scope, credential=None, parallel=False)
 
         # run the evaluation
         result = evaluate(
