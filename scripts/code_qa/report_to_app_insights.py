@@ -31,7 +31,7 @@ def parse_junit_xml(fle: str) -> Dict[str, Dict[str, Union[float, str]]]:
 
 
 def main(activity_name: str,
-         value: float,
+         value: Union[float, str],
          run_id: str,
          workflow: str,
          action: str,
@@ -92,7 +92,6 @@ if __name__ == '__main__':
                         required=True)
     parser.add_argument(
         '--value',
-        type=float,
         help='The floating point value for activity or a set of values in key-value format.',
         required=False,
         default=-1)
