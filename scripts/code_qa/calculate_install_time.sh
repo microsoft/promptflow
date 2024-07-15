@@ -56,15 +56,13 @@ start_tm=`date +%s`
 echo "python -m pip install \"./${pf_evals_wheel}${extras}\" --no-cache-dir"
 python -m pip install "./${pf_evals_wheel}${extras}" --no-cache-dir
 install_time=$((`date +%s` - ${start_tm}))
-echo `which python`
 packages_installed=$((`python -m pip freeze | wc -l` - packages))
-echo "Installed ${packages_installed} packages per ${install_time} seconds."
 # Log the install time
-echo `which python`
-python `dirname "$0"`/report_to_app_insights.py --activity install_time_s --value "{\"install_time\": ${install_time}, \"packages_installed\": ${packages_installed}}" --git-hub-action-run-id ${run_id} --git-hub-workflow ${workflow} --git-hub-action ${action} --git-branch ${ref}
-deactivate
+echo "--activity install_time_s --git-hub-action-run-id ${run_id} --git-hub-workflow ${workflow} --git-hub-action ${action} --git-branch ${ref}"
+python `dirname "$0"`/report_to_app_insights.py --activity "install_time_s" --value "{\"install_time\": ${install_time}, \"packages_installed\": ${packages_installed}}" --git-hub-action-run-id "${run_id}" --git-hub-workflow "${workflow}" --git-hub-action "${action}" --git-branch "${ref}
+deactivate"
 rm -rf test_pf_ev
-
+echo "Installed ${packages_installed} packages per ${install_time} seconds."
 if [ $fail -eq 0 ]; then
     # Swallow the exit code 1 and just show the warning, understandable by
     # github UI.
