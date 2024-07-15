@@ -25,4 +25,4 @@ jobs:
           set -xe
           poetry install -C src/promptflow-evals --with dev
           poetry show -C src/promptflow-evals
-          pylint --rcfile="../../pylintrc" src/promptflow-evals
+          poetry run pylint --rcfile="../../pylintrc" src/promptflow-evals
