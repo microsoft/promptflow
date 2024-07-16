@@ -18,9 +18,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
-        # TODO: Encounter hash mismatch for ubuntu-latest and 3.9 combination during installing promptflow-evals package
-        # https://github.com/microsoft/promptflow/actions/runs/9009397933/job/24753518853?pr=3158
-        # Add 3.9 back after we figure out the issue
         python-version: ['3.8', '3.9', '3.10', '3.11']
       fail-fast: false
     # snok/install-poetry need this to support Windows
