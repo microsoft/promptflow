@@ -23,7 +23,7 @@ pip install -r requirements.txt
 
 ### 1. Setup connection
 
-If you are using Azure Open AI, prepare your resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
+If you are using Azure OpenAI, prepare your resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
 
 ```bash
 # Override keys with --set to avoid yaml file changes

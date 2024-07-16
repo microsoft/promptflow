@@ -61,7 +61,7 @@ jobs:
         run: poetry install
         working-directory: ${{ env.RECORD_DIRECTORY }}
       - name: run unit tests
-        run: poetry run pytest -m unittest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
+        run: poetry run pytest -m unittest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml --tb=short
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4

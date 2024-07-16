@@ -70,7 +70,7 @@ jobs:
         run: echo '${{ secrets.PF_TRACING_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run e2e tests
-        run: poetry run pytest -m e2etest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
+        run: poetry run pytest -m e2etest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml --tb=short
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4

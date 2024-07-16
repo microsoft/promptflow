@@ -150,6 +150,28 @@ class AdversarialSimulator:
 
          The 'content' for 'assistant' role messages may includes the messages that your callback returned.
         :rtype: List[Dict[str, Any]]
+
+        **Output format**
+
+        .. code-block:: python
+
+            return_value = [
+                {
+                    'template_parameters': {},
+                    'messages': [
+                        {
+                            'content': '<jailbreak prompt> <adversarial question>',
+                            'role': 'user'
+                        },
+                        {
+                            'content': "<response from endpoint>",
+                            'role': 'assistant',
+                            'context': None
+                        }
+                    ],
+                    '$schema': 'http://azureml/sdk-2-0/ChatConversation.json'
+                }
+            ]
         """
         # validate the inputs
         if scenario != AdversarialScenario.ADVERSARIAL_CONVERSATION:
@@ -174,16 +196,17 @@ class AdversarialSimulator:
                 total_tasks,
             )
         total_tasks = min(total_tasks, max_simulation_results)
+        if jailbreak:
+            jailbreak_dataset = await self.rai_client.get_jailbreaks_dataset()
         progress_bar = tqdm(
             total=total_tasks,
-            desc="generating simulations",
+            desc="generating jailbreak simulations" if jailbreak else "generating simulations",
             ncols=100,
             unit="simulations",
         )
         for template in templates:
             for parameter in template.template_parameters:
                 if jailbreak:
-                    jailbreak_dataset = await self.rai_client.get_jailbreaks_dataset()
                     parameter = self._join_conversation_starter(parameter, random.choice(jailbreak_dataset))
                 tasks.append(
                     asyncio.create_task(
@@ -210,24 +233,25 @@ class AdversarialSimulator:
 
         return JsonLineList(sim_results)
 
-    def _to_chat_protocol(self, *, conversation_history, template_parameters):
+    def _to_chat_protocol(self, *, conversation_history, template_parameters: Dict = {}):
         messages = []
         for i, m in enumerate(conversation_history):
             message = {"content": m.message, "role": m.role.value}
             if "context" in m.full_response:
                 message["context"] = m.full_response["context"]
             messages.append(message)
+        conversation_category = template_parameters.pop("metadata", {}).get("Category")
         template_parameters["metadata"] = {}
         for key in (
             "conversation_starter",
             "group_of_people",
-            "metadata",
             "target_population",
             "topic",
             "ch_template_placeholder",
         ):
             template_parameters.pop(key, None)
-
+        if conversation_category:
+            template_parameters["category"] = conversation_category
         return {
             "template_parameters": template_parameters,
             "messages": messages,

@@ -130,7 +130,7 @@ We need to set up the connection if we haven't added it before. Once created, th
 
 Firstly we need a connection yaml file `connection.yaml`:
 
-If you are using Azure Open AI, prepare your resource follow with this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
+If you are using Azure OpenAI, prepare your resource follow with this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
 name: open_ai_connection

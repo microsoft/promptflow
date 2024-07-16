@@ -89,7 +89,7 @@ jobs:
         shell: pwsh
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          poetry run pytest ${{ inputs.filepath }} -n auto -m "unittest or e2etest"
+          poetry run pytest ${{ inputs.filepath }} -n auto -m "unittest or e2etest" --tb=short
 
       - name: Upload Test Results
         if: always()

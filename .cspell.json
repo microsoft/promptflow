@@ -243,7 +243,8 @@
     "azureopenaimodelconfiguration",
     "openaimodelconfiguration",
     "usecwd",
-    "locustio"
+    "locustio",
+    "euap"
   ],
   "flagWords": [
     "Prompt Flow"
