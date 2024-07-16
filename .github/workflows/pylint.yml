@@ -29,4 +29,4 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
           cd src/promptflow-evals
-          poetry run pylint promptflow/evals
+          poetry run pylint promptflow/evals --rcfile=../../pylintrc
