@@ -17,6 +17,7 @@ from promptflow._constants import PF_MAIN_MODULE_NAME
 from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import is_json_serializable
+from promptflow.core._errors import JinjaTemplateError
 from promptflow.core._model_configuration import MODEL_CONFIG_NAME_2_CLASS
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -245,7 +246,11 @@ def get_inputs_for_prompt_template(template_str):
     {"image_input": InputDefinition(type=[ValueType.IMAGE]), "str_input": InputDefinition(type=[ValueType.STRING])
     """
     env = Environment()
-    template = env.parse(template_str)
+    try:
+        template = env.parse(template_str)
+    except Exception as e:
+        error_type = type(e).__name__
+        raise JinjaTemplateError(f"Failed to parse template string ({error_type}): {e}") from e
     inputs = sorted(meta.find_undeclared_variables(template), key=lambda x: template_str.find(x))
     result_dict = {i: InputDefinition(type=[ValueType.STRING]) for i in inputs}
 
