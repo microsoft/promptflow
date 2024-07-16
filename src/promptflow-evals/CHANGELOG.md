@@ -16,5 +16,15 @@
 ## v0.3.1 (2022-07-09)
 - This release contains minor bug fixes and improvements.
 
+<<<<<<< HEAD
 ## v0.3.0 (2024-05-17)
 - Initial release of promptflow-evals package.
+=======
+- Parity between evals and Simulator on signature, passing credentials.
+
+- Reduced chance of Nan in GPT based evaluators.
+- Reduced chance of NaN in GPT based evaluators.
+
+## 0.0.1
+- Introduced package
+>>>>>>> aeeb53ece (Update src/promptflow-evals/CHANGELOG.md)
