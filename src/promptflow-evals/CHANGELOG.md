@@ -22,7 +22,6 @@
 =======
 - Parity between evals and Simulator on signature, passing credentials.
 
-- Reduced chance of Nan in GPT based evaluators.
 - Reduced chance of NaN in GPT based evaluators.
 
 ## 0.0.1
