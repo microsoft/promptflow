@@ -1,4 +1,4 @@
-name: promptflow-evals-regression-test
+name: promptflow-evals-performance-test
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   pull_request:
     paths:
       - src/promptflow-evals/**
-      - .github/workflows/promptflow-evals-regression-test.yml
+      - .github/workflows/promptflow-evals-performance-test.yml
   workflow_dispatch:
 
 env:
@@ -15,28 +15,11 @@ env:
   PROMPT_FLOW_TEST_MODE: "live"
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: snok/install-poetry@v1
-    - name: build
-      run: poetry build
-      working-directory: ${{ env.WORKING_DIRECTORY }}
-    - uses: actions/upload-artifact@v4
-      with:
-        name: promptflow-evals
-        path: ${{ env.WORKING_DIRECTORY }}/dist/promptflow_evals-*.whl
-
   test:
-    needs: build
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
-        # TODO: Encounter hash mismatch for ubuntu-latest and 3.9 combination during installing promptflow-evals package
-        # https://github.com/microsoft/promptflow/actions/runs/9009397933/job/24753518853?pr=3158
-        # Add 3.9 back after we figure out the issue
-        python-version: ['3.8', '3.10', '3.11']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
       fail-fast: false
     # snok/install-poetry need this to support Windows
     defaults:
@@ -49,10 +32,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1
-      - uses: actions/download-artifact@v4
-        with:
-          name: promptflow-evals
-          path: ${{ env.WORKING_DIRECTORY }}
       - name: install test dependency group
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -60,17 +39,13 @@ jobs:
         id: install_promptflow
         run: |
           # Estimate the installation time.
-          export start_tm=`date +%s`
           poetry run pip install -e ../promptflow
           poetry run pip install -e ../promptflow-core
           poetry run pip install -e ../promptflow-devkit
           poetry run pip install -e ../promptflow-tracing
           poetry run pip install -e ../promptflow-tools
           poetry run pip install -e ../promptflow-azure
-          poetry run pip install --pre $(python -c "import glob; print(glob.glob('promptflow_evals-*.whl')[0])")
-          export install_time=$((`date +%s` - ${start_tm}))
-          poetry run python ../../scripts/code_qa/report_to_app_insights.py --activity install_time_s --value $install_time --git-hub-action-run-id ${{ github.run_id }} --git-hub-workflow ${{ github.workflow }} --git-hub-action ${{ github.action }} --git-branch ${{ github.ref }}
-          test ${install_time} -le $TIME_LIMIT || echo "::warning file=pyproject.toml,line=40,col=0::The installation took ${install_time} minutes, the limit is ${TIME_LIMIT}."
+          poetry run pip install -e ../promptflow-evals
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install recording
         run: poetry run pip install -e ../promptflow-recording
