@@ -25,8 +25,5 @@ jobs:
           set -xe
           poetry install -C src/promptflow-evals --with dev
           poetry show -C src/promptflow-evals
-      - name: run pylint
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: |
-          cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals
+          cd /src/promptflow-evals
           poetry run pylint promptflow/evals
