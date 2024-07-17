@@ -12,7 +12,7 @@ class DocstringParser:
             return docstring, {}
         description = re.sub(r"\s+", " ", docstring[:idx].strip())
 
-        param_pattern = re.compile(r":param *(\w+): *(.*?)\n", re.DOTALL)
+        param_pattern = re.compile(r":param *(\w+): *(.*?)(:param |:type |$)", re.DOTALL)
         type_pattern = re.compile(r":type *(\w+): *(\S*)", re.DOTALL)
         params = {}
         for match in param_pattern.finditer(docstring[idx:]):
