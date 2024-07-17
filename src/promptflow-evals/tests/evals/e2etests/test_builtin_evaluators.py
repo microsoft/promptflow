@@ -2,10 +2,14 @@ import pytest
 
 from promptflow.evals.evaluators import (
     ChatEvaluator,
+    CoherenceEvaluator,
     ContentSafetyChatEvaluator,
     ContentSafetyEvaluator,
     FluencyEvaluator,
+    GroundednessEvaluator,
     QAEvaluator,
+    RelevanceEvaluator,
+    SimilarityEvaluator,
     ViolenceEvaluator,
 )
 
@@ -13,7 +17,7 @@ from promptflow.evals.evaluators import (
 @pytest.mark.usefixtures("recording_injection", "vcr_recording")
 @pytest.mark.localtest
 class TestBuiltInEvaluators:
-    def test_individual_evaluator_prompt_based(self, model_config):
+    def test_quality_evaluator_fluency(self, model_config):
         eval_fn = FluencyEvaluator(model_config)
         score = eval_fn(
             question="What is the capital of Japan?",
@@ -22,7 +26,45 @@ class TestBuiltInEvaluators:
         assert score is not None
         assert score["gpt_fluency"] > 1.0
 
-    def test_individual_evaluator_prompt_based_with_dict_input(self, model_config):
+    def test_quality_evaluator_coherence(self, model_config):
+        eval_fn = CoherenceEvaluator(model_config)
+        score = eval_fn(
+            question="What is the capital of Japan?",
+            answer="The capital of Japan is Tokyo.",
+        )
+        assert score is not None
+        assert score["gpt_coherence"] > 1.0
+
+    def test_quality_evaluator_similarity(self, model_config):
+        eval_fn = SimilarityEvaluator(model_config)
+        score = eval_fn(
+            question="What is the capital of Japan?",
+            answer="The capital of Japan is Tokyo.",
+            ground_truth="Tokyo is Japan's capital.",
+        )
+        assert score is not None
+        assert score["gpt_similarity"] > 1.0
+
+    def test_quality_evaluator_groundedness(self, model_config):
+        eval_fn = GroundednessEvaluator(model_config)
+        score = eval_fn(
+            answer="The capital of Japan is Tokyo.",
+            context="Tokyo is Japan's capital.",
+        )
+        assert score is not None
+        assert score["gpt_groundedness"] > 1.0
+
+    def test_quality_evaluator_relevance(self, model_config):
+        eval_fn = RelevanceEvaluator(model_config)
+        score = eval_fn(
+            question="What is the capital of Japan?",
+            answer="The capital of Japan is Tokyo.",
+            context="Tokyo is Japan's capital.",
+        )
+        assert score is not None
+        assert score["gpt_relevance"] > 1.0
+
+    def test_quality_evaluator_prompt_based_with_dict_input(self, model_config):
         eval_fn = FluencyEvaluator(model_config)
         score = eval_fn(
             question={"foo": "1"},
@@ -32,7 +74,7 @@ class TestBuiltInEvaluators:
         assert score["gpt_fluency"] > 0.0
 
     @pytest.mark.azuretest
-    def test_individual_evaluator_service_based(self, project_scope, azure_cred):
+    def test_content_safety_evaluator_violence(self, project_scope, azure_cred):
         eval_fn = ViolenceEvaluator(project_scope, azure_cred)
         score = eval_fn(
             question="What is the capital of Japan?",
