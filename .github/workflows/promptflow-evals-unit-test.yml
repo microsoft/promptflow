@@ -14,21 +14,7 @@ env:
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-evals
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: snok/install-poetry@v1
-    - name: build
-      run: poetry build
-      working-directory: ${{ env.WORKING_DIRECTORY }}
-    - uses: actions/upload-artifact@v4
-      with:
-        name: promptflow-evals
-        path: ${{ env.WORKING_DIRECTORY }}/dist/promptflow_evals-*.whl
-
   test:
-    needs: build
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
@@ -45,17 +31,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1
-      - uses: actions/download-artifact@v4
-        with:
-          name: promptflow-evals
-          path: ${{ env.WORKING_DIRECTORY }}
       - name: install test dependency group
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow packages in editable mode
         run: |
-          export TIME_LIMIT=5
-          export start_tm=`date +%s`
           poetry run pip install -e ../promptflow
           poetry run pip install -e ../promptflow-core
           poetry run pip install -e ../promptflow-devkit
@@ -63,10 +43,6 @@ jobs:
           poetry run pip install -e ../promptflow-tools
           poetry run pip install -e ../promptflow-azure
           poetry run pip install -e ../promptflow-evals
-          export install_time=$(((`date +%s` - ${start_tm})/60))
-          echo "The installation took ${install_time} minutes."
-          echo "The time limit for installation is ${TIME_LIMIT}"
-          test ${install_time} -le $TIME_LIMIT || echo "::warning file=pyproject.toml,line=40,col=0::The installation took ${install_time} minutes, the limit is ${TIME_LIMIT}."
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install recording
         run: poetry run pip install -e ../promptflow-recording

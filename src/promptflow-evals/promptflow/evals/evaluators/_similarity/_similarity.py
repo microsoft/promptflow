@@ -48,7 +48,7 @@ class SimilarityEvaluator:
             model_config.api_version = "2024-02-15-preview"
 
         prompty_model_config = {"configuration": model_config}
-        prompty_model_config.update({"parameters": {"extra_headers": {"x-ms-user-agent": USER_AGENT}}}) \
+        prompty_model_config.update({"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}) \
             if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration) else None
         current_dir = os.path.dirname(__file__)
         prompty_path = os.path.join(current_dir, "similarity.prompty")
