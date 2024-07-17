@@ -1,6 +1,7 @@
 import json
 import os
 import pathlib
+import time
 
 import numpy as np
 import pandas as pd
@@ -8,7 +9,12 @@ import pytest
 import requests
 
 from promptflow.evals.evaluate import evaluate
-from promptflow.evals.evaluators import ContentSafetyEvaluator, F1ScoreEvaluator, GroundednessEvaluator
+from promptflow.evals.evaluators import (
+    ContentSafetyEvaluator,
+    F1ScoreEvaluator,
+    FluencyEvaluator,
+    GroundednessEvaluator,
+)
 
 
 @pytest.fixture
@@ -153,6 +159,32 @@ class TestEvaluate:
         assert 0 <= metrics.get("content_safety.violence_defect_rate") <= 1
         assert 0 <= metrics.get("content_safety.self_harm_defect_rate") <= 1
         assert 0 <= metrics.get("content_safety.hate_unfairness_defect_rate") <= 1
+
+    @pytest.mark.performance_test
+    def test_evaluate_with_async_enabled_evaluator(self, model_config, data_file):
+        fluency_eval = FluencyEvaluator(model_config)
+
+        start_time = time.time()
+        result = evaluate(
+            data=data_file,
+            evaluators={
+                "fluency": fluency_eval,
+            },
+        )
+        end_time = time.time()
+        duration = end_time - start_time
+
+        row_result_df = pd.DataFrame(result["rows"])
+        metrics = result["metrics"]
+
+        # validate the results
+        assert result is not None
+        assert result["rows"] is not None
+        input_data = pd.read_json(data_file, lines=True)
+        assert row_result_df.shape[0] == len(input_data)
+        assert "outputs.fluency.gpt_fluency" in row_result_df.columns.to_list()
+        assert "fluency.gpt_fluency" in metrics.keys()
+        assert duration < 10, f"evaluate API call took too long: {duration} seconds"
 
     @pytest.mark.parametrize(
         "use_pf_client,function,column",
