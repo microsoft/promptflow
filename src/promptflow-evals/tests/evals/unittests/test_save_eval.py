@@ -5,6 +5,7 @@ from typing import Any, List, Optional, Type
 
 import pytest
 
+from promptflow.core._errors import GenerateFlowMetaJsonError
 from promptflow.evals import evaluators
 
 
@@ -46,3 +47,21 @@ class TestSaveEval:
 
         assert results_df is not None
         assert results_df["outputs.f1_score"].notnull().all()
+
+    def test_relative_import_save_load(self, tmpdir, pf_client, data_file) -> None:
+        """Test loading and running an evaluator with a relative import, and ensure
+        that the expected error message occurs.
+
+        Debugging context. An loaded and executed evaluator acts like a main module in that it's __package__
+        value is not set, which causes relative imports to fail. Attempts to set __package__ can potentially work,
+        but that requires that the loaded directory be added to sys.modules as a functional module, which is non-trivial
+        enough that I gave up on it.
+
+        More context on __package__: https://peps.python.org/pep-0366/
+        """
+        from data.toyFlexFlow.toy_flex_eval import ToyEvaluator
+
+        pf_client.flows.save(ToyEvaluator, path=tmpdir)
+        with pytest.raises(GenerateFlowMetaJsonError) as info:
+            _ = pf_client.run(tmpdir, data=data_file)
+        assert "Relative imports fail in evaluators that are saved and loaded." in info._excinfo[1].message

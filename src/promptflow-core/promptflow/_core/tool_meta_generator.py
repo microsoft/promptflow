@@ -261,10 +261,21 @@ def load_python_module_from_file(src_file: Path):
     try:
         spec.loader.exec_module(m)
     except Exception as e:
+        message = "Failed to load python module from file '{src_file}': {error_type_and_message}"
+        if (
+            isinstance(e, ImportError)
+            and hasattr(e, "msg")
+            and e.msg == "attempted relative import with no known parent package"
+        ):
+            message = (
+                "Failed to load python module from file '{src_file}' due to relative import."
+                + " Relative imports fail in evaluators that are saved and loaded. Please use absolute imports instead."
+                + " Original error: '{error_type_and_message}'"
+            )
         # TODO: add stacktrace to additional info
         error_type_and_message = f"({e.__class__.__name__}) {e}"
         raise PythonLoadError(
-            message_format="Failed to load python module from file '{src_file}': {error_type_and_message}",
+            message_format=message,
             src_file=src_file,
             error_type_and_message=error_type_and_message,
         ) from e
