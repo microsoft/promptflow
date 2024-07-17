@@ -85,6 +85,14 @@ class PythonExecutorProxy(AbstractExecutorProxy):
     ) -> AggregationResult:
         return self._flow_executor.exec_aggregation(batch_inputs, aggregation_inputs, run_id=run_id)
 
+    async def exec_line_async(
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+    ) -> LineResult:
+        return await self._flow_executor.exec_line_async(inputs, index, run_id)
+
     async def _exec_batch(
         self,
         batch_inputs: List[Mapping[str, Any]],
