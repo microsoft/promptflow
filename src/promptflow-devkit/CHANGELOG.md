@@ -1,7 +1,8 @@
 # promptflow-devkit package
 
 ## v1.14.0 (Upcoming)
-TODO
+### Improvements
+- Add `promptflow` to dockerfile when build flow with `python_requirements_txt` incase promptflow not exists in custom requirements.
 
 ## v1.13.0 (2024.06.28)
 
