@@ -6,7 +6,7 @@ import pytest
 
 
 @pytest.mark.usefixtures("recording_injection")
-@pytest.mark.e2etest
+@pytest.mark.azuretest
 class TestAdvSimulator:
     @pytest.mark.usefixtures("vcr_recording")
     def test_adv_sim_init_with_prod_url(self, azure_cred, project_scope):

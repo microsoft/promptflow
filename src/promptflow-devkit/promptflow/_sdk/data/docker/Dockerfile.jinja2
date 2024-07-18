@@ -28,6 +28,7 @@ RUN conda create -n {{env.conda_env_name}} python=3.9.16 pip=23.0.1 -q -y && \
     conda run -n {{env.conda_env_name}} \
 {% if env.python_requirements_txt %}
     pip install -r /flow/{{env.python_requirements_txt}} && \
+    conda run -n {{env.conda_env_name}} pip install promptflow && \
 {% else %}
 {% if env.sdk_version %}
     pip install promptflow=={{env.sdk_version}} \
