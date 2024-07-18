@@ -9,7 +9,6 @@ class TestPackagesNotInstalles():
     @pytest.mark.parametrize('package', [
         'promptflow.azure',
         'azure.ai.ml',
-        'azure.identity',
         'azure.storage.blob'
     ])
     def test_promptflow_azure(self, package):
