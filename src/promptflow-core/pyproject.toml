@@ -43,6 +43,7 @@ packages = [
 python = "<4.0,>=3.8"
 promptflow-tracing = ">=1.0.0,<2.0.0"
 "ruamel.yaml" = ">=0.17.10,<1.0.0"  # used to generate connection templates with preserved comments
+docstring_parser = "*"  # used to parse doc string for Assistant user tools
 psutil = "*"  # promptflow/_utils/process_utils.py
 jsonschema = ">=4.0.0,<5.0.0"  # used to validate tool
 filetype = ">=1.2.0"  # used to detect the mime type for multi-media input

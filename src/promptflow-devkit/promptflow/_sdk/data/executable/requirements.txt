@@ -2,6 +2,7 @@ openai
 opentelemetry-sdk
 tiktoken
 ruamel.yaml
+docstring_parser
 psutil
 jsonschema
 filetype
