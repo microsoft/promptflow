@@ -4,15 +4,24 @@
 
 import asyncio
 import logging
-from typing import Any, Callable, List, Tuple
+from typing import Callable, Dict, List, Tuple, Union
 
 from .._model_tools import RetryClient
 from . import ConversationBot, ConversationTurn
 
 
-def is_closing_message(response: Any, recursion_depth: int = 0):
+def is_closing_message(response: Union[Dict, str], recursion_depth: int = 0) -> bool:
+    """Determine if a response indicates an end to the conversation.
+
+    :param response: The response to check.
+    :type response: Union[Dict, str]
+    :param recursion_depth: The current recursion depth. Defaults to 0.
+    :type recursion_depth: int
+    :return: True if the response indicates an end to the conversation, False otherwise.
+    :rtype: bool
+    """
     if recursion_depth > 10:
-        raise Exception("Exceeded max call depth in is_closing_message")
+        raise Exception("Exceeded max call depth in is_closing_message")  # pylint: disable=broad-exception-raised
 
     # recursively go through each inner dictionary in the JSON dict
     # and check if any value entry contains a closing message
@@ -26,7 +35,14 @@ def is_closing_message(response: Any, recursion_depth: int = 0):
     return False
 
 
-def is_closing_message_helper(response: str):
+def is_closing_message_helper(response: str) -> bool:
+    """Determine if a response indicates an end to the conversation.
+
+    :param response: The response to check.
+    :type response: str
+    :return: True if the response indicates an end to the conversation, False otherwise.
+    :rtype: bool
+    """
     message = response.lower()
     if "?" in message.lower():
         return False
@@ -109,7 +125,7 @@ async def simulate_conversation(
             current_bot = bots[current_character_idx]
             # invoke Bot to generate response given the input request
             # pass only the last generated turn without passing the bot name.
-            response, request, time_taken, full_response = await current_bot.generate_response(
+            response, request, _, full_response = await current_bot.generate_response(
                 session=session,
                 conversation_history=conversation_history,
                 max_history=history_limit,

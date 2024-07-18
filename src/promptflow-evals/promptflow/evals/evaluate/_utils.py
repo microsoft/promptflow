@@ -14,7 +14,6 @@ import pandas as pd
 from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME, Prefixes
 from promptflow.evals.evaluate._eval_run import EvalRun
 
-
 LOGGER = logging.getLogger(__name__)
 
 AZURE_WORKSPACE_REGEX_FORMAT = (
@@ -29,7 +28,7 @@ def is_none(value):
     return value is None or str(value).lower() == "none"
 
 
-def extract_workspace_triad_from_trace_provider(trace_provider: str):
+def extract_workspace_triad_from_trace_provider(trace_provider: str):  # pylint: disable=name-too-long
     match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, trace_provider)
     if not match or len(match.groups()) != 5:
         raise ValueError(
@@ -78,7 +77,11 @@ def _azure_pf_client_and_triad(trace_destination):
 
 
 def _log_metrics_and_instance_results(
-    metrics, instance_results, trace_destination, run, evaluation_name,
+    metrics,
+    instance_results,
+    trace_destination,
+    run,
+    evaluation_name,
 ) -> str:
     if trace_destination is None:
         LOGGER.error("Unable to log traces as trace destination was not defined.")
@@ -192,10 +195,10 @@ def _apply_column_mapping(source_df: pd.DataFrame, mapping_config: dict, inplace
             if match is not None:
                 pattern = match.group(1)
                 if pattern.startswith(pattern_prefix):
-                    map_from_key = pattern[len(pattern_prefix):]
+                    map_from_key = pattern[len(pattern_prefix) :]
                 elif pattern.startswith(run_outputs_prefix):
                     # Target-generated columns always starts from .outputs.
-                    map_from_key = f"{Prefixes._TGT_OUTPUTS}{pattern[len(run_outputs_prefix) :]}"
+                    map_from_key = f"{Prefixes.TSG_OUTPUTS}{pattern[len(run_outputs_prefix) :]}"
                 # if we are not renaming anything, skip.
                 if map_from_key == map_to_key:
                     continue

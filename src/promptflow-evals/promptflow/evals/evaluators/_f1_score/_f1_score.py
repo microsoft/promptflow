@@ -40,10 +40,10 @@ class F1ScoreEvaluator:
         """
         Evaluate F1 score.
 
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :param ground_truth: The ground truth to be evaluated.
-        :type ground_truth: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
+        :keyword ground_truth: The ground truth to be evaluated.
+        :paramtype ground_truth: str
         :return: The F1 score.
         :rtype: dict
         """

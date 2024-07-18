@@ -1,3 +1,6 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ._hate_unfairness import HateUnfairnessEvaluator
@@ -68,12 +71,12 @@ class ContentSafetyEvaluator:
         """
         Evaluates content-safety metrics for "question-answering" scenario.
 
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :param parallel: Whether to evaluate in parallel.
-        :type parallel: bool
+        :keyword question: The question to be evaluated.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
+        :keyword parallel: Whether to evaluate in parallel.
+        :paramtype parallel: bool
         :return: The scores for content-safety.
         :rtype: dict
         """

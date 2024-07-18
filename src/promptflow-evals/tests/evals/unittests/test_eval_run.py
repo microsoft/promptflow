@@ -39,13 +39,7 @@ class TestEvalRun:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "run": {
-                "info": {
-                    "run_id": str(uuid4()),
-                    "experiment_id": str(uuid4()),
-                    "run_name": str(uuid4())
-                }
-            }
+            "run": {"info": {"run_id": str(uuid4()), "experiment_id": str(uuid4()), "run_name": str(uuid4())}}
         }
         mock_session.request.return_value = mock_response
         with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
@@ -71,13 +65,7 @@ class TestEvalRun:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "run": {
-                "info": {
-                    "run_id": str(uuid4()),
-                    "experiment_id": str(uuid4()),
-                    "run_name": str(uuid4())
-                }
-            }
+            "run": {"info": {"run_id": str(uuid4()), "experiment_id": str(uuid4()), "run_name": str(uuid4())}}
         }
         mock_session.request.return_value = mock_response
         with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
@@ -105,13 +93,7 @@ class TestEvalRun:
         mock_response_start = MagicMock()
         mock_response_start.status_code = 200
         mock_response_start.json.return_value = {
-            "run": {
-                "info": {
-                    "run_id": str(uuid4()),
-                    "experiment_id": str(uuid4()),
-                    "run_name": str(uuid4())
-                }
-            }
+            "run": {"info": {"run_id": str(uuid4()), "experiment_id": str(uuid4()), "run_name": str(uuid4())}}
         }
         mock_response_end = MagicMock()
         mock_response_end.status_code = 500
@@ -183,24 +165,8 @@ class TestEvalRun:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.side_effect = [
-            {
-                "run": {
-                    "info": {
-                        "run_id": str(uuid4()),
-                        "experiment_id": str(uuid4()),
-                        "run_name": str(uuid4())
-                    }
-                }
-            },
-            {
-                "run": {
-                    "info": {
-                        "run_id": str(uuid4()),
-                        "experiment_id": str(uuid4()),
-                        "run_name": str(uuid4())
-                    }
-                }
-            },
+            {"run": {"info": {"run_id": str(uuid4()), "experiment_id": str(uuid4()), "run_name": str(uuid4())}}},
+            {"run": {"info": {"run_id": str(uuid4()), "experiment_id": str(uuid4()), "run_name": str(uuid4())}}},
         ]
         mock_session = MagicMock()
         mock_session.request.return_value = mock_response
@@ -234,13 +200,7 @@ class TestEvalRun:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "run": {
-                "info": {
-                    "run_id": str(uuid4()),
-                    "experiment_id": str(uuid4()),
-                    "run_name": str(uuid4())
-                }
-            }
+            "run": {"info": {"run_id": str(uuid4()), "experiment_id": str(uuid4()), "run_name": str(uuid4())}}
         }
         mock_session = MagicMock()
         mock_session.request.return_value = mock_response
@@ -253,10 +213,9 @@ class TestEvalRun:
             workspace_name="mock",
             ml_client=MagicMock(),
         )
-        assert run.info.run_id == mock_response.json.return_value['run']['info']['run_id']
-        assert run.info.experiment_id == mock_response.json.return_value[
-            'run']['info']['experiment_id']
-        assert run.info.run_name == mock_response.json.return_value['run']['info']["run_name"]
+        assert run.info.run_id == mock_response.json.return_value["run"]["info"]["run_id"]
+        assert run.info.experiment_id == mock_response.json.return_value["run"]["info"]["experiment_id"]
+        assert run.info.run_name == mock_response.json.return_value["run"]["info"]["run_name"]
 
     @patch("promptflow.evals.evaluate._eval_run.requests.Session")
     def test_run_with_name(self, mock_session_cls, token_mock, setup_data):
@@ -264,13 +223,7 @@ class TestEvalRun:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "run": {
-                "info": {
-                    "run_id": str(uuid4()),
-                    "experiment_id": str(uuid4()),
-                    "run_name": 'test'
-                }
-            }
+            "run": {"info": {"run_id": str(uuid4()), "experiment_id": str(uuid4()), "run_name": "test"}}
         }
         mock_session = MagicMock()
         mock_session.request.return_value = mock_response
@@ -283,10 +236,9 @@ class TestEvalRun:
             workspace_name="mock",
             ml_client=MagicMock(),
         )
-        assert run.info.run_id == mock_response.json.return_value['run']['info']['run_id']
-        assert run.info.experiment_id == mock_response.json.return_value[
-            'run']['info']['experiment_id']
-        assert run.info.run_name == 'test'
+        assert run.info.run_id == mock_response.json.return_value["run"]["info"]["run_id"]
+        assert run.info.experiment_id == mock_response.json.return_value["run"]["info"]["experiment_id"]
+        assert run.info.run_name == "test"
         assert run.info.run_name != run.info.run_id
 
     @patch("promptflow.evals.evaluate._eval_run.requests.Session")
@@ -295,13 +247,7 @@ class TestEvalRun:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "run": {
-                "info": {
-                    "run_id": str(uuid4()),
-                    "experiment_id": str(uuid4()),
-                    "run_name": str(uuid4())
-                }
-            }
+            "run": {"info": {"run_id": str(uuid4()), "experiment_id": str(uuid4()), "run_name": str(uuid4())}}
         }
         mock_session = MagicMock()
         mock_session.request.return_value = mock_response
@@ -342,11 +288,7 @@ class TestEvalRun:
         ), "Wrong Metrics URL"
 
     @pytest.mark.parametrize(
-        'log_function,expected_str',
-        [
-            ('log_artifact', 'register artifact'),
-            ('log_metric', 'save metrics')
-        ]
+        "log_function,expected_str", [("log_artifact", "register artifact"), ("log_metric", "save metrics")]
     )
     def test_log_artifacts_logs_error(self, token_mock, setup_data, tmp_path, caplog, log_function, expected_str):
         """Test that the error is logged."""
@@ -354,13 +296,7 @@ class TestEvalRun:
         mock_create_response = MagicMock()
         mock_create_response.status_code = 200
         mock_create_response.json.return_value = {
-            "run": {
-                "info": {
-                    "run_id": str(uuid4()),
-                    "experiment_id": str(uuid4()),
-                    "run_name": str(uuid4())
-                }
-            }
+            "run": {"info": {"run_id": str(uuid4()), "experiment_id": str(uuid4()), "run_name": str(uuid4())}}
         }
         mock_response = MagicMock()
         mock_response.status_code = 404
@@ -391,13 +327,13 @@ class TestEvalRun:
             # captured by caplog. Here we will skip this logger to capture logs.
             logger.parent = logging.root
             fn = getattr(run, log_function)
-            if log_function == 'log_artifact':
-                with open(os.path.join(tmp_path, EvalRun.EVALUATION_ARTIFACT), 'w') as fp:
-                    fp.write('42')
-                kwargs = {'artifact_folder': tmp_path}
+            if log_function == "log_artifact":
+                with open(os.path.join(tmp_path, EvalRun.EVALUATION_ARTIFACT), "w") as fp:
+                    fp.write("42")
+                kwargs = {"artifact_folder": tmp_path}
             else:
-                kwargs = {'key': 'f1', 'value': 0.5}
-            with patch('promptflow.evals.evaluate._eval_run.BlobServiceClient', return_value=MagicMock()):
+                kwargs = {"key": "f1", "value": 0.5}
+            with patch("promptflow.evals.evaluate._eval_run.BlobServiceClient", return_value=MagicMock()):
                 fn(**kwargs)
         assert len(caplog.records) == 1
         assert mock_response.text in caplog.records[0].message
@@ -405,24 +341,19 @@ class TestEvalRun:
         assert expected_str in caplog.records[0].message
 
     @pytest.mark.parametrize(
-        'dir_exists,dir_empty,expected_error', [
+        "dir_exists,dir_empty,expected_error",
+        [
             (True, True, "The path to the artifact is empty."),
             (False, True, "The path to the artifact is either not a directory or does not exist."),
-            (True, False, "The run results file was not found, skipping artifacts upload.")
-        ]
+            (True, False, "The run results file was not found, skipping artifacts upload."),
+        ],
     )
     def test_wrong_artifact_path(self, token_mock, tmp_path, caplog, dir_exists, dir_empty, expected_error, setup_data):
         """Test that if artifact path is empty, or dies not exist we are logging the error."""
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "run": {
-                "info": {
-                    "run_id": str(uuid4()),
-                    "experiment_id": str(uuid4()),
-                    "run_name": str(uuid4())
-                }
-            }
+            "run": {"info": {"run_id": str(uuid4()), "experiment_id": str(uuid4()), "run_name": str(uuid4())}}
         }
         mock_session = MagicMock()
         mock_session.request.return_value = mock_response
@@ -447,7 +378,7 @@ class TestEvalRun:
             logger.parent = logging.root
             artifact_folder = tmp_path if dir_exists else "wrong_path_567"
             if not dir_empty:
-                with open(os.path.join(tmp_path, "test.txt"), 'w') as fp:
+                with open(os.path.join(tmp_path, "test.txt"), "w") as fp:
                     fp.write("42")
             run.log_artifact(artifact_folder)
             assert len(caplog.records) == 1
@@ -480,14 +411,14 @@ class TestEvalRun:
         run = EvalRun(
             run_name=None,
             tracking_uri=None,
-            subscription_id='mock',
-            group_name='mock',
-            workspace_name='mock',
-            ml_client=MagicMock()
+            subscription_id="mock",
+            group_name="mock",
+            workspace_name="mock",
+            ml_client=MagicMock(),
         )
         assert len(caplog.records) == 1
         assert "The results will be saved locally, but will not be logged to Azure." in caplog.records[0].message
-        with patch('promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry') as mock_request:
-            run.log_artifact('mock_dir')
-            run.log_metric('foo', 42)
+        with patch("promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry") as mock_request:
+            run.log_artifact("mock_dir")
+            run.log_metric("foo", 42)
         mock_request.assert_not_called()

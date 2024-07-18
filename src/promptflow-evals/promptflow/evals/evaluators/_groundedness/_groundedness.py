@@ -9,6 +9,7 @@ import numpy as np
 
 from promptflow.client import load_flow
 from promptflow.core import AzureOpenAIModelConfiguration
+
 try:
     from ..._user_agent import USER_AGENT
 except ImportError:
@@ -49,8 +50,10 @@ class GroundednessEvaluator:
 
         prompty_model_config = {"configuration": model_config}
 
-        prompty_model_config.update({"parameters": {"extra_headers": {"x-ms-user-agent": USER_AGENT}}}) \
-            if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration) else None
+        if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration):
+            prompty_model_config.update(
+                {"parameters": {"extra_headers": {"x-ms-user-agent": USER_AGENT}}}
+            )
 
         current_dir = os.path.dirname(__file__)
         prompty_path = os.path.join(current_dir, "groundedness.prompty")
@@ -60,10 +63,10 @@ class GroundednessEvaluator:
         """
         Evaluate groundedness of the answer in the context.
 
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :param context: The context in which the answer is evaluated.
-        :type context: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
+        :keyword context: The context in which the answer is evaluated.
+        :paramtype context: str
         :return: The groundedness score.
         :rtype: dict
         """
@@ -71,7 +74,7 @@ class GroundednessEvaluator:
         answer = str(answer or "")
         context = str(context or "")
 
-        if not (answer.strip()) or not (context.strip()):
+        if not answer.strip() or not context.strip():
             raise ValueError("Both 'answer' and 'context' must be non-empty strings.")
 
         # Run the evaluation flow

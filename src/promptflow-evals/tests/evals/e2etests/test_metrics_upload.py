@@ -36,12 +36,12 @@ def questions_file():
 def setup_data(azure_ml_client, project_scope):
     tracking_uri = azure_ml_client.workspaces.get(project_scope["project_name"]).mlflow_tracking_uri
     run = EvalRun(
-        run_name='test',
+        run_name="test",
         tracking_uri=tracking_uri,
         subscription_id=project_scope["subscription_id"],
         group_name=project_scope["resource_group_name"],
         workspace_name=project_scope["project_name"],
-        ml_client=azure_ml_client
+        ml_client=azure_ml_client,
     )
     yield
     run.end_run("FINISHED")
@@ -95,7 +95,8 @@ class TestMetricsUpload(object):
         with patch("promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry", return_value=mock_response):
             ev_run.log_metric("f1", 0.54)
             assert any(
-                lg_rec.levelno == logging.WARNING for lg_rec in caplog.records), "The error log was not captured!"
+                lg_rec.levelno == logging.WARNING for lg_rec in caplog.records
+            ), "The error log was not captured!"
         caplog.clear()
         ev_run.log_metric("f1", 0.54)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
@@ -111,15 +112,16 @@ class TestMetricsUpload(object):
         ev_run = EvalRun.get_instance()
         mock_response = MagicMock()
         mock_response.status_code = 418
-        with open(os.path.join(tmp_path, EvalRun.EVALUATION_ARTIFACT), 'w') as fp:
-            json.dump({'f1': 0.5}, fp)
-        os.makedirs(os.path.join(tmp_path, 'internal_dir'), exist_ok=True)
-        with open(os.path.join(tmp_path, 'internal_dir', 'test.json'), 'w') as fp:
-            json.dump({'internal_f1': 0.6}, fp)
-        with patch('promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry', return_value=mock_response):
+        with open(os.path.join(tmp_path, EvalRun.EVALUATION_ARTIFACT), "w") as fp:
+            json.dump({"f1": 0.5}, fp)
+        os.makedirs(os.path.join(tmp_path, "internal_dir"), exist_ok=True)
+        with open(os.path.join(tmp_path, "internal_dir", "test.json"), "w") as fp:
+            json.dump({"internal_f1": 0.6}, fp)
+        with patch("promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry", return_value=mock_response):
             ev_run.log_artifact(tmp_path)
             assert any(
-                lg_rec.levelno == logging.WARNING for lg_rec in caplog.records), "The error log was not captured!"
+                lg_rec.levelno == logging.WARNING for lg_rec in caplog.records
+            ), "The error log was not captured!"
         caplog.clear()
         ev_run.log_artifact(tmp_path)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
@@ -145,7 +147,7 @@ class TestMetricsUpload(object):
         # Switch off tracing as it is running in the second thread, wile
         # thread pool executor is not compatible with VCR.py.
         if not is_live():
-            monkeypatch.setattr(_start_trace, '_is_devkit_installed', lambda: False)
+            monkeypatch.setattr(_start_trace, "_is_devkit_installed", lambda: False)
         # All loggers, having promptflow. prefix will have "promptflow" logger
         # as a parent. This logger does not propagate the logs and cannot be
         # captured by caplog. Here we will skip this logger to capture logs.
@@ -180,7 +182,11 @@ class TestMetricsUpload(object):
         # Switch off tracing as it is running in the second thread, wile
         # thread pool executor is not compatible with VCR.py.
         if not is_live():
-            monkeypatch.setattr(_start_trace, '_is_devkit_installed', lambda: False)
+            monkeypatch.setattr(_start_trace, "_is_devkit_installed", lambda: False)
         f1_score_eval = F1ScoreEvaluator()
-        evaluate(data=questions_answers_file, evaluators={"f1": f1_score_eval}, azure_ai_project=project_scope,)
+        evaluate(
+            data=questions_answers_file,
+            evaluators={"f1": f1_score_eval},
+            azure_ai_project=project_scope,
+        )
         self._assert_no_errors_for_module(caplog.records, (ev_utils.__name__, EvalRun.__module__))

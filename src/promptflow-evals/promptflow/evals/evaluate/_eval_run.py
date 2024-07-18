@@ -5,23 +5,23 @@ import dataclasses
 import logging
 import os
 import posixpath
-import requests
 import time
 import uuid
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
+import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from promptflow.evals._version import VERSION
 from promptflow._sdk.entities import Run
+from promptflow.evals._version import VERSION
 
 LOGGER = logging.getLogger(__name__)
 
 try:
-    from azure.storage.blob import BlobServiceClient
     from azure.ai.ml.entities._credentials import AccountKeyConfiguration
+    from azure.storage.blob import BlobServiceClient
 except ImportError:
     LOGGER.debug("promptflow.azure is not installed.")
 
@@ -37,19 +37,18 @@ class RunInfo:
     run_name: str
 
     @staticmethod
-    def generate(run_name: Optional[str]) -> 'RunInfo':
+    def generate(run_name: Optional[str]) -> "RunInfo":
         """
         Generate the new RunInfo instance with the RunID and Experiment ID.
 
         **Note:** This code is used when we are in failed state and cannot get a run.
+
         :param run_name: The name of a run.
-        :type run_name: str
+        :type run_name: Optional[str]
+        :return: The RunInfo instance.
+        :rtype: promptflow.evals.evaluate.RunInfo
         """
-        return RunInfo(
-            str(uuid.uuid4()),
-            str(uuid.uuid4()),
-            run_name or ""
-        )
+        return RunInfo(str(uuid.uuid4()), str(uuid.uuid4()), run_name or "")
 
 
 class Singleton(type):
@@ -57,20 +56,33 @@ class Singleton(type):
 
     _instances = {}
 
-    def __call__(cls, *args, **kwargs):
-        """Redefinition of call to return one instance per type."""
+    def __call__(cls, *args, **kwargs) -> Dict:
+        """Redefinition of call to return one instance per type.
+
+        :param cls: The class to be called.
+        :type cls: Type
+        :param args: Optional arguments
+        :type args: Any
+        :keyword kwargs: Optional keyword arguments
+        :paramtype kwargs: Any
+        :return: The instance of the class.
+        :rtype: Dict
+        """
         if cls not in Singleton._instances:
             Singleton._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return Singleton._instances[cls]
 
-    @staticmethod
-    def destroy(cls: Type) -> None:
+    @classmethod
+    def destroy(mcs, instance: "Singleton") -> None:
         """
         Destroy the singleton instance.
 
-        :param cls: The class to be destroyed.
+        :param mcs: The metaclass.
+        :type mcs: Type
+        :param instance: The class to be destroyed.
+        :type instance: Type
         """
-        Singleton._instances.pop(cls, None)
+        mcs._instances.pop(instance)
 
 
 class EvalRun(metaclass=Singleton):
@@ -97,18 +109,19 @@ class EvalRun(metaclass=Singleton):
     _TIMEOUT = 5
     _SCOPE = "https://management.azure.com/.default"
 
-    EVALUATION_ARTIFACT = 'instance_results.jsonl'
-    EVALUATION_ARTIFACT_DUMMY_RUN = 'eval_results.jsonl'
+    EVALUATION_ARTIFACT = "instance_results.jsonl"
+    EVALUATION_ARTIFACT_DUMMY_RUN = "eval_results.jsonl"
 
-    def __init__(self,
-                 run_name: Optional[str],
-                 tracking_uri: str,
-                 subscription_id: str,
-                 group_name: str,
-                 workspace_name: str,
-                 ml_client: Any,
-                 promptflow_run: Optional[Run] = None,
-                 ):
+    def __init__(
+        self,
+        run_name: Optional[str],
+        tracking_uri: str,
+        subscription_id: str,
+        group_name: str,
+        workspace_name: str,
+        ml_client: Any,
+        promptflow_run: Optional[Run] = None,
+    ):
         """
         Constructor
         """
@@ -121,19 +134,16 @@ class EvalRun(metaclass=Singleton):
         self._is_promptflow_run: bool = promptflow_run is not None
         self._is_broken = False
         if self._tracking_uri is None:
-            LOGGER.warning("tracking_uri was not provided, "
-                           "The results will be saved locally, but will not be logged to Azure.")
+            LOGGER.warning(
+                "A tracking_uri was not provided. The results will be saved locally, but will not be logged to Azure."
+            )
             self._url_base = None
             self._is_broken = True
             self.info = RunInfo.generate(run_name)
         else:
             self._url_base = urlparse(self._tracking_uri).netloc
             if promptflow_run is not None:
-                self.info = RunInfo(
-                    promptflow_run.name,
-                    promptflow_run._experiment_name,
-                    promptflow_run.name
-                )
+                self.info = RunInfo(promptflow_run.name, promptflow_run._experiment_name, promptflow_run.name)
             else:
                 self._is_broken = self._start_run(run_name)
 
@@ -143,8 +153,6 @@ class EvalRun(metaclass=Singleton):
         """
         Return the scope information for the workspace.
 
-        :param workspace_object: The workspace object.
-        :type workspace_object: azureml.core.workspace.Workspace
         :return: The scope information for the workspace.
         :rtype: str
         """
@@ -159,11 +167,12 @@ class EvalRun(metaclass=Singleton):
     def _start_run(self, run_name: Optional[str]) -> bool:
         """
         Make a request to start the mlflow run. If the run will not start, it will be
-
         marked as broken and the logging will be switched off.
+
         :param run_name: The display name for the run.
         :type run_name: Optional[str]
         :returns: True if the run has started and False otherwise.
+        :rtype: bool
         """
         url = f"https://{self._url_base}/mlflow/v2.0" f"{self._get_scope()}/api/2.0/mlflow/runs/create"
         body = {
@@ -174,29 +183,27 @@ class EvalRun(metaclass=Singleton):
         }
         if run_name:
             body["run_name"] = run_name
-        response = self.request_with_retry(
-            url=url,
-            method='POST',
-            json_dict=body
-        )
+        response = self.request_with_retry(url=url, method="POST", json_dict=body)
         if response.status_code != 200:
             self.info = RunInfo.generate(run_name)
-            LOGGER.warning(f"The run failed to start: {response.status_code}: {response.text}."
-                           "The results will be saved locally, but will not be logged to Azure.")
+            LOGGER.warning(
+                f"The run failed to start: {response.status_code}: {response.text}."
+                "The results will be saved locally, but will not be logged to Azure."
+            )
             return True
         parsed_response = response.json()
         self.info = RunInfo(
-            run_id=parsed_response['run']['info']['run_id'],
-            experiment_id=parsed_response['run']['info']['experiment_id'],
-            run_name=parsed_response['run']['info']['run_name']
+            run_id=parsed_response["run"]["info"]["run_id"],
+            experiment_id=parsed_response["run"]["info"]["experiment_id"],
+            run_name=parsed_response["run"]["info"]["run_name"],
         )
         return False
 
     def end_run(self, status: str) -> None:
         """
-        Tetminate the run.
+        Terminate the run.
 
-        :param status: One of "FINISHED" "FAILED" and "KILLED"
+        :param status: Run status. Possible values are "FINISHED" "FAILED" or "KILLED".
         :type status: str
         :raises: ValueError if the run is not in ("FINISHED", "FAILED", "KILLED")
         """
@@ -229,7 +236,10 @@ class EvalRun(metaclass=Singleton):
 
     def get_run_history_uri(self) -> str:
         """
-        Return the run history service URI.
+        Get the run history service URI.
+
+        :return: The run history service URI.
+        :rtype: str
         """
         return (
             f"https://{self._url_base}"
@@ -240,13 +250,19 @@ class EvalRun(metaclass=Singleton):
 
     def get_artifacts_uri(self) -> str:
         """
-        Returns the url to upload the artifacts.
+        Gets the URI to upload the artifacts to.
+
+        :return: The URI to upload the artifacts to.
+        :rtype: str
         """
         return self.get_run_history_uri() + "/artifacts/batch/metadata"
 
     def get_metrics_url(self):
         """
         Return the url needed to track the mlflow metrics.
+
+        :return: The url needed to track the mlflow metrics.
+        :rtype: str
         """
         return f"https://{self._url_base}" "/mlflow/v2.0" f"{self._get_scope()}" f"/api/2.0/mlflow/runs/log-metric"
 
@@ -254,6 +270,7 @@ class EvalRun(metaclass=Singleton):
         # We have to use lazy import because promptflow.azure
         # is an optional dependency.
         from promptflow.azure._utils._token_cache import ArmTokenCache
+
         return ArmTokenCache().get_token(self._ml_client._credential)
 
     def request_with_retry(
@@ -264,13 +281,14 @@ class EvalRun(metaclass=Singleton):
 
         :param url: The url to send the request to.
         :type url: str
-        :param auth_token: Azure authentication token
-        :type auth_token: str or None
         :param method: The request method to be used.
         :type method: str
         :param json_dict: The json dictionary (not serialized) to be sent.
-        :type json_dict: dict.
-        :return: The requests.Response object.
+        :type json_dict: Dict[str, Any]
+        :param headers: The headers to be sent with the request.
+        :type headers: Optional[Dict[str, str]]
+        :return: The response
+        :rtype: requests.Response
         """
         if headers is None:
             headers = {}
@@ -313,8 +331,12 @@ class EvalRun(metaclass=Singleton):
         **Note:** In the current implementation we are not using the thread pool executor
         as it is done in azureml-mlflow, instead we are just running upload in cycle as we are not
         expecting uploading a lot of artifacts.
+
         :param artifact_folder: The folder with artifacts to be uploaded.
         :type artifact_folder: str
+        :param artifact_name: The name of the artifact to be uploaded. Defaults to
+            promptflow.evals.evaluate.EvalRun.EVALUATION_ARTIFACT.
+        :type artifact_name: str
         """
         if self._is_broken:
             LOGGER.warning("Unable to log artifact because the run failed to start.")
@@ -330,15 +352,15 @@ class EvalRun(metaclass=Singleton):
             LOGGER.warning("The run results file was not found, skipping artifacts upload.")
             return
         # First we will list the files and the appropriate remote paths for them.
-        root_upload_path = posixpath.join("promptflow", 'PromptFlowArtifacts', self.info.run_name)
-        remote_paths = {'paths': []}
+        root_upload_path = posixpath.join("promptflow", "PromptFlowArtifacts", self.info.run_name)
+        remote_paths = {"paths": []}
         local_paths = []
         # Go over the artifact folder and upload all artifacts.
         for (root, _, filenames) in os.walk(artifact_folder):
             upload_path = root_upload_path
             if root != artifact_folder:
                 rel_path = os.path.relpath(root, artifact_folder)
-                if rel_path != '.':
+                if rel_path != ".":
                     upload_path = posixpath.join(root_upload_path, rel_path)
             for f in filenames:
                 remote_file_path = posixpath.join(upload_path, f)
@@ -349,13 +371,10 @@ class EvalRun(metaclass=Singleton):
         # We will write the artifacts to the workspaceblobstore
         datastore = self._ml_client.datastores.get_default(include_secrets=True)
         account_url = f"{datastore.account_name}.blob.{datastore.endpoint}"
-        svc_client = BlobServiceClient(
-            account_url=account_url, credential=self._get_datastore_credential(datastore))
-        for local, remote in zip(local_paths, remote_paths['paths']):
-            blob_client = svc_client.get_blob_client(
-                container=datastore.container_name,
-                blob=remote['path'])
-            with open(local, 'rb') as fp:
+        svc_client = BlobServiceClient(account_url=account_url, credential=self._get_datastore_credential(datastore))
+        for local, remote in zip(local_paths, remote_paths["paths"]):
+            blob_client = svc_client.get_blob_client(container=datastore.container_name, blob=remote["path"])
+            with open(local, "rb") as fp:
                 blob_client.upload_blob(fp, overwrite=True)
 
         # To show artifact in UI we will need to register it. If it is a promptflow run,
@@ -382,18 +401,17 @@ class EvalRun(metaclass=Singleton):
             },
         )
         if response.status_code != 200:
-            self._log_warning('register artifact', response)
+            self._log_warning("register artifact", response)
 
-    def _get_datastore_credential(self, datastore: 'Datastore'):
+    def _get_datastore_credential(self, datastore: "Datastore"):
         # Reference the logic in azure.ai.ml._artifact._artifact_utilities
         # https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/ml/azure-ai-ml/azure/ai/ml/_artifacts/_artifact_utilities.py#L103
         credential = datastore.credentials
         if isinstance(credential, AccountKeyConfiguration):
             return credential.account_key
-        elif hasattr(credential, "sas_token"):
+        if hasattr(credential, "sas_token"):
             return credential.sas_token
-        else:
-            return self._ml_client.datastores._credential
+        return self._ml_client.datastores._credential
 
     def log_metric(self, key: str, value: float) -> None:
         """
@@ -428,6 +446,11 @@ class EvalRun(metaclass=Singleton):
         """
         The convenience method to the the EvalRun instance.
 
+        :param args: Optional positional arguments.
+        :type args: Any
+        :keyword kwargs: Optional keyword arguments.
+        :paramtype kwargs: Any
         :return: The EvalRun instance.
+        :rtype: ~promptflow.evals.evaluate.EvalRun
         """
         return EvalRun(*args, **kwargs)

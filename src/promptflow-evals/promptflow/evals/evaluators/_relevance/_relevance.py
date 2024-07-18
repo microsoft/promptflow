@@ -9,6 +9,7 @@ import numpy as np
 
 from promptflow.client import load_flow
 from promptflow.core import AzureOpenAIModelConfiguration
+
 try:
     from ..._user_agent import USER_AGENT
 except ImportError:
@@ -52,8 +53,10 @@ class RelevanceEvaluator:
             "configuration": model_config,
         }
 
-        prompty_model_config.update({"parameters": {"extra_headers": {"x-ms-user-agent": USER_AGENT}}})\
-            if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration) else None
+        if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration):
+            prompty_model_config.update(
+                {"parameters": {"extra_headers": {"x-ms-user-agent": USER_AGENT}}}
+            )
 
         current_dir = os.path.dirname(__file__)
         prompty_path = os.path.join(current_dir, "relevance.prompty")
@@ -63,12 +66,12 @@ class RelevanceEvaluator:
         """
         Evaluate relevance.
 
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :param context: The context to be evaluated.
-        :type context: str
+        :keyword question: The question to be evaluated.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
+        :keyword context: The context to be evaluated.
+        :paramtype context: str
         :return: The relevance score.
         :rtype: dict
         """

@@ -29,7 +29,14 @@ from ._utils import JsonLineList
 logger = logging.getLogger(__name__)
 
 
-def monitor_adversarial_scenario(func):
+def monitor_adversarial_scenario(func) -> Callable:
+    """Monitor an adversarial scenario with logging
+
+    :param func: The function to be monitored
+    :type func: Callable
+    :return: The decorated function
+    :rtype: Callable
+    """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         scenario = str(kwargs.get("scenario", None))
@@ -109,36 +116,36 @@ class AdversarialSimulator:
         """
         Executes the adversarial simulation against a specified target function asynchronously.
 
-        :param scenario: Enum value specifying the adversarial scenario used for generating inputs.
+        :keyword scenario: Enum value specifying the adversarial scenario used for generating inputs.
          example:
 
          - :py:const:`promptflow.evals.synthetic.adversarial_scenario.AdversarialScenario.ADVERSARIAL_QA`
          - :py:const:`promptflow.evals.synthetic.adversarial_scenario.AdversarialScenario.ADVERSARIAL_CONVERSATION`
-        :type scenario: promptflow.evals.synthetic.adversarial_scenario.AdversarialScenario
-        :param target: The target function to simulate adversarial inputs against.
+        :paramtype scenario: promptflow.evals.synthetic.adversarial_scenario.AdversarialScenario
+        :keyword target: The target function to simulate adversarial inputs against.
             This function should be asynchronous and accept a dictionary representing the adversarial input.
-        :type target: Callable
-        :param max_conversation_turns: The maximum number of conversation turns to simulate.
+        :paramtype target: Callable
+        :keyword max_conversation_turns: The maximum number of conversation turns to simulate.
             Defaults to 1.
-        :type max_conversation_turns: int
-        :param max_simulation_results: The maximum number of simulation results to return.
+        :paramtype max_conversation_turns: int
+        :keyword max_simulation_results: The maximum number of simulation results to return.
             Defaults to 3.
-        :type max_simulation_results: int
-        :param api_call_retry_limit: The maximum number of retries for each API call within the simulation.
+        :paramtype max_simulation_results: int
+        :keyword api_call_retry_limit: The maximum number of retries for each API call within the simulation.
             Defaults to 3.
-        :type api_call_retry_limit: int
-        :param api_call_retry_sleep_sec: The sleep duration (in seconds) between retries for API calls.
+        :paramtype api_call_retry_limit: int
+        :keyword api_call_retry_sleep_sec: The sleep duration (in seconds) between retries for API calls.
             Defaults to 1 second.
-        :type api_call_retry_sleep_sec: int
-        :param api_call_delay_sec: The delay (in seconds) before making an API call.
+        :paramtype api_call_retry_sleep_sec: int
+        :keyword api_call_delay_sec: The delay (in seconds) before making an API call.
             This can be used to avoid hitting rate limits. Defaults to 0 seconds.
-        :type api_call_delay_sec: int
-        :param concurrent_async_task: The number of asynchronous tasks to run concurrently during the simulation.
+        :paramtype api_call_delay_sec: int
+        :keyword concurrent_async_task: The number of asynchronous tasks to run concurrently during the simulation.
             Defaults to 3.
-        :type concurrent_async_task: int
-        :param jailbreak: If set to True, allows breaking out of the conversation flow defined by the scenario.
+        :paramtype concurrent_async_task: int
+        :keyword jailbreak: If set to True, allows breaking out of the conversation flow defined by the scenario.
             Defaults to False.
-        :type jailbreak: bool
+        :paramtype jailbreak: bool
         :return: A list of dictionaries, each representing a simulated conversation. Each dictionary contains:
 
          - 'template_parameters': A dictionary with parameters used in the conversation template,
@@ -235,7 +242,7 @@ class AdversarialSimulator:
 
     def _to_chat_protocol(self, *, conversation_history, template_parameters):
         messages = []
-        for i, m in enumerate(conversation_history):
+        for _, m in enumerate(conversation_history):
             message = {"content": m.message, "role": m.role.value}
             if "context" in m.full_response:
                 message["context"] = m.full_response["context"]
@@ -351,7 +358,26 @@ class AdversarialSimulator:
         api_call_retry_sleep_sec: int,
         api_call_delay_sec: int,
         concurrent_async_task: int,
-    ):
+    ) -> List[Dict[str, Any]]:
+        """Call the adversarial simulator synchronously.
+
+        :keyword max_conversation_turns: The maximum number of conversation turns to simulate.
+        :paramtype max_conversation_turns: int
+        :keyword max_simulation_results: The maximum number of simulation results to return.
+        :paramtype max_simulation_results: int
+        :keyword target: The target function to simulate adversarial inputs against.
+        :paramtype target: Callable
+        :keyword api_call_retry_limit: The maximum number of retries for each API call within the simulation.
+        :paramtype api_call_retry_limit: int
+        :keyword api_call_retry_sleep_sec: The sleep duration (in seconds) between retries for API calls.
+        :paramtype api_call_retry_sleep_sec: int
+        :keyword api_call_delay_sec: The delay (in seconds) before making an API call.
+        :paramtype api_call_delay_sec: int
+        :keyword concurrent_async_task: The number of asynchronous tasks to run concurrently during the simulation.
+        :paramtype concurrent_async_task: int
+        :return: A list of dictionaries, each representing a simulated conversation.
+        :rtype: List[Dict[str, Any]]
+        """
         # Running the async method in a synchronous context
         loop = asyncio.get_event_loop()
         if loop.is_running():
@@ -369,16 +395,16 @@ class AdversarialSimulator:
                 )
             )
             return loop.run_until_complete(future)
-        else:
-            # If no event loop is running, use asyncio.run (Python 3.7+)
-            return asyncio.run(
-                self(
-                    max_conversation_turns=max_conversation_turns,
-                    max_simulation_results=max_simulation_results,
-                    target=target,
-                    api_call_retry_limit=api_call_retry_limit,
-                    api_call_retry_sleep_sec=api_call_retry_sleep_sec,
-                    api_call_delay_sec=api_call_delay_sec,
-                    concurrent_async_task=concurrent_async_task,
-                )
+
+        # If no event loop is running, use asyncio.run (Python 3.7+)
+        return asyncio.run(
+            self(
+                max_conversation_turns=max_conversation_turns,
+                max_simulation_results=max_simulation_results,
+                target=target,
+                api_call_retry_limit=api_call_retry_limit,
+                api_call_retry_sleep_sec=api_call_retry_sleep_sec,
+                api_call_delay_sec=api_call_delay_sec,
+                concurrent_async_task=concurrent_async_task,
             )
+        )

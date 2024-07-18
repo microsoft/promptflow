@@ -47,6 +47,7 @@ jsonpath_ng = ">=1.5.0"
 urllib3 = ">1.26.17"
 numpy = ">=1.22"
 promptflow-azure = { version = "<2.0.0,>=1.13.0", optional = true} # Needed for remote tracking
+isort = "^5.13.2"
 
 [tool.poetry.extras]
 azure = [
@@ -115,3 +116,23 @@ name = "Contract forbidden modules"
 type = "forbidden"
 source_modules = ["promptflow.evals"]
 forbidden_modules = []
+
+[tool.isort]
+# we use check for make fmt*
+profile = "black"
+# no need to fmt ignored
+skip_gitignore = true
+# needs to be the same as in black
+line_length = 120
+use_parentheses = true
+include_trailing_comma = true
+honor_noqa = true
+ensure_newline_before_comments = true
+skip_glob = [
+        docs/**,
+        pipelines/**,
+        pytest/**,
+        samples/**,
+    ]
+known_third_party = azure,mock,numpy,pandas,pydash,pytest,pytest_mock,requests,setuptools,six,sklearn,tqdm,urllib3,utilities,utils,yaml,jsonschema,strictyaml,jwt,pathspec,isodate,docker
+known_first_party = promptflow
