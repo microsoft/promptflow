@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from promptflow.evals.evaluators import (
@@ -120,6 +121,17 @@ class TestBuiltInEvaluators:
         assert score["gpt_fluency"] > 0.0
         assert score["gpt_similarity"] > 0.0
         assert score["f1_score"] > 0.0
+
+    def test_qa_evaluator_for_nans(self, model_config):
+        qa_eval = QAEvaluator(model_config)
+        # Test Q/A below would cause NaNs in the evaluation metrics before the fix.
+        score = qa_eval(question="This's the color?", answer="Black", ground_truth="gray", context="gray")
+
+        assert score["gpt_groundedness"] is not np.nan
+        assert score["gpt_relevance"] is not np.nan
+        assert score["gpt_coherence"] is not np.nan
+        assert score["gpt_fluency"] is not np.nan
+        assert score["gpt_similarity"] is not np.nan
 
     @pytest.mark.azuretest
     def test_composite_evaluator_content_safety(self, project_scope, azure_cred):
