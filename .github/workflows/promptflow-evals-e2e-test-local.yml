@@ -38,6 +38,9 @@ jobs:
       - name: install test dependency group
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install recording
+        run: poetry run pip install -e ../promptflow-recording
+        working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install promptflow packages in editable mode
         run: |
           poetry run pip install -e ../promptflow

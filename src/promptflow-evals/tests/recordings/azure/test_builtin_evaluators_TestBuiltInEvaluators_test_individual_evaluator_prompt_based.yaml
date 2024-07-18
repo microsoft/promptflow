@@ -1,0 +1,113 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "system", "content": "You are an AI assistant. You
+      will be given the definition of an evaluation metric for assessing the quality
+      of an answer in a question-answering task. Your job is to compute an accurate
+      evaluation score using the provided evaluation metric."}, {"role": "user", "content":
+      "Fluency measures the quality of individual sentences in the answer, and whether
+      they are well-written and grammatically correct. Consider the quality of individual
+      sentences when evaluating fluency. Given the question and answer, score the
+      fluency of the answer between one to five stars using the following rating scale:\nOne
+      star: the answer completely lacks fluency\nTwo stars: the answer mostly lacks
+      fluency\nThree stars: the answer is partially fluent\nFour stars: the answer
+      is mostly fluent\nFive stars: the answer has perfect fluency\n\nThis rating
+      value should always be an integer between 1 and 5. So the rating produced should
+      be 1 or 2 or 3 or 4 or 5.\n\nquestion: What did you have for breakfast today?\nanswer:
+      Breakfast today, me eating cereal and orange juice very good.\nstars: 1\n\nquestion:
+      How do you feel when you travel alone?\nanswer: Alone travel, nervous, but excited
+      also. I feel adventure and like its time.\nstars: 2\n\nquestion: When was the
+      last time you went on a family vacation?\nanswer: Last family vacation, it took
+      place in last summer. We traveled to a beach destination, very fun.\nstars:
+      3\n\nquestion: What is your favorite thing about your job?\nanswer: My favorite
+      aspect of my job is the chance to interact with diverse people. I am constantly
+      learning from their experiences and stories.\nstars: 4\n\nquestion: Can you
+      describe your morning routine?\nanswer: Every morning, I wake up at 6 am, drink
+      a glass of water, and do some light stretching. After that, I take a shower
+      and get dressed for work. Then, I have a healthy breakfast, usually consisting
+      of oatmeal and fruits, before leaving the house around 7:30 am.\nstars: 5\n\nquestion:
+      What is the capital of Japan?\nanswer: The capital of Japan is Tokyo.\nstars:"}],
+      "model": "gpt-35-turbo", "frequency_penalty": 0, "max_tokens": 1, "presence_penalty":
+      0, "response_format": {"type": "text"}, "temperature": 0.0, "top_p": 1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      api-key:
+      - 73963c03086243b3ae5665565fcaae42
+      connection:
+      - keep-alive
+      content-length:
+      - '2245'
+      content-type:
+      - application/json
+      host:
+      - eastus.api.cognitive.microsoft.com
+      ms-azure-ai-promptflow:
+      - '{}'
+      ms-azure-ai-promptflow-called-from:
+      - promptflow-core
+      user-agent:
+      - AsyncAzureOpenAI/Python 1.35.8
+      x-ms-useragent:
+      - promptflow-sdk/1.13.0.dev0 promptflow-tracing/1.13.0.dev0 promptflow-evals/0.1.0.dev0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - Linux
+      x-stainless-package-version:
+      - 1.35.8
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.10.8
+    method: POST
+    uri: https://eastus.api.cognitive.microsoft.com//openai/deployments/gpt-35-turbo/chat/completions?api-version=2023-07-01-preview
+  response:
+    content: '{"choices": [{"content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}, "finish_reason": "length", "index": 0, "message": {"content": "5",
+      "role": "assistant"}}], "created": 1721248139, "id": "chatcmpl-9m5YhCqNHC3LP2JwLsaSCHGM4ifIp",
+      "model": "gpt-35-turbo", "object": "chat.completion", "prompt_filter_results":
+      [{"prompt_index": 0, "content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}}], "system_fingerprint": null, "usage": {"completion_tokens": 1, "prompt_tokens":
+      451, "total_tokens": 452}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      apim-request-id:
+      - 6c03d853-0376-47f1-bc03-6182a31652c7
+      azureml-model-session:
+      - turbo-0301-4ba1ad30
+      cache-control:
+      - no-cache, must-revalidate
+      content-length:
+      - '783'
+      content-type:
+      - application/json
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-accel-buffering:
+      - 'no'
+      x-content-type-options:
+      - nosniff
+      x-ms-rai-invoked:
+      - 'true'
+      x-ms-region:
+      - East US
+      x-ratelimit-remaining-requests:
+      - '239'
+      x-ratelimit-remaining-tokens:
+      - '239999'
+      x-request-id:
+      - f5ba8836-c7e2-4629-a987-6914412e8378
+    http_version: HTTP/1.1
+    status_code: 200
+version: 1
