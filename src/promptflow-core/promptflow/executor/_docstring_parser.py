@@ -9,7 +9,7 @@ class DocstringParser:
         description = (
             (short + " " + long if (long := parsed.long_description) is not None else short)
             if (short := parsed.short_description) is not None
-            else None
+            else ""
         )
 
         params = {}
