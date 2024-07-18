@@ -9,10 +9,13 @@ import numpy as np
 import requests
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
-from constants import EvaluationMetrics, RAIService, Tasks
-from utils import get_harm_severity_level
 
-from promptflow.core import tool
+try:
+    from .constants import EvaluationMetrics, RAIService, Tasks
+    from .utils import get_harm_severity_level
+except ImportError:
+    from constants import EvaluationMetrics, RAIService, Tasks
+    from utils import get_harm_severity_level
 
 try:
     version = importlib.metadata.version("promptflow-evals")
@@ -207,7 +210,6 @@ def fetch_or_reuse_token(credential: TokenCredential, token: str = None):
     return token
 
 
-@tool
 def evaluate_with_rai_service(
     question: str, answer: str, metric_name: str, project_scope: dict, credential: TokenCredential
 ):
