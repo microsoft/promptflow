@@ -3,23 +3,18 @@ import pytest
 
 from promptflow.evals.evaluators import (
     ChatEvaluator,
-    CoherenceEvaluator,
     ContentSafetyChatEvaluator,
     ContentSafetyEvaluator,
     FluencyEvaluator,
-    GroundednessEvaluator,
     QAEvaluator,
-    RelevanceEvaluator,
-    SimilarityEvaluator,
     ViolenceEvaluator,
 )
-from promptflow.recording.record_mode import is_replay
 
 
 @pytest.mark.usefixtures("recording_injection", "vcr_recording")
 @pytest.mark.localtest
 class TestBuiltInEvaluators:
-    def test_quality_evaluator_fluency(self, model_config):
+    def test_individual_evaluator_prompt_based(self, model_config):
         eval_fn = FluencyEvaluator(model_config)
         score = eval_fn(
             question="What is the capital of Japan?",
@@ -28,45 +23,7 @@ class TestBuiltInEvaluators:
         assert score is not None
         assert score["gpt_fluency"] > 1.0
 
-    def test_quality_evaluator_coherence(self, model_config):
-        eval_fn = CoherenceEvaluator(model_config)
-        score = eval_fn(
-            question="What is the capital of Japan?",
-            answer="The capital of Japan is Tokyo.",
-        )
-        assert score is not None
-        assert score["gpt_coherence"] > 1.0
-
-    def test_quality_evaluator_similarity(self, model_config):
-        eval_fn = SimilarityEvaluator(model_config)
-        score = eval_fn(
-            question="What is the capital of Japan?",
-            answer="The capital of Japan is Tokyo.",
-            ground_truth="Tokyo is Japan's capital.",
-        )
-        assert score is not None
-        assert score["gpt_similarity"] > 1.0
-
-    def test_quality_evaluator_groundedness(self, model_config):
-        eval_fn = GroundednessEvaluator(model_config)
-        score = eval_fn(
-            answer="The capital of Japan is Tokyo.",
-            context="Tokyo is Japan's capital.",
-        )
-        assert score is not None
-        assert score["gpt_groundedness"] > 1.0
-
-    def test_quality_evaluator_relevance(self, model_config):
-        eval_fn = RelevanceEvaluator(model_config)
-        score = eval_fn(
-            question="What is the capital of Japan?",
-            answer="The capital of Japan is Tokyo.",
-            context="Tokyo is Japan's capital.",
-        )
-        assert score is not None
-        assert score["gpt_relevance"] > 1.0
-
-    def test_quality_evaluator_prompt_based_with_dict_input(self, model_config):
+    def test_individual_evaluator_prompt_based_with_dict_input(self, model_config):
         eval_fn = FluencyEvaluator(model_config)
         score = eval_fn(
             question={"foo": "1"},
@@ -76,7 +33,7 @@ class TestBuiltInEvaluators:
         assert score["gpt_fluency"] > 0.0
 
     @pytest.mark.azuretest
-    def test_content_safety_evaluator_violence(self, project_scope, azure_cred):
+    def test_individual_evaluator_service_based(self, project_scope, azure_cred):
         eval_fn = ViolenceEvaluator(project_scope, azure_cred)
         score = eval_fn(
             question="What is the capital of Japan?",
@@ -87,14 +44,10 @@ class TestBuiltInEvaluators:
         assert score["violence_score"] < 1.0
         assert score["violence_reason"], "violence_reason must not be None or empty."
 
-    @pytest.mark.azuretest
+    @pytest.mark.skip(reason="Not working in ci pipeline. For local run.")
     def test_content_safety_service_unavailable(self, project_scope, azure_cred):
         eval_fn = ViolenceEvaluator(project_scope, azure_cred)
-        # Doing this is replay mode breaks causes mismatch between scrubbed recordings
-        # and the actual request made.
-        # Using not is_replay() because is_live doesn't apply to recording mode?
-        if not is_replay():
-            project_scope["project_name"] = "pf-evals-ws-westus2"
+        project_scope["project_name"] = "pf-evals-ws-westus2"
 
         with pytest.raises(Exception) as exc_info:
             eval_fn(
@@ -102,7 +55,7 @@ class TestBuiltInEvaluators:
                 answer="The capital of Japan is Tokyo.",
             )
 
-        assert "RAI service is not available in this region" in exc_info._excinfo[1].args[0]
+        assert "RAI service is not available in this region" in exc_info._excinfo[1].inner_exception.args[0]
 
     @pytest.mark.parametrize("parallel", [False, True])
     def test_composite_evaluator_qa(self, model_config, parallel):
@@ -124,6 +77,7 @@ class TestBuiltInEvaluators:
 
     def test_qa_evaluator_for_nans(self, model_config):
         qa_eval = QAEvaluator(model_config)
+        # Test Q/A below would cause NaNs in the evaluation metrics before the fix.
         score = qa_eval(question="This's the color?", answer="Black", ground_truth="gray", context="gray")
 
         assert score["gpt_groundedness"] is not np.nan

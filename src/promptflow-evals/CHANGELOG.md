@@ -12,18 +12,11 @@
 - Converted built-in evaluators to async-based implementation, leveraging async batch run for performance improvement.
 - Parity between evals and Simulator on signature, passing credentials.
 - The `AdversarialSimulator` responds with `category` of harm in the response.
+- Reduced chances of NaNs in GPT based evaluators.
+
 
 ## v0.3.1 (2022-07-09)
 - This release contains minor bug fixes and improvements.
 
-<<<<<<< HEAD
 ## v0.3.0 (2024-05-17)
 - Initial release of promptflow-evals package.
-=======
-- Parity between evals and Simulator on signature, passing credentials.
-
-- Reduced chances of NaNs in GPT based evaluators.
-
-## 0.0.1
-- Introduced package
->>>>>>> aeeb53ece (Update src/promptflow-evals/CHANGELOG.md)
