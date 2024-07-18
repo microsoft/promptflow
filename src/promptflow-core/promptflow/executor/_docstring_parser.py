@@ -4,16 +4,10 @@ from docstring_parser import parse
 class DocstringParser:
     @staticmethod
     def parse_description(docstring: str):
+        # TODO: Retrieve details from the function interface when the docstring lacks sufficient information.
         parsed = parse(docstring)
-
-        description = (
-            (short + " " + long if (long := parsed.long_description) is not None else short)
-            if (short := parsed.short_description) is not None
-            else ""
-        )
-
         params = {}
         for param in parsed.params:
             params[param.arg_name] = {"description": param.description, "type": param.type_name}
 
-        return description, params
+        return parsed.description or "", params
