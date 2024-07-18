@@ -17,7 +17,7 @@ class TestDocstringParser:
         :type connection: AzureOpenAIConnection
         """
 
-        expected_des = "Hello world."
+        expected_des = "Hello world.\n"
         assert expected_des == DocstringParser.parse_description(docstring)[0]
 
         # Multiple lines of description
@@ -33,7 +33,7 @@ class TestDocstringParser:
         """
 
         expected_des = (
-            "Generate thanks statement over multiple lines "
+            "Generate thanks statement over multiple lines\n"
             "with additional details. This part should also be included in the description."
         )
         assert expected_des == DocstringParser.parse_description(docstring)[0]
@@ -51,7 +51,7 @@ class TestDocstringParser:
         :type connection: AzureOpenAIConnection
         """
 
-        expected_des = "line 1. line 2."
+        expected_des = "line 1.\n\nline 2."
         assert expected_des == DocstringParser.parse_description(docstring)[0]
 
         # Multiple lines of description
@@ -67,7 +67,7 @@ class TestDocstringParser:
         :type connection: AzureOpenAIConnection
         """
 
-        expected_des = "line 1 line 2"
+        expected_des = "line 1\n\nline 2"
         assert expected_des == DocstringParser.parse_description(docstring)[0]
 
         docstring = """
@@ -81,7 +81,7 @@ class TestDocstringParser:
         :type connection: AzureOpenAIConnection
         """
 
-        expected_des = "line 1 line 2."
+        expected_des = "line 1\n\nline 2."
         assert expected_des == DocstringParser.parse_description(docstring)[0]
 
         docstring = """
@@ -94,7 +94,7 @@ class TestDocstringParser:
         :type connection: AzureOpenAIConnection
         """
 
-        expected_des = "line 1 line 2."
+        expected_des = "line 1\nline 2."
         assert expected_des == DocstringParser.parse_description(docstring)[0]
 
         docstring = """
