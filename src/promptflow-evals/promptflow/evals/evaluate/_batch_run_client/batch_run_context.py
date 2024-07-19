@@ -13,6 +13,7 @@ from promptflow.evals._constants import (
 from promptflow.tracing._integrations._openai_injector import inject_openai_api, recover_openai_api
 
 from ..._user_agent import USER_AGENT
+from .._utils import set_event_loop_policy
 from .code_client import CodeClient
 from .proxy_client import ProxyClient
 
@@ -35,6 +36,9 @@ class BatchRunContext:
                 os.environ[PF_IS_BATCH_TIMEOUT_SYSTEM_SET] = "true"
             else:
                 os.environ[PF_IS_BATCH_TIMEOUT_SYSTEM_SET] = "false"
+
+            # For addressing the issue of asyncio event loop closed on Windows
+            set_event_loop_policy()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if isinstance(self.client, CodeClient):

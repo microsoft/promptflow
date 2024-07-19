@@ -218,3 +218,13 @@ def get_int_env_var(env_var_name, default_value=None):
         return int(os.environ.get(env_var_name, default_value))
     except Exception:
         return default_value
+
+
+def set_event_loop_policy():
+    import asyncio
+    import platform
+
+    if platform.system().lower() == "windows":
+        # Reference: https://stackoverflow.com/questions/45600579/asyncio-event-loop-is-closed-when-getting-loop
+        # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

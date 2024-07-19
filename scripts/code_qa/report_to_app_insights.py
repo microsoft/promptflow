@@ -1,6 +1,7 @@
 from typing import Dict, Optional, Union
 
 import argparse
+import json
 import platform
 
 from promptflow._sdk._configuration import Configuration
@@ -25,12 +26,12 @@ def parse_junit_xml(fle: str) -> Dict[str, Dict[str, Union[float, str]]]:
 
         for child in test.childNodes:
             if child.nodeName == 'failure':
-                test_results['fail_message'] = child.attributes["message"].value
+                test_results[test_name]['fail_message'] = child.attributes["message"].value
     return test_results
 
 
 def main(activity_name: str,
-         value: float,
+         value: Union[float, str],
          run_id: str,
          workflow: str,
          action: str,
@@ -70,9 +71,15 @@ def main(activity_name: str,
     if junit_file:
         junit_dict = parse_junit_xml(junit_file)
         for k, v in junit_dict.items():
-            activity_info[k] = -1 if v["fail_message"] else v['time']
+            if v["fail_message"]:
+                # Do not log time together with fail message.
+                continue
+            activity_info[k] = v['time']
     else:
-        activity_info["value"] = value
+        if isinstance(value, str):
+            activity_info.update(json.loads(value))
+        else:
+            activity_info["value"] = value
 
     # write information to the application insights.
     logger.info(action, extra={"custom_dimensions": activity_info})
@@ -83,8 +90,11 @@ if __name__ == '__main__':
         description="Log the value to application insights along with platform characteristics and run ID.")
     parser.add_argument('--activity', help='The activity to be logged.',
                         required=True)
-    parser.add_argument('--value', type=float, help='The value for activity.',
-                        required=False, default=-1)
+    parser.add_argument(
+        '--value',
+        help='The floating point value for activity or a set of values in key-value format.',
+        required=False,
+        default=-1)
     parser.add_argument('--junit-xml', help='The path to junit-xml file.',
                         dest="junit_xml", required=False, default=None)
     parser.add_argument('--git-hub-action-run-id', dest='run_id',

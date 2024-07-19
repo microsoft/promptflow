@@ -3,11 +3,16 @@
 ## v0.3.2 (Upcoming)
 
 ### Features Added
+- Introduced `JailbreakAdversarialSimulator` for customers who need to do run jailbreak and non jailbreak adversarial simulations at the same time. More info in the README.md in `/promptflow/evals/synthetic/README.md#jailbreak-simulator`
+- Exposed batch evaluation run timeout via "PF_BATCH_TIMEOUT_SEC" environment variable
 
 ### Bugs Fixed
+- Large simulation was causing a jinja exception, this has been fixed.
 
 ### Improvements
-- Exposed batch evaluation run timeout variable via "PF_BATCH_TIMEOUT_SEC" environment variable
+- Converted built-in evaluators to async-based implementation, leveraging async batch run for performance improvement.
+- Parity between evals and Simulator on signature, passing credentials.
+- The `AdversarialSimulator` responds with `category` of harm in the response.
 
 ## v0.3.1 (2022-07-09)
 - This release contains minor bug fixes and improvements.
