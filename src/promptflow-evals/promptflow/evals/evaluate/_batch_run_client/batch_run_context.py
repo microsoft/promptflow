@@ -5,7 +5,11 @@ import os
 
 from promptflow._sdk._constants import PF_FLOW_ENTRY_IN_TMP, PF_FLOW_META_LOAD_IN_SUBPROCESS
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
-from promptflow.evals._constants import PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_SEC_DEFAULT
+from promptflow.evals._constants import (
+    PF_BATCH_TIMEOUT_SEC,
+    PF_BATCH_TIMEOUT_SEC_DEFAULT,
+    PF_IS_BATCH_TIMEOUT_SYSTEM_SET,
+)
 from promptflow.tracing._integrations._openai_injector import inject_openai_api, recover_openai_api
 
 from ..._user_agent import USER_AGENT
@@ -28,6 +32,9 @@ class BatchRunContext:
 
             if os.environ.get(PF_BATCH_TIMEOUT_SEC) is None:
                 os.environ[PF_BATCH_TIMEOUT_SEC] = str(PF_BATCH_TIMEOUT_SEC_DEFAULT)
+                os.environ[PF_IS_BATCH_TIMEOUT_SYSTEM_SET] = "true"
+            else:
+                os.environ[PF_IS_BATCH_TIMEOUT_SYSTEM_SET] = "false"
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if isinstance(self.client, CodeClient):
@@ -37,5 +44,6 @@ class BatchRunContext:
             os.environ.pop(PF_FLOW_ENTRY_IN_TMP, None)
             os.environ.pop(PF_FLOW_META_LOAD_IN_SUBPROCESS, None)
 
-            if os.environ.get(PF_BATCH_TIMEOUT_SEC) == str(PF_BATCH_TIMEOUT_SEC_DEFAULT):
+            if os.environ.get(PF_IS_BATCH_TIMEOUT_SYSTEM_SET) == "true":
                 os.environ.pop(PF_BATCH_TIMEOUT_SEC, None)
+                os.environ[PF_IS_BATCH_TIMEOUT_SYSTEM_SET] = "false"
