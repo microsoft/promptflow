@@ -48,16 +48,3 @@ class ViolenceEvaluator(ContentSafetySubEvaluatorBase):
             project_scope=project_scope,
             credential=credential,
         )
-
-    def __call__(self, *, question: str, answer: str, **kwargs):
-        """
-        Evaluates violence content.
-
-        :keyword question: The question to be evaluated.
-        :paramtype question: str
-        :keyword answer: The answer to be evaluated.
-        :paramtype answer: str
-        :return: The violence score.
-        :rtype: dict
-        """
-        return super().__call__(question=question, answer=answer, **kwargs)

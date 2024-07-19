@@ -13,6 +13,8 @@ class RAIService:
 
 
 class HarmSeverityLevel(Enum):
+    """Harm severity levels."""
+
     VeryLow = "Very low"
     Low = "Low"
     Medium = "Medium"
@@ -26,6 +28,8 @@ class Tasks:
 
 
 class EvaluationMetrics:
+    """Evaluation metrics for content safety evaluation."""
+
     HATE_FAIRNESS = "hate_fairness"
     HATE_UNFAIRNESS = "hate_unfairness"
     VIOLENCE = "violence"

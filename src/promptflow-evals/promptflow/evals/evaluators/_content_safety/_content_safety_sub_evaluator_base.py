@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from abc import ABC
+from typing import Dict, List
 
 try:
     from .common.constants import EvaluationMetrics
@@ -28,21 +29,21 @@ class ContentSafetySubEvaluatorBase(ABC):
     :type credential: TokenCredential
     """
 
-    def __init__(self,  metric: EvaluationMetrics, project_scope: dict, credential=None):
+    def __init__(self, metric: EvaluationMetrics, project_scope: dict, credential=None):
         self._metric = metric
         self._project_scope = project_scope
         self._credential = credential
 
-    def __call__(self, *, question: str, answer: str, **kwargs):
+    def __call__(self, *, question: str, answer: str, **kwargs) -> List[List[Dict]]:
         """
         Evaluates content according to this evaluator's metric.
 
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :return: The evaluation score.
-        :rtype: dict
+        :keyword question: The question to be evaluated.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
+        :return: The evaluation score computation based on the Content Safety metric (self.metric).
+        :rtype: List[List[Dict]]
         """
         # Validate inputs
         # Raises value error if failed, so execution alone signifies success.

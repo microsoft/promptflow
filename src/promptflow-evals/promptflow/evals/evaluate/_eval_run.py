@@ -66,6 +66,7 @@ class RunInfo:
 
 class RunStatus(enum.Enum):
     """Run states."""
+
     NOT_STARTED = 0
     STARTED = 1
     BROKEN = 2
@@ -152,13 +153,12 @@ class EvalRun(
         """
         Start the run, or, if it is not applicable (for example, if tracking is not enabled), mark it as started.
         """
-        self._check_state_and_log('start run',
-                                  {v for v in RunStatus if v != RunStatus.NOT_STARTED},
-                                  True)
+        self._check_state_and_log("start run", {v for v in RunStatus if v != RunStatus.NOT_STARTED}, True)
         self._status = RunStatus.STARTED
         if self._tracking_uri is None:
-            LOGGER.warning("tracking_uri was not provided, "
-                           "The results will be saved locally, but will not be logged to Azure.")
+            LOGGER.warning(
+                "tracking_uri was not provided, " "The results will be saved locally, but will not be logged to Azure."
+            )
             self._url_base = None
             self._status = RunStatus.BROKEN
             self.info = RunInfo.generate(self._run_name)
@@ -166,9 +166,7 @@ class EvalRun(
             self._url_base = urlparse(self._tracking_uri).netloc
             if self._promptflow_run is not None:
                 self.info = RunInfo(
-                    self._promptflow_run.name,
-                    self._promptflow_run._experiment_name,
-                    self._promptflow_run.name
+                    self._promptflow_run.name, self._promptflow_run._experiment_name, self._promptflow_run.name
                 )
             else:
                 url = f"https://{self._url_base}/mlflow/v2.0" f"{self._get_scope()}/api/2.0/mlflow/runs/create"
@@ -180,22 +178,20 @@ class EvalRun(
                 }
                 if self._run_name:
                     body["run_name"] = self._run_name
-                response = self.request_with_retry(
-                    url=url,
-                    method='POST',
-                    json_dict=body
-                )
+                response = self.request_with_retry(url=url, method="POST", json_dict=body)
                 if response.status_code != 200:
                     self.info = RunInfo.generate(self._run_name)
-                    LOGGER.warning(f"The run failed to start: {response.status_code}: {response.text}."
-                                   "The results will be saved locally, but will not be logged to Azure.")
+                    LOGGER.warning(
+                        f"The run failed to start: {response.status_code}: {response.text}."
+                        "The results will be saved locally, but will not be logged to Azure."
+                    )
                     self._status = RunStatus.BROKEN
                 else:
                     parsed_response = response.json()
                     self.info = RunInfo(
-                        run_id=parsed_response['run']['info']['run_id'],
-                        experiment_id=parsed_response['run']['info']['experiment_id'],
-                        run_name=parsed_response['run']['info']['run_name']
+                        run_id=parsed_response["run"]["info"]["run_id"],
+                        experiment_id=parsed_response["run"]["info"]["experiment_id"],
+                        run_name=parsed_response["run"]["info"]["run_name"],
                     )
                     self._status = RunStatus.STARTED
 
@@ -207,9 +203,9 @@ class EvalRun(
         :type reason: str
         :raises ValueError: Raised if the run is not in ("FINISHED", "FAILED", "KILLED")
         """
-        if not self._check_state_and_log('stop run',
-                                         {RunStatus.BROKEN, RunStatus.NOT_STARTED, RunStatus.TERMINATED},
-                                         False):
+        if not self._check_state_and_log(
+            "stop run", {RunStatus.BROKEN, RunStatus.NOT_STARTED, RunStatus.TERMINATED}, False
+        ):
             return
         if self._is_promptflow_run:
             # This run is already finished, we just add artifacts/metrics to it.
@@ -279,7 +275,7 @@ class EvalRun(
     def _get_token(self):
         # We have to use lazy import because promptflow.azure
         # is an optional dependency.
-        from promptflow.azure._utils._token_cache import ArmTokenCache
+        from promptflow.azure._utils._token_cache import ArmTokenCache  # pylint: disable=import-error,no-name-in-module
 
         return ArmTokenCache().get_token(self._ml_client._credential)
 
@@ -334,12 +330,7 @@ class EvalRun(
             f"{response.text=}."
         )
 
-    def _check_state_and_log(
-        self,
-        action: str,
-        bad_states: Set[RunStatus],
-        should_raise: bool
-    ) -> bool:
+    def _check_state_and_log(self, action: str, bad_states: Set[RunStatus], should_raise: bool) -> bool:
         """
         Check that the run is in the correct state and log worning if it is not.
 
@@ -376,7 +367,7 @@ class EvalRun(
             promptflow.evals.evaluate.EvalRun.EVALUATION_ARTIFACT.
         :type artifact_name: str
         """
-        if not self._check_state_and_log('log artifact', {RunStatus.BROKEN, RunStatus.NOT_STARTED}, False):
+        if not self._check_state_and_log("log artifact", {RunStatus.BROKEN, RunStatus.NOT_STARTED}, False):
             return
         # Check if artifact dirrectory is empty or does not exist.
         if not os.path.isdir(artifact_folder):
@@ -459,7 +450,7 @@ class EvalRun(
         :param value: The valure to be logged.
         :type value: float
         """
-        if not self._check_state_and_log('log metric', {RunStatus.BROKEN, RunStatus.NOT_STARTED}, False):
+        if not self._check_state_and_log("log metric", {RunStatus.BROKEN, RunStatus.NOT_STARTED}, False):
             return
         body = {
             "run_uuid": self.info.run_id,
@@ -484,7 +475,7 @@ class EvalRun(
         :param properties: The properties to be written to run history.
         :type properties: dict
         """
-        if not self._check_state_and_log('write properties', {RunStatus.BROKEN, RunStatus.NOT_STARTED}, False):
+        if not self._check_state_and_log("write properties", {RunStatus.BROKEN, RunStatus.NOT_STARTED}, False):
             return
         # update host to run history and request PATCH API
         response = self.request_with_retry(
