@@ -1,15 +1,26 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-try:
-    from .common.constants import EvaluationMetrics
-    from ._content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
-except ImportError:
-    from common.constants import EvaluationMetrics
-    from _content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
+from promptflow._utils.async_utils import async_run_allowing_running_loop
+from promptflow.evals.evaluators._content_safety.common import ContentSafetyEvaluatorBase
+from promptflow.evals.evaluators._content_safety.common.constants import EvaluationMetrics
 
 
-class HateUnfairnessEvaluator(ContentSafetySubEvaluatorBase):
+class _AsyncHateUnfairnessEvaluator(ContentSafetyEvaluatorBase):
+    def __init__(self, project_scope: dict, credential=None):
+        # Hate_fairness is the actual backend metric name. Which, uh, doesn't sound great.
+        # so invert the name.
+        super().__init__(
+            metric=EvaluationMetrics.HATE_FAIRNESS,
+            project_scope=project_scope,
+            credential=credential,
+        )
+
+    async def __call__(self, *, question: str, answer: str, **kwargs):
+        return await super().__call__(question=question, answer=answer, **kwargs)
+
+
+class HateUnfairnessEvaluator:
     """
     Initialize a hate-unfairness evaluator for hate unfairness score.
 
@@ -43,13 +54,7 @@ class HateUnfairnessEvaluator(ContentSafetySubEvaluatorBase):
     """
 
     def __init__(self, project_scope: dict, credential=None):
-        # Hate_fairness is the actual backend metric name. Which, uh, doesn't sound great.
-        # so invert the name.
-        super().__init__(
-            metric=EvaluationMetrics.HATE_FAIRNESS,
-            project_scope=project_scope,
-            credential=credential,
-        )
+        self._async_evaluator = _AsyncHateUnfairnessEvaluator(project_scope, credential)
 
     def __call__(self, *, question: str, answer: str, **kwargs):
         """
@@ -62,4 +67,7 @@ class HateUnfairnessEvaluator(ContentSafetySubEvaluatorBase):
         :return: The hate unfairness score.
         :rtype: dict
         """
-        return super().__call__(question=question, answer=answer, **kwargs)
+        return async_run_allowing_running_loop(self._async_evaluator, question=question, answer=answer, **kwargs)
+
+    def _to_async(self):
+        return self._async_evaluator

@@ -1,21 +1,18 @@
+import asyncio
 import importlib.metadata
 import re
 import time
 from typing import List
 from urllib.parse import urlparse
 
+import httpx
 import jwt
 import numpy as np
-import requests
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
 
-try:
-    from .constants import EvaluationMetrics, RAIService, Tasks
-    from .utils import get_harm_severity_level
-except ImportError:
-    from constants import EvaluationMetrics, RAIService, Tasks
-    from utils import get_harm_severity_level
+from promptflow.evals.evaluators._content_safety.common.constants import EvaluationMetrics, RAIService, Tasks
+from promptflow.evals.evaluators._content_safety.common.utils import get_harm_severity_level
 
 try:
     version = importlib.metadata.version("promptflow-evals")
@@ -24,7 +21,7 @@ except importlib.metadata.PackageNotFoundError:
 USER_AGENT = "{}/{}".format("promptflow-evals", version)
 
 
-def ensure_service_availability(rai_svc_url: str, token: str, capability: str = None):
+async def ensure_service_availability(rai_svc_url: str, token: str, capability: str = None):
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
@@ -32,7 +29,8 @@ def ensure_service_availability(rai_svc_url: str, token: str, capability: str = 
     }
 
     svc_liveness_url = rai_svc_url + "/checkannotation"
-    response = requests.get(svc_liveness_url, headers=headers)
+    async with httpx.AsyncClient() as client:
+        response = await client.get(svc_liveness_url, headers=headers)
 
     if response.status_code != 200:
         raise Exception(f"RAI service is not available in this region. Status Code: {response.status_code}")
@@ -43,7 +41,7 @@ def ensure_service_availability(rai_svc_url: str, token: str, capability: str = 
         raise Exception(f"Capability '{capability}' is not available in this region")
 
 
-def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, token: str):
+async def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, token: str):
     user_text = f"<Human>{question}</><System>{answer}</>"
     normalized_user_text = user_text.replace("'", '\\"')
     payload = {"UserTextList": [normalized_user_text], "AnnotationTask": Tasks.CONTENT_HARM, "MetricList": [metric]}
@@ -55,7 +53,9 @@ def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, to
         "User-Agent": USER_AGENT,
     }
 
-    response = requests.post(url, json=payload, headers=headers)
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json=payload, headers=headers)
+
     if response.status_code != 202:
         print("Fail evaluating '%s' with error message: %s" % (payload["UserTextList"], response.text))
         response.raise_for_status()
@@ -65,15 +65,18 @@ def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, to
     return operation_id
 
 
-def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredential, token: str):
+async def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredential, token: str):
     start = time.time()
     request_count = 0
 
     url = rai_svc_url + "/operations/" + operation_id
     while True:
-        token = fetch_or_reuse_token(credential, token)
+        token = await fetch_or_reuse_token(credential, token)
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-        response = requests.get(url, headers=headers)
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, headers=headers)
+
         if response.status_code == 200:
             return response.json()
 
@@ -83,7 +86,7 @@ def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredentia
 
         request_count += 1
         sleep_time = RAIService.SLEEP_TIME**request_count
-        time.sleep(sleep_time)
+        await asyncio.sleep(sleep_time)
 
 
 def parse_response(batch_response: List[dict], metric_name: str) -> List[List[dict]]:
@@ -158,24 +161,25 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
     return result
 
 
-def _get_service_discovery_url(azure_ai_project, token):
+async def _get_service_discovery_url(azure_ai_project, token):
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-    response = requests.get(
-        f"https://management.azure.com/subscriptions/{azure_ai_project['subscription_id']}/"
-        f"resourceGroups/{azure_ai_project['resource_group_name']}/"
-        f"providers/Microsoft.MachineLearningServices/workspaces/{azure_ai_project['project_name']}?"
-        f"api-version=2023-08-01-preview",
-        headers=headers,
-        timeout=5,
-    )
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"https://management.azure.com/subscriptions/{azure_ai_project['subscription_id']}/"
+            f"resourceGroups/{azure_ai_project['resource_group_name']}/"
+            f"providers/Microsoft.MachineLearningServices/workspaces/{azure_ai_project['project_name']}?"
+            f"api-version=2023-08-01-preview",
+            headers=headers,
+            timeout=5,
+        )
     if response.status_code != 200:
         raise Exception("Failed to retrieve the discovery service URL")
     base_url = urlparse(response.json()["properties"]["discoveryUrl"])
     return f"{base_url.scheme}://{base_url.netloc}"
 
 
-def get_rai_svc_url(project_scope: dict, token: str):
-    discovery_url = _get_service_discovery_url(azure_ai_project=project_scope, token=token)
+async def get_rai_svc_url(project_scope: dict, token: str):
+    discovery_url = await _get_service_discovery_url(azure_ai_project=project_scope, token=token)
     subscription_id = project_scope["subscription_id"]
     resource_group_name = project_scope["resource_group_name"]
     project_name = project_scope["project_name"]
@@ -189,7 +193,7 @@ def get_rai_svc_url(project_scope: dict, token: str):
     return rai_url
 
 
-def fetch_or_reuse_token(credential: TokenCredential, token: str = None):
+async def fetch_or_reuse_token(credential: TokenCredential, token: str = None):
     acquire_new_token = True
     try:
         if token:
@@ -210,7 +214,7 @@ def fetch_or_reuse_token(credential: TokenCredential, token: str = None):
     return token
 
 
-def evaluate_with_rai_service(
+async def evaluate_with_rai_service(
     question: str, answer: str, metric_name: str, project_scope: dict, credential: TokenCredential
 ):
     # Use DefaultAzureCredential if no credential is provided
@@ -219,13 +223,13 @@ def evaluate_with_rai_service(
         credential = DefaultAzureCredential()
 
     # Get RAI service URL from discovery service and check service availability
-    token = fetch_or_reuse_token(credential)
-    rai_svc_url = get_rai_svc_url(project_scope, token)
-    ensure_service_availability(rai_svc_url, token, Tasks.CONTENT_HARM)
+    token = await fetch_or_reuse_token(credential)
+    rai_svc_url = await get_rai_svc_url(project_scope, token)
+    await ensure_service_availability(rai_svc_url, token, Tasks.CONTENT_HARM)
 
     # Submit annotation request and fetch result
-    operation_id = submit_request(question, answer, metric_name, rai_svc_url, token)
-    annotation_response = fetch_result(operation_id, rai_svc_url, credential, token)
+    operation_id = await submit_request(question, answer, metric_name, rai_svc_url, token)
+    annotation_response = await fetch_result(operation_id, rai_svc_url, credential, token)
     result = parse_response(annotation_response, metric_name)
 
     return result

@@ -1,11 +1,9 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-try:
-    from . import constants
-except ImportError:
-    import constants
 import numpy as np
+
+from promptflow.evals.evaluators._content_safety.common import constants
 
 
 def get_harm_severity_level(harm_score: int) -> str:

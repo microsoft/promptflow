@@ -7,17 +7,10 @@ from typing import Dict, List
 
 import numpy as np
 
-try:
-    from ._hate_unfairness import HateUnfairnessEvaluator
-    from ._self_harm import SelfHarmEvaluator
-    from ._sexual import SexualEvaluator
-    from ._violence import ViolenceEvaluator
-except ImportError:
-    from _hate_unfairness import HateUnfairnessEvaluator
-    from _self_harm import SelfHarmEvaluator
-    from _sexual import SexualEvaluator
-    from _violence import ViolenceEvaluator
-
+from promptflow.evals.evaluators._content_safety._hate_unfairness import HateUnfairnessEvaluator
+from promptflow.evals.evaluators._content_safety._self_harm import SelfHarmEvaluator
+from promptflow.evals.evaluators._content_safety._sexual import SexualEvaluator
+from promptflow.evals.evaluators._content_safety._violence import ViolenceEvaluator
 
 logger = logging.getLogger(__name__)
 
@@ -209,8 +202,7 @@ class ContentSafetyChatEvaluator:
             one_based_turn_num = turn_num + 1
 
             if not isinstance(turn, dict):
-                raise ValueError(
-                    f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
+                raise ValueError(f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
 
             if "role" not in turn or "content" not in turn:
                 raise ValueError(

@@ -1,15 +1,24 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-try:
-    from .common.constants import EvaluationMetrics
-    from ._content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
-except ImportError:
-    from common.constants import EvaluationMetrics
-    from _content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
+from promptflow._utils.async_utils import async_run_allowing_running_loop
+from promptflow.evals.evaluators._content_safety.common import ContentSafetyEvaluatorBase
+from promptflow.evals.evaluators._content_safety.common.constants import EvaluationMetrics
 
 
-class SexualEvaluator(ContentSafetySubEvaluatorBase):
+class _AsyncSexualEvaluator(ContentSafetyEvaluatorBase):
+    def __init__(self, project_scope: dict, credential=None):
+        super().__init__(
+            metric=EvaluationMetrics.SEXUAL,
+            project_scope=project_scope,
+            credential=credential,
+        )
+
+    async def __call__(self, *, question: str, answer: str, **kwargs):
+        return await super().__call__(question=question, answer=answer, **kwargs)
+
+
+class SexualEvaluator:
     """
     Initialize a sexual evaluator for sexual score.
 
@@ -43,11 +52,7 @@ class SexualEvaluator(ContentSafetySubEvaluatorBase):
     """
 
     def __init__(self, project_scope: dict, credential=None):
-        super().__init__(
-            metric=EvaluationMetrics.SEXUAL,
-            project_scope=project_scope,
-            credential=credential,
-        )
+        self._async_evaluator = _AsyncSexualEvaluator(project_scope, credential)
 
     def __call__(self, *, question: str, answer: str, **kwargs):
         """
@@ -60,4 +65,7 @@ class SexualEvaluator(ContentSafetySubEvaluatorBase):
         :return: The sexual score.
         :rtype: dict
         """
-        return super().__call__(question=question, answer=answer, **kwargs)
+        return async_run_allowing_running_loop(self._async_evaluator, question=question, answer=answer, **kwargs)
+
+    def _to_async(self):
+        return self._async_evaluator
