@@ -5,7 +5,6 @@ from typing import Dict
 from unittest.mock import patch
 
 import pytest
-
 from pytest_mock import MockerFixture
 
 from promptflow.client import PFClient
@@ -35,6 +34,7 @@ except ImportError as e:
 
     def is_replay():
         return False
+
 
 # Import of optional packages
 AZURE_INSTALLED = True
@@ -95,6 +95,8 @@ def model_config() -> dict:
         raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
 
     model_config = AzureOpenAIModelConfiguration(**dev_connections[conn_name]["value"])
+    # Default to gpt-35-turbo for capacity reasons
+    model_config.azure_deployment = "gpt-35-turbo"
 
     AzureOpenAIModelConfiguration.__repr__ = lambda self: "<sensitive data redacted>"
 
@@ -368,12 +370,13 @@ def pytest_collection_modifyitems(items):
     parents = {}
     for item in items:
         # Check if parent contains 'localtest' marker and remove it.
-        if any(mark.name == 'localtest' for mark in item.parent.own_markers) or id(item.parent) in parents:
+        if any(mark.name == "localtest" for mark in item.parent.own_markers) or id(item.parent) in parents:
             if id(item.parent) not in parents:
                 item.parent.own_markers = [
-                    marker for marker in item.own_markers if getattr(marker, 'name', None) != 'localtest']
+                    marker for marker in item.own_markers if getattr(marker, "name", None) != "localtest"
+                ]
                 parents[id(item.parent)] = item.parent
-            if not item.get_closest_marker('azuretest'):
+            if not item.get_closest_marker("azuretest"):
                 # If item's parent was marked as 'localtest', mark the child as such, but not if
                 # it was marked as 'azuretest'.
                 item.add_marker(pytest.mark.localtest)

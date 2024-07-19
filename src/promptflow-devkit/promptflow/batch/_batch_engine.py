@@ -151,6 +151,7 @@ class BatchEngine:
         self._storage = storage if storage else DefaultRunStorage(base_dir=self._working_dir)
         self._kwargs = kwargs
 
+        self._batch_use_async = kwargs.get("batch_use_async", False)
         self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
         self._line_timeout_sec = line_timeout_sec or get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
         self._worker_count = worker_count or get_int_env_var("PF_WORKER_COUNT")
@@ -472,7 +473,7 @@ class BatchEngine:
 
         # execute lines
         is_timeout = False
-        if isinstance(self._executor_proxy, PythonExecutorProxy):
+        if not self._batch_use_async and isinstance(self._executor_proxy, PythonExecutorProxy):
             results, is_timeout = await self._executor_proxy._exec_batch(
                 inputs_to_run,
                 output_dir,
@@ -656,6 +657,8 @@ class BatchEngine:
 
     def _batch_timeout_expired(self) -> bool:
         # Currently, local PythonExecutorProxy will handle the batch timeout by itself.
-        if self._batch_timeout_sec is None or isinstance(self._executor_proxy, PythonExecutorProxy):
+        if self._batch_timeout_sec is None or (
+            not self._batch_use_async and isinstance(self._executor_proxy, PythonExecutorProxy)
+        ):
             return False
         return (datetime.utcnow() - self._start_time).total_seconds() > self._batch_timeout_sec
