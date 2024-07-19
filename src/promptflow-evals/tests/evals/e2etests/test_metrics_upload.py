@@ -10,8 +10,13 @@ from promptflow.evals.evaluate import _utils as ev_utils
 from promptflow.evals.evaluate._eval_run import EvalRun
 from promptflow.evals.evaluate._evaluate import evaluate
 from promptflow.evals.evaluators._f1_score._f1_score import F1ScoreEvaluator
-from promptflow.recording.record_mode import is_live
 from promptflow.tracing import _start_trace
+
+try:
+    from promptflow.recording.record_mode import is_live
+except ModuleNotFoundError:
+    # The file is being imported by the local test
+    pass
 
 
 @pytest.fixture
@@ -33,22 +38,12 @@ def questions_file():
 
 
 @pytest.fixture
-def setup_data(azure_ml_client, project_scope):
-    tracking_uri = azure_ml_client.workspaces.get(project_scope["project_name"]).mlflow_tracking_uri
-    run = EvalRun(
-        run_name="test",
-        tracking_uri=tracking_uri,
-        subscription_id=project_scope["subscription_id"],
-        group_name=project_scope["resource_group_name"],
-        workspace_name=project_scope["project_name"],
-        ml_client=azure_ml_client,
-    )
-    yield
-    run.end_run("FINISHED")
+def tracking_uri(azure_ml_client, project_scope):
+    return azure_ml_client.workspaces.get(project_scope["project_name"]).mlflow_tracking_uri
 
 
 @pytest.mark.usefixtures("model_config", "recording_injection", "project_scope")
-@pytest.mark.e2etest
+@pytest.mark.azuretest
 class TestMetricsUpload(object):
     """End to end tests to check how the metrics were uploaded to cloud."""
 
@@ -64,9 +59,9 @@ class TestMetricsUpload(object):
             assert not error_messages, "\n".join(error_messages)
 
     @pytest.mark.usefixtures("vcr_recording")
-    def test_writing_to_run_history(self, setup_data, caplog):
+    def test_writing_to_run_history(self, caplog, project_scope, azure_ml_client, tracking_uri):
         """Test logging data to RunHistory service."""
-        logger = logging.getLogger(ev_utils.__name__)
+        logger = logging.getLogger(EvalRun.__module__)
         # All loggers, having promptflow. prefix will have "promptflow" logger
         # as a parent. This logger does not propagate the logs and cannot be
         # captured by caplog. Here we will skip this logger to capture logs.
@@ -74,56 +69,77 @@ class TestMetricsUpload(object):
         # Just for sanity check let us make sure that the logging actually works
         mock_response = MagicMock()
         mock_response.status_code = 418
-        with patch("promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry", return_value=mock_response):
-            ev_utils._write_properties_to_run_history({"test": 42})
-            assert any(lg_rec.levelno == logging.ERROR for lg_rec in caplog.records), "The error log was not captured!"
-        caplog.clear()
-        ev_utils._write_properties_to_run_history({"test": 42})
-        self._assert_no_errors_for_module(caplog.records, [ev_utils.__name__])
+        with EvalRun(
+            run_name='test',
+            tracking_uri=tracking_uri,
+            subscription_id=project_scope["subscription_id"],
+            group_name=project_scope["resource_group_name"],
+            workspace_name=project_scope["project_name"],
+            ml_client=azure_ml_client
+        ) as ev_run:
+            with patch("promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry", return_value=mock_response):
+                ev_run.write_properties_to_run_history({"test": 42})
+                assert any(
+                    lg_rec.levelno == logging.ERROR for lg_rec in caplog.records), "The error log was not captured!"
+            caplog.clear()
+            ev_run.write_properties_to_run_history({"test": 42})
+        self._assert_no_errors_for_module(caplog.records, [EvalRun.__module__])
 
     @pytest.mark.usefixtures("vcr_recording")
-    def test_logging_metrics(self, setup_data, caplog):
+    def test_logging_metrics(self, caplog, project_scope, azure_ml_client, tracking_uri):
         """Test logging metrics."""
         logger = logging.getLogger(EvalRun.__module__)
         # All loggers, having promptflow. prefix will have "promptflow" logger
         # as a parent. This logger does not propagate the logs and cannot be
         # captured by caplog. Here we will skip this logger to capture logs.
         logger.parent = logging.root
-        ev_run = EvalRun.get_instance()
-        mock_response = MagicMock()
-        mock_response.status_code = 418
-        with patch("promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry", return_value=mock_response):
+        with EvalRun(
+            run_name='test',
+            tracking_uri=tracking_uri,
+            subscription_id=project_scope["subscription_id"],
+            group_name=project_scope["resource_group_name"],
+            workspace_name=project_scope["project_name"],
+            ml_client=azure_ml_client
+        ) as ev_run:
+            mock_response = MagicMock()
+            mock_response.status_code = 418
+            with patch("promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry", return_value=mock_response):
+                ev_run.log_metric("f1", 0.54)
+                assert any(
+                    lg_rec.levelno == logging.WARNING for lg_rec in caplog.records), "The error log was not captured!"
+            caplog.clear()
             ev_run.log_metric("f1", 0.54)
-            assert any(
-                lg_rec.levelno == logging.WARNING for lg_rec in caplog.records
-            ), "The error log was not captured!"
-        caplog.clear()
-        ev_run.log_metric("f1", 0.54)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
     @pytest.mark.usefixtures("vcr_recording")
-    def test_log_artifact(self, setup_data, caplog, tmp_path):
+    def test_log_artifact(self, project_scope, azure_ml_client, tracking_uri, caplog, tmp_path):
         """Test uploading artifact to the service."""
         logger = logging.getLogger(EvalRun.__module__)
         # All loggers, having promptflow. prefix will have "promptflow" logger
         # as a parent. This logger does not propagate the logs and cannot be
         # captured by caplog. Here we will skip this logger to capture logs.
         logger.parent = logging.root
-        ev_run = EvalRun.get_instance()
-        mock_response = MagicMock()
-        mock_response.status_code = 418
-        with open(os.path.join(tmp_path, EvalRun.EVALUATION_ARTIFACT), "w") as fp:
-            json.dump({"f1": 0.5}, fp)
-        os.makedirs(os.path.join(tmp_path, "internal_dir"), exist_ok=True)
-        with open(os.path.join(tmp_path, "internal_dir", "test.json"), "w") as fp:
-            json.dump({"internal_f1": 0.6}, fp)
-        with patch("promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry", return_value=mock_response):
+        with EvalRun(
+            run_name='test',
+            tracking_uri=tracking_uri,
+            subscription_id=project_scope["subscription_id"],
+            group_name=project_scope["resource_group_name"],
+            workspace_name=project_scope["project_name"],
+            ml_client=azure_ml_client
+        ) as ev_run:
+            mock_response = MagicMock()
+            mock_response.status_code = 418
+            with open(os.path.join(tmp_path, EvalRun.EVALUATION_ARTIFACT), 'w') as fp:
+                json.dump({'f1': 0.5}, fp)
+            os.makedirs(os.path.join(tmp_path, 'internal_dir'), exist_ok=True)
+            with open(os.path.join(tmp_path, 'internal_dir', 'test.json'), 'w') as fp:
+                json.dump({'internal_f1': 0.6}, fp)
+            with patch('promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry', return_value=mock_response):
+                ev_run.log_artifact(tmp_path)
+                assert any(
+                    lg_rec.levelno == logging.WARNING for lg_rec in caplog.records), "The error log was not captured!"
+            caplog.clear()
             ev_run.log_artifact(tmp_path)
-            assert any(
-                lg_rec.levelno == logging.WARNING for lg_rec in caplog.records
-            ), "The error log was not captured!"
-        caplog.clear()
-        ev_run.log_artifact(tmp_path)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
 
     @pytest.mark.performance_test

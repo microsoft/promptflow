@@ -240,24 +240,27 @@ class AdversarialSimulator:
 
         return JsonLineList(sim_results)
 
-    def _to_chat_protocol(self, *, conversation_history, template_parameters):
+    def _to_chat_protocol(self, *, conversation_history, template_parameters: Dict = None):
+        if template_parameters is None:
+            template_parameters = {}
         messages = []
         for _, m in enumerate(conversation_history):
             message = {"content": m.message, "role": m.role.value}
             if "context" in m.full_response:
                 message["context"] = m.full_response["context"]
             messages.append(message)
+        conversation_category = template_parameters.pop("metadata", {}).get("Category")
         template_parameters["metadata"] = {}
         for key in (
             "conversation_starter",
             "group_of_people",
-            "metadata",
             "target_population",
             "topic",
             "ch_template_placeholder",
         ):
             template_parameters.pop(key, None)
-
+        if conversation_category:
+            template_parameters["category"] = conversation_category
         return {
             "template_parameters": template_parameters,
             "messages": messages,
