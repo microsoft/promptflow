@@ -230,13 +230,13 @@ class CallbackConversationBot(ConversationBot):
     :type kwargs: Any
     """
     def __init__(
-            self,
-            callback: Callable,
-            user_template: str,
-            user_template_parameters: Dict,
-            *args,
-            **kwargs,
-        ) -> None:
+        self,
+        callback: Callable,
+        user_template: str,
+        user_template_parameters: Dict,
+        *args,
+        **kwargs,
+    ) -> None:
         self.callback = callback
         self.user_template = user_template
         self.user_template_parameters = user_template_parameters

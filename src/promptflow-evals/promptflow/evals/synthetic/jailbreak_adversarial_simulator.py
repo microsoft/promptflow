@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def monitor_adversarial_scenario(func) -> Callable:
     """Decorator to monitor adversarial scenario.
-    
+
     :param func: The function to be decorated.
     :type func: Callable
     :return: The decorated function.

@@ -72,7 +72,9 @@ class RunStatus(enum.Enum):
     TERMINATED = 3
 
 
-class EvalRun(contextlib.AbstractContextManager):
+class EvalRun(
+    contextlib.AbstractContextManager
+):  # pylint: disable=too-many-instance-attributes,docstring-missing-param
     """
     The simple singleton run class, used for accessing artifact store.
 
@@ -118,6 +120,7 @@ class EvalRun(contextlib.AbstractContextManager):
         self._run_name = run_name
         self._promptflow_run = promptflow_run
         self._status = RunStatus.NOT_STARTED
+        self._url_base = None
         self.info = None
 
     @property
@@ -237,7 +240,7 @@ class EvalRun(contextlib.AbstractContextManager):
         self._start_run()
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_tb):
+    def __exit__(self, exc_type, exc_value, exc_tb):  # pylint: disable=docstring-missing-param
         """The context manager exit call."""
         self._end_run("FINISHED")
 
@@ -332,11 +335,11 @@ class EvalRun(contextlib.AbstractContextManager):
         )
 
     def _check_state_and_log(
-            self,
-            action: str,
-            bad_states: Set[RunStatus],
-            should_raise: bool
-        ) -> bool:
+        self,
+        action: str,
+        bad_states: Set[RunStatus],
+        should_raise: bool
+    ) -> bool:
         """
         Check that the run is in the correct state and log worning if it is not.
 
