@@ -138,5 +138,5 @@ skip_glob = [
   "pytest/**",
   "samples/**",
 ]
-known_third_party = azure,mock,numpy,pandas,pydash,pytest,pytest_mock,requests,setuptools,six,sklearn,tqdm,urllib3,utilities,utils,yaml,jsonschema,strictyaml,jwt,pathspec,isodate,docker
-known_first_party = promptflow
+known_third_party = ["azure", "mock", "numpy", "pandas", "pydash", "pytest", "pytest_mock", "requests", "setuptools", "six", "sklearn", "tqdm", "urllib3", "utilities", "utils", "yaml", "jsonschema", "strictyaml", "jwt", "pathspec", "isodate", "docker"]
+known_first_party = ["promptflow"]
