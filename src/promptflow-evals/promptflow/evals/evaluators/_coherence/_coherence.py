@@ -4,7 +4,6 @@
 
 import os
 import re
-from typing import Dict
 
 import numpy as np
 
@@ -24,9 +23,7 @@ class _AsyncCoherenceEvaluator:
 
         prompty_model_config = {"configuration": model_config}
         if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration):
-            prompty_model_config.update(
-                {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
-            )
+            prompty_model_config.update({"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}})
         current_dir = os.path.dirname(__file__)
         prompty_path = os.path.join(current_dir, "coherence.prompty")
         self._flow = AsyncPrompty.load(source=prompty_path, model=prompty_model_config)
@@ -79,7 +76,7 @@ class CoherenceEvaluator:
     def __init__(self, model_config: AzureOpenAIModelConfiguration):
         self._async_evaluator = _AsyncCoherenceEvaluator(model_config)
 
-    def __call__(self, *, question: str, answer: str, **kwargs) -> Dict[str, float]:
+    def __call__(self, *, question: str, answer: str, **kwargs):
         """
         Evaluate coherence.
 

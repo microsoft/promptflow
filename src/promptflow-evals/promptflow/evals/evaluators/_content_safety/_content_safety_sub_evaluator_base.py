@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from abc import ABC
-from typing import Dict, List
 
 try:
     from .common.constants import EvaluationMetrics
@@ -24,7 +23,7 @@ class ContentSafetySubEvaluatorBase(ABC):
     :type metric: ~promptflow.evals.evaluators._content_safety.flow.constants.EvaluationMetrics
     :param project_scope: The scope of the Azure AI project.
         It contains subscription id, resource group, and project name.
-    :type project_scope: dict
+    :type project_scope: Dict
     :param credential: The credential for connecting to Azure AI project.
     :type credential: TokenCredential
     """
@@ -34,7 +33,7 @@ class ContentSafetySubEvaluatorBase(ABC):
         self._project_scope = project_scope
         self._credential = credential
 
-    def __call__(self, *, question: str, answer: str, **kwargs) -> List[List[Dict]]:
+    def __call__(self, *, question: str, answer: str, **kwargs):
         """
         Evaluates content according to this evaluator's metric.
 
@@ -43,13 +42,12 @@ class ContentSafetySubEvaluatorBase(ABC):
         :keyword answer: The answer to be evaluated.
         :paramtype answer: str
         :return: The evaluation score computation based on the Content Safety metric (self.metric).
-        :rtype: List[List[Dict]]
+        :rtype: Any
         """
         # Validate inputs
         # Raises value error if failed, so execution alone signifies success.
         _ = validate_inputs(question=question, answer=answer)
 
-        # question: str, answer: str, metric_name: str, project_scope: dict, credential: TokenCredential
         # Run score computation based on supplied metric.
         result = evaluate_with_rai_service(
             metric_name=self._metric,

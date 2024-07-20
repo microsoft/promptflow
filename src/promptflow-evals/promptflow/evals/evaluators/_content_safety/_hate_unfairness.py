@@ -1,9 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import Dict, Union
-
-from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
 
 try:
     from ._content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
@@ -46,9 +43,7 @@ class HateUnfairnessEvaluator(ContentSafetySubEvaluatorBase):
         }
     """
 
-    def __init__(
-        self, project_scope: Dict, credential: Union[DefaultAzureCredential, ManagedIdentityCredential] = None
-    ) -> None:
+    def __init__(self, project_scope: dict, credential=None) -> None:
         # Hate_fairness is the actual backend metric name. Which, uh, doesn't sound great.
         # so invert the name.
         super().__init__(

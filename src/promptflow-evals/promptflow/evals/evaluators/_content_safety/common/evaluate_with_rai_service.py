@@ -215,7 +215,7 @@ def parse_response(  # pylint: disable=too-many-branches,too-many-statements
     return result
 
 
-def _get_service_discovery_url(azure_ai_project: Dict, token: str) -> str:
+def _get_service_discovery_url(azure_ai_project: dict, token: str) -> str:
     """Get the discovery service URL for the Azure AI project
 
     :param azure_ai_project: The Azure AI project details.
@@ -240,7 +240,7 @@ def _get_service_discovery_url(azure_ai_project: Dict, token: str) -> str:
     return f"{base_url.scheme}://{base_url.netloc}"
 
 
-def get_rai_svc_url(project_scope: Dict, token: str) -> str:
+def get_rai_svc_url(project_scope: dict, token: str) -> str:
     """Get the Responsible AI service URL
 
     :param project_scope: The Azure AI project scope details.
@@ -294,8 +294,8 @@ def fetch_or_reuse_token(credential: TokenCredential, token: str = None) -> str:
 
 
 def evaluate_with_rai_service(
-    question: str, answer: str, metric_name: str, project_scope: Dict, credential: TokenCredential
-) -> List[List[Dict]]:
+    question: str, answer: str, metric_name: str, project_scope: dict, credential: TokenCredential
+):
     """ "Evaluate the content safety of the answer using Responsible AI service
 
     :param question: The question to evaluate.
