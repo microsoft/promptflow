@@ -1,0 +1,732 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "system", "content": "You are an AI assistant. You
+      will be given the definition of an evaluation metric for assessing the quality
+      of an answer in a question-answering task. Your job is to compute an accurate
+      evaluation score using the provided evaluation metric. You should return a single
+      integer value between 1 to 5 representing the evaluation metric. You will include
+      no other text or information."}, {"role": "user", "content": "Fluency measures
+      the quality of individual sentences in the answer, and whether they are well-written
+      and grammatically correct. Consider the quality of individual sentences when
+      evaluating fluency. Given the question and answer, score the fluency of the
+      answer between one to five stars using the following rating scale:\nOne star:
+      the answer completely lacks fluency\nTwo stars: the answer mostly lacks fluency\nThree
+      stars: the answer is partially fluent\nFour stars: the answer is mostly fluent\nFive
+      stars: the answer has perfect fluency\n\nThis rating value should always be
+      an integer between 1 and 5. So the rating produced should be 1 or 2 or 3 or
+      4 or 5.\n\nquestion: What did you have for breakfast today?\nanswer: Breakfast
+      today, me eating cereal and orange juice very good.\nstars: 1\n\nquestion: How
+      do you feel when you travel alone?\nanswer: Alone travel, nervous, but excited
+      also. I feel adventure and like its time.\nstars: 2\n\nquestion: When was the
+      last time you went on a family vacation?\nanswer: Last family vacation, it took
+      place in last summer. We traveled to a beach destination, very fun.\nstars:
+      3\n\nquestion: What is your favorite thing about your job?\nanswer: My favorite
+      aspect of my job is the chance to interact with diverse people. I am constantly
+      learning from their experiences and stories.\nstars: 4\n\nquestion: Can you
+      describe your morning routine?\nanswer: Every morning, I wake up at 6 am, drink
+      a glass of water, and do some light stretching. After that, I take a shower
+      and get dressed for work. Then, I have a healthy breakfast, usually consisting
+      of oatmeal and fruits, before leaving the house around 7:30 am.\nstars: 5\n\nquestion:
+      What is the value of 2 + 2?\nanswer: 2 + 2 = 4\nstars:"}], "model": "gpt-35-turbo",
+      "frequency_penalty": 0, "max_tokens": 1, "presence_penalty": 0, "response_format":
+      {"type": "text"}, "temperature": 0.0, "top_p": 1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      api-key:
+      - 73963c03086243b3ae5665565fcaae42
+      connection:
+      - keep-alive
+      content-length:
+      - '2361'
+      content-type:
+      - application/json
+      host:
+      - eastus.api.cognitive.microsoft.com
+      ms-azure-ai-promptflow:
+      - '{}'
+      ms-azure-ai-promptflow-called-from:
+      - promptflow-core
+      user-agent:
+      - AsyncAzureOpenAI/Python 1.35.14
+      x-ms-useragent:
+      - promptflow-sdk/1.14.0.dev0 promptflow-tracing/1.14.0.dev0 promptflow-evals/0.1.0.dev0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.35.14
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.9.19
+    method: POST
+    uri: https://eastus.api.cognitive.microsoft.com//openai/deployments/gpt-35-turbo/chat/completions?api-version=2024-06-01
+  response:
+    content: '{"choices": [{"content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}, "finish_reason": "length", "index": 0, "logprobs": null, "message":
+      {"content": "5", "role": "assistant"}}], "created": 1721427511, "id": "chatcmpl-9mqDn06q8DD7aATrp3YsmmT2ka3TR",
+      "model": "gpt-35-turbo", "object": "chat.completion", "prompt_filter_results":
+      [{"prompt_index": 0, "content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}}], "system_fingerprint": null, "usage": {"completion_tokens": 1, "prompt_tokens":
+      484, "total_tokens": 485}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      apim-request-id:
+      - 62463e95-2f3a-4789-8bdd-64b2167b78da
+      azureml-model-session:
+      - turbo-0301-939b4ecf
+      cache-control:
+      - no-cache, must-revalidate
+      content-length:
+      - '799'
+      content-type:
+      - application/json
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-accel-buffering:
+      - 'no'
+      x-content-type-options:
+      - nosniff
+      x-ms-rai-invoked:
+      - 'true'
+      x-ms-region:
+      - East US
+      x-ratelimit-remaining-requests:
+      - '238'
+      x-ratelimit-remaining-tokens:
+      - '239987'
+      x-request-id:
+      - a1441385-9f38-4cae-906e-2e692656e440
+    http_version: HTTP/1.1
+    status_code: 200
+- request:
+    body: '{"messages": [{"role": "system", "content": "You are an AI assistant. You
+      will be given the definition of an evaluation metric for assessing the quality
+      of an answer in a question-answering task. Your job is to compute an accurate
+      evaluation score using the provided evaluation metric. You should return a single
+      integer value between 1 to 5 representing the evaluation metric. You will include
+      no other text or information."}, {"role": "user", "content": "Relevance measures
+      how well the answer addresses the main aspects of the question, based on the
+      context. Consider whether all and only the important aspects are contained in
+      the answer when evaluating relevance. Given the context and question, score
+      the relevance of the answer between one to five stars using the following rating
+      scale:\nOne star: the answer completely lacks relevance\nTwo stars: the answer
+      mostly lacks relevance\nThree stars: the answer is partially relevant\nFour
+      stars: the answer is mostly relevant\nFive stars: the answer has perfect relevance\n\nThis
+      rating value should always be an integer between 1 and 5. So the rating produced
+      should be 1 or 2 or 3 or 4 or 5.\n\ncontext: Marie Curie was a Polish-born physicist
+      and chemist who pioneered research on radioactivity and was the first woman
+      to win a Nobel Prize.\nquestion: What field did Marie Curie excel in?\nanswer:
+      Marie Curie was a renowned painter who focused mainly on impressionist styles
+      and techniques.\nstars: 1\n\ncontext: The Beatles were an English rock band
+      formed in Liverpool in 1960, and they are widely regarded as the most influential
+      music band in history.\nquestion: Where were The Beatles formed?\nanswer: The
+      band The Beatles began their journey in London, England, and they changed the
+      history of music.\nstars: 2\n\ncontext: The recent Mars rover, Perseverance,
+      was launched in 2020 with the main goal of searching for signs of ancient life
+      on Mars. The rover also carries an experiment called MOXIE, which aims to generate
+      oxygen from the Martian atmosphere.\nquestion: What are the main goals of Perseverance
+      Mars rover mission?\nanswer: The Perseverance Mars rover mission focuses on
+      searching for signs of ancient life on Mars.\nstars: 3\n\ncontext: The Mediterranean
+      diet is a commonly recommended dietary plan that emphasizes fruits, vegetables,
+      whole grains, legumes, lean proteins, and healthy fats. Studies have shown that
+      it offers numerous health benefits, including a reduced risk of heart disease
+      and improved cognitive health.\nquestion: What are the main components of the
+      Mediterranean diet?\nanswer: The Mediterranean diet primarily consists of fruits,
+      vegetables, whole grains, and legumes.\nstars: 4\n\ncontext: The Queen''s Royal
+      Castle is a well-known tourist attraction in the United Kingdom. It spans over
+      500 acres and contains extensive gardens and parks. The castle was built in
+      the 15th century and has been home to generations of royalty.\nquestion: What
+      are the main attractions of the Queen''s Royal Castle?\nanswer: The main attractions
+      of the Queen''s Royal Castle are its expansive 500-acre grounds, extensive gardens,
+      parks, and the historical castle itself, which dates back to the 15th century
+      and has housed generations of royalty.\nstars: 5\n\ncontext: [{\"id\": \"doc.md\",
+      \"content\": \"Information about additions: 1 + 2 = 3, 2 + 2 = 4\"}]\nquestion:
+      What is the value of 2 + 2?\nanswer: 2 + 2 = 4\nstars:"}], "model": "gpt-35-turbo",
+      "frequency_penalty": 0, "max_tokens": 1, "presence_penalty": 0, "response_format":
+      {"type": "text"}, "temperature": 0.0, "top_p": 1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      api-key:
+      - 73963c03086243b3ae5665565fcaae42
+      connection:
+      - keep-alive
+      content-length:
+      - '3570'
+      content-type:
+      - application/json
+      host:
+      - eastus.api.cognitive.microsoft.com
+      ms-azure-ai-promptflow:
+      - '{}'
+      ms-azure-ai-promptflow-called-from:
+      - promptflow-core
+      user-agent:
+      - AsyncAzureOpenAI/Python 1.35.14
+      x-ms-useragent:
+      - promptflow-sdk/1.14.0.dev0 promptflow-tracing/1.14.0.dev0 promptflow-evals/0.1.0.dev0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.35.14
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.9.19
+    method: POST
+    uri: https://eastus.api.cognitive.microsoft.com//openai/deployments/gpt-35-turbo/chat/completions?api-version=2024-06-01
+  response:
+    content: '{"choices": [{"content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}, "finish_reason": "length", "index": 0, "logprobs": null, "message":
+      {"content": "5", "role": "assistant"}}], "created": 1721427511, "id": "chatcmpl-9mqDnnPsJHlDCrsHIMVJmzd70Lmzp",
+      "model": "gpt-35-turbo", "object": "chat.completion", "prompt_filter_results":
+      [{"prompt_index": 0, "content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}}], "system_fingerprint": null, "usage": {"completion_tokens": 1, "prompt_tokens":
+      719, "total_tokens": 720}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      apim-request-id:
+      - 4c059a43-452f-4bd2-bc92-61960680d340
+      azureml-model-session:
+      - turbo-0301-a605b9fb
+      cache-control:
+      - no-cache, must-revalidate
+      content-length:
+      - '799'
+      content-type:
+      - application/json
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-accel-buffering:
+      - 'no'
+      x-content-type-options:
+      - nosniff
+      x-ms-rai-invoked:
+      - 'true'
+      x-ms-region:
+      - East US
+      x-ratelimit-remaining-requests:
+      - '239'
+      x-ratelimit-remaining-tokens:
+      - '239988'
+      x-request-id:
+      - 22413f60-ed7b-4cd0-a8b4-09698c25f19a
+    http_version: HTTP/1.1
+    status_code: 200
+- request:
+    body: '{"messages": [{"role": "system", "content": "You are an AI assistant. You
+      will be given the definition of an evaluation metric for assessing the quality
+      of an answer in a question-answering task. Your job is to compute an accurate
+      evaluation score using the provided evaluation metric. You should return a single
+      integer value between 1 to 5 representing the evaluation metric. You will include
+      no other text or information."}, {"role": "user", "content": "Coherence of an
+      answer is measured by how well all the sentences fit together and sound naturally
+      as a whole. Consider the overall quality of the answer when evaluating coherence.
+      Given the question and answer, score the coherence of answer between one to
+      five stars using the following rating scale:\nOne star: the answer completely
+      lacks coherence\nTwo stars: the answer mostly lacks coherence\nThree stars:
+      the answer is partially coherent\nFour stars: the answer is mostly coherent\nFive
+      stars: the answer has perfect coherency\n\nThis rating value should always be
+      an integer between 1 and 5. So the rating produced should be 1 or 2 or 3 or
+      4 or 5.\n\nquestion: What is your favorite indoor activity and why do you enjoy
+      it?\nanswer: I like pizza. The sun is shining.\nstars: 1\n\nquestion: Can you
+      describe your favorite movie without giving away any spoilers?\nanswer: It is
+      a science fiction movie. There are dinosaurs. The actors eat cake. People must
+      stop the villain.\nstars: 2\n\nquestion: What are some benefits of regular exercise?\nanswer:
+      Regular exercise improves your mood. A good workout also helps you sleep better.
+      Trees are green.\nstars: 3\n\nquestion: How do you cope with stress in your
+      daily life?\nanswer: I usually go for a walk to clear my head. Listening to
+      music helps me relax as well. Stress is a part of life, but we can manage it
+      through some activities.\nstars: 4\n\nquestion: What can you tell me about climate
+      change and its effects on the environment?\nanswer: Climate change has far-reaching
+      effects on the environment. Rising temperatures result in the melting of polar
+      ice caps, contributing to sea-level rise. Additionally, more frequent and severe
+      weather events, such as hurricanes and heatwaves, can cause disruption to ecosystems
+      and human societies alike.\nstars: 5\n\nquestion: What is the value of 2 + 2?\nanswer:
+      2 + 2 = 4\nstars:"}], "model": "gpt-35-turbo", "frequency_penalty": 0, "max_tokens":
+      1, "presence_penalty": 0, "response_format": {"type": "text"}, "temperature":
+      0.0, "top_p": 1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      api-key:
+      - 73963c03086243b3ae5665565fcaae42
+      connection:
+      - keep-alive
+      content-length:
+      - '2502'
+      content-type:
+      - application/json
+      host:
+      - eastus.api.cognitive.microsoft.com
+      ms-azure-ai-promptflow:
+      - '{}'
+      ms-azure-ai-promptflow-called-from:
+      - promptflow-core
+      user-agent:
+      - AsyncAzureOpenAI/Python 1.35.14
+      x-ms-useragent:
+      - promptflow-sdk/1.14.0.dev0 promptflow-tracing/1.14.0.dev0 promptflow-evals/0.1.0.dev0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.35.14
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.9.19
+    method: POST
+    uri: https://eastus.api.cognitive.microsoft.com//openai/deployments/gpt-35-turbo/chat/completions?api-version=2024-06-01
+  response:
+    content: '{"choices": [{"content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}, "finish_reason": "length", "index": 0, "logprobs": null, "message":
+      {"content": "5", "role": "assistant"}}], "created": 1721427511, "id": "chatcmpl-9mqDnlPhGMczMCIh1nGSDanMhOgw6",
+      "model": "gpt-35-turbo", "object": "chat.completion", "prompt_filter_results":
+      [{"prompt_index": 0, "content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}}], "system_fingerprint": null, "usage": {"completion_tokens": 1, "prompt_tokens":
+      494, "total_tokens": 495}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      apim-request-id:
+      - 8f64cdf4-3984-4795-ae90-98c457249b0c
+      azureml-model-session:
+      - turbo-0301-939b4ecf
+      cache-control:
+      - no-cache, must-revalidate
+      content-length:
+      - '799'
+      content-type:
+      - application/json
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-accel-buffering:
+      - 'no'
+      x-content-type-options:
+      - nosniff
+      x-ms-rai-invoked:
+      - 'true'
+      x-ms-region:
+      - East US
+      x-ratelimit-remaining-requests:
+      - '239'
+      x-ratelimit-remaining-tokens:
+      - '239988'
+      x-request-id:
+      - 4fa5d7ec-c432-48ad-bf6e-550f91437455
+    http_version: HTTP/1.1
+    status_code: 200
+- request:
+    body: '{"messages": [{"role": "system", "content": "You are an AI assistant. You
+      will be given the definition of an evaluation metric for assessing the quality
+      of an answer in a question-answering task. Your job is to compute an accurate
+      evaluation score using the provided evaluation metric. You should return a single
+      integer value between 1 to 5 representing the evaluation metric. You will include
+      no other text or information."}, {"role": "user", "content": "You will be presented
+      with a CONTEXT and an ANSWER about that CONTEXT. You need to decide whether
+      the ANSWER is entailed by the CONTEXT by choosing one of the following rating:\n1.
+      5: The ANSWER follows logically from the information contained in the CONTEXT.\n2.
+      1: The ANSWER is logically false from the information contained in the CONTEXT.\n3.
+      an integer score between 1 and 5 and if such integer score does not exist, use
+      1: It is not possible to determine whether the ANSWER is true or false without
+      further information. Read the passage of information thoroughly and select the
+      correct answer from the three answer labels. Read the CONTEXT thoroughly to
+      ensure you know what the CONTEXT entails. Note the ANSWER is generated by a
+      computer system, it can contain certain symbols, which should not be a negative
+      factor in the evaluation.\nIndependent Examples:\n## Example Task #1 Input:\n{\"CONTEXT\":
+      \"Some are reported as not having been wanted at all.\", \"QUESTION\": \"\",
+      \"ANSWER\": \"All are reported as being completely and fully wanted.\"}\n##
+      Example Task #1 Output:\n1\n## Example Task #2 Input:\n{\"CONTEXT\": \"Ten new
+      television shows appeared during the month of September. Five of the shows were
+      sitcoms, three were hourlong dramas, and two were news-magazine shows. By January,
+      only seven of these new shows were still on the air. Five of the shows that
+      remained were sitcoms.\", \"QUESTION\": \"\", \"ANSWER\": \"At least one of
+      the shows that were cancelled was an hourlong drama.\"}\n## Example Task #2
+      Output:\n5\n## Example Task #3 Input:\n{\"CONTEXT\": \"In Quebec, an allophone
+      is a resident, usually an immigrant, whose mother tongue or home language is
+      neither French nor English.\", \"QUESTION\": \"\", \"ANSWER\": \"In Quebec,
+      an allophone is a resident, usually an immigrant, whose mother tongue or home
+      language is not French.\"}\n## Example Task #3 Output:\n5\n## Example Task #4
+      Input:\n{\"CONTEXT\": \"Some are reported as not having been wanted at all.\",
+      \"QUESTION\": \"\", \"ANSWER\": \"All are reported as being completely and fully
+      wanted.\"}\n## Example Task #4 Output:\n1\n## Actual Task Input:\n{\"CONTEXT\":
+      [{\"id\": \"doc.md\", \"content\": \"Information about additions: 1 + 2 = 3,
+      2 + 2 = 4\"}], \"QUESTION\": \"\", \"ANSWER\": 2 + 2 = 4}\nReminder: The return
+      values for each task should be correctly formatted as an integer between 1 and
+      5. Do not repeat the context and question.\nActual Task Output:"}], "model":
+      "gpt-35-turbo", "frequency_penalty": 0, "max_tokens": 1, "presence_penalty":
+      0, "response_format": {"type": "text"}, "temperature": 0.0, "top_p": 1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      api-key:
+      - 73963c03086243b3ae5665565fcaae42
+      connection:
+      - keep-alive
+      content-length:
+      - '3079'
+      content-type:
+      - application/json
+      host:
+      - eastus.api.cognitive.microsoft.com
+      ms-azure-ai-promptflow:
+      - '{}'
+      ms-azure-ai-promptflow-called-from:
+      - promptflow-core
+      user-agent:
+      - AsyncAzureOpenAI/Python 1.35.14
+      x-ms-useragent:
+      - promptflow-sdk/1.14.0.dev0 promptflow-tracing/1.14.0.dev0 promptflow-evals/0.1.0.dev0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.35.14
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.9.19
+    method: POST
+    uri: https://eastus.api.cognitive.microsoft.com//openai/deployments/gpt-35-turbo/chat/completions?api-version=2024-06-01
+  response:
+    content: '{"choices": [{"content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}, "finish_reason": "length", "index": 0, "logprobs": null, "message":
+      {"content": "5", "role": "assistant"}}], "created": 1721427511, "id": "chatcmpl-9mqDnBx7hswuNRnVzI4ieSotvbg48",
+      "model": "gpt-35-turbo", "object": "chat.completion", "prompt_filter_results":
+      [{"prompt_index": 0, "content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}}], "system_fingerprint": null, "usage": {"completion_tokens": 1, "prompt_tokens":
+      643, "total_tokens": 644}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      apim-request-id:
+      - 2001ae6e-d504-4911-bfaf-2ce87a3a69a7
+      azureml-model-session:
+      - turbo-0301-79ba370e
+      cache-control:
+      - no-cache, must-revalidate
+      content-length:
+      - '799'
+      content-type:
+      - application/json
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-accel-buffering:
+      - 'no'
+      x-content-type-options:
+      - nosniff
+      x-ms-rai-invoked:
+      - 'true'
+      x-ms-region:
+      - East US
+      x-ratelimit-remaining-requests:
+      - '238'
+      x-ratelimit-remaining-tokens:
+      - '239987'
+      x-request-id:
+      - 8b6b3795-5c93-4251-8f5a-f2c76f50f2ce
+    http_version: HTTP/1.1
+    status_code: 200
+- request:
+    body: '{"messages": [{"role": "system", "content": "You are an AI assistant. You
+      will be given the definition of an evaluation metric for assessing the quality
+      of an answer in a question-answering task. Your job is to compute an accurate
+      evaluation score using the provided evaluation metric. You should return a single
+      integer value between 1 to 5 representing the evaluation metric. You will include
+      no other text or information."}, {"role": "user", "content": "You will be presented
+      with a CONTEXT and an ANSWER about that CONTEXT. You need to decide whether
+      the ANSWER is entailed by the CONTEXT by choosing one of the following rating:\n1.
+      5: The ANSWER follows logically from the information contained in the CONTEXT.\n2.
+      1: The ANSWER is logically false from the information contained in the CONTEXT.\n3.
+      an integer score between 1 and 5 and if such integer score does not exist, use
+      1: It is not possible to determine whether the ANSWER is true or false without
+      further information. Read the passage of information thoroughly and select the
+      correct answer from the three answer labels. Read the CONTEXT thoroughly to
+      ensure you know what the CONTEXT entails. Note the ANSWER is generated by a
+      computer system, it can contain certain symbols, which should not be a negative
+      factor in the evaluation.\nIndependent Examples:\n## Example Task #1 Input:\n{\"CONTEXT\":
+      \"Some are reported as not having been wanted at all.\", \"QUESTION\": \"\",
+      \"ANSWER\": \"All are reported as being completely and fully wanted.\"}\n##
+      Example Task #1 Output:\n1\n## Example Task #2 Input:\n{\"CONTEXT\": \"Ten new
+      television shows appeared during the month of September. Five of the shows were
+      sitcoms, three were hourlong dramas, and two were news-magazine shows. By January,
+      only seven of these new shows were still on the air. Five of the shows that
+      remained were sitcoms.\", \"QUESTION\": \"\", \"ANSWER\": \"At least one of
+      the shows that were cancelled was an hourlong drama.\"}\n## Example Task #2
+      Output:\n5\n## Example Task #3 Input:\n{\"CONTEXT\": \"In Quebec, an allophone
+      is a resident, usually an immigrant, whose mother tongue or home language is
+      neither French nor English.\", \"QUESTION\": \"\", \"ANSWER\": \"In Quebec,
+      an allophone is a resident, usually an immigrant, whose mother tongue or home
+      language is not French.\"}\n## Example Task #3 Output:\n5\n## Example Task #4
+      Input:\n{\"CONTEXT\": \"Some are reported as not having been wanted at all.\",
+      \"QUESTION\": \"\", \"ANSWER\": \"All are reported as being completely and fully
+      wanted.\"}\n## Example Task #4 Output:\n1\n## Actual Task Input:\n{\"CONTEXT\":
+      [{\"id\": \"doc.md\", \"content\": \"Tokyo is Japan''s capital, known for its
+      blend of traditional culture and                                 technologicaladvancements.\"}],
+      \"QUESTION\": \"\", \"ANSWER\": The capital of Japan is Tokyo.}\nReminder: The
+      return values for each task should be correctly formatted as an integer between
+      1 and 5. Do not repeat the context and question.\nActual Task Output:"}], "model":
+      "gpt-35-turbo", "frequency_penalty": 0, "max_tokens": 1, "presence_penalty":
+      0, "response_format": {"type": "text"}, "temperature": 0.0, "top_p": 1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      api-key:
+      - 73963c03086243b3ae5665565fcaae42
+      connection:
+      - keep-alive
+      content-length:
+      - '3182'
+      content-type:
+      - application/json
+      host:
+      - eastus.api.cognitive.microsoft.com
+      ms-azure-ai-promptflow:
+      - '{}'
+      ms-azure-ai-promptflow-called-from:
+      - promptflow-core
+      user-agent:
+      - AsyncAzureOpenAI/Python 1.35.14
+      x-ms-useragent:
+      - promptflow-sdk/1.14.0.dev0 promptflow-tracing/1.14.0.dev0 promptflow-evals/0.1.0.dev0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.35.14
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.9.19
+    method: POST
+    uri: https://eastus.api.cognitive.microsoft.com//openai/deployments/gpt-35-turbo/chat/completions?api-version=2024-06-01
+  response:
+    content: '{"choices": [{"content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}, "finish_reason": "length", "index": 0, "logprobs": null, "message":
+      {"content": "5", "role": "assistant"}}], "created": 1721427511, "id": "chatcmpl-9mqDnF3BjTCsD7ymccINRGl47hwqt",
+      "model": "gpt-35-turbo", "object": "chat.completion", "prompt_filter_results":
+      [{"prompt_index": 0, "content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}}], "system_fingerprint": null, "usage": {"completion_tokens": 1, "prompt_tokens":
+      640, "total_tokens": 641}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      apim-request-id:
+      - fdbdb5f5-be70-43bd-872b-de8eec70c9cd
+      azureml-model-session:
+      - turbo-0301-939b4ecf
+      cache-control:
+      - no-cache, must-revalidate
+      content-length:
+      - '799'
+      content-type:
+      - application/json
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-accel-buffering:
+      - 'no'
+      x-content-type-options:
+      - nosniff
+      x-ms-rai-invoked:
+      - 'true'
+      x-ms-region:
+      - East US
+      x-ratelimit-remaining-requests:
+      - '235'
+      x-ratelimit-remaining-tokens:
+      - '239985'
+      x-request-id:
+      - ed9ffc3b-470f-4871-9be3-1048f59e16f0
+    http_version: HTTP/1.1
+    status_code: 200
+- request:
+    body: '{"messages": [{"role": "system", "content": "You are an AI assistant. You
+      will be given the definition of an evaluation metric for assessing the quality
+      of an answer in a question-answering task. Your job is to compute an accurate
+      evaluation score using the provided evaluation metric. You should return a single
+      integer value between 1 to 5 representing the evaluation metric. You will include
+      no other text or information."}, {"role": "user", "content": "Relevance measures
+      how well the answer addresses the main aspects of the question, based on the
+      context. Consider whether all and only the important aspects are contained in
+      the answer when evaluating relevance. Given the context and question, score
+      the relevance of the answer between one to five stars using the following rating
+      scale:\nOne star: the answer completely lacks relevance\nTwo stars: the answer
+      mostly lacks relevance\nThree stars: the answer is partially relevant\nFour
+      stars: the answer is mostly relevant\nFive stars: the answer has perfect relevance\n\nThis
+      rating value should always be an integer between 1 and 5. So the rating produced
+      should be 1 or 2 or 3 or 4 or 5.\n\ncontext: Marie Curie was a Polish-born physicist
+      and chemist who pioneered research on radioactivity and was the first woman
+      to win a Nobel Prize.\nquestion: What field did Marie Curie excel in?\nanswer:
+      Marie Curie was a renowned painter who focused mainly on impressionist styles
+      and techniques.\nstars: 1\n\ncontext: The Beatles were an English rock band
+      formed in Liverpool in 1960, and they are widely regarded as the most influential
+      music band in history.\nquestion: Where were The Beatles formed?\nanswer: The
+      band The Beatles began their journey in London, England, and they changed the
+      history of music.\nstars: 2\n\ncontext: The recent Mars rover, Perseverance,
+      was launched in 2020 with the main goal of searching for signs of ancient life
+      on Mars. The rover also carries an experiment called MOXIE, which aims to generate
+      oxygen from the Martian atmosphere.\nquestion: What are the main goals of Perseverance
+      Mars rover mission?\nanswer: The Perseverance Mars rover mission focuses on
+      searching for signs of ancient life on Mars.\nstars: 3\n\ncontext: The Mediterranean
+      diet is a commonly recommended dietary plan that emphasizes fruits, vegetables,
+      whole grains, legumes, lean proteins, and healthy fats. Studies have shown that
+      it offers numerous health benefits, including a reduced risk of heart disease
+      and improved cognitive health.\nquestion: What are the main components of the
+      Mediterranean diet?\nanswer: The Mediterranean diet primarily consists of fruits,
+      vegetables, whole grains, and legumes.\nstars: 4\n\ncontext: The Queen''s Royal
+      Castle is a well-known tourist attraction in the United Kingdom. It spans over
+      500 acres and contains extensive gardens and parks. The castle was built in
+      the 15th century and has been home to generations of royalty.\nquestion: What
+      are the main attractions of the Queen''s Royal Castle?\nanswer: The main attractions
+      of the Queen''s Royal Castle are its expansive 500-acre grounds, extensive gardens,
+      parks, and the historical castle itself, which dates back to the 15th century
+      and has housed generations of royalty.\nstars: 5\n\ncontext: [{\"id\": \"doc.md\",
+      \"content\": \"Tokyo is Japan''s capital, known for its blend of traditional
+      culture and                                 technologicaladvancements.\"}]\nquestion:
+      What is the capital of Japan?\nanswer: The capital of Japan is Tokyo.\nstars:"}],
+      "model": "gpt-35-turbo", "frequency_penalty": 0, "max_tokens": 1, "presence_penalty":
+      0, "response_format": {"type": "text"}, "temperature": 0.0, "top_p": 1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      api-key:
+      - 73963c03086243b3ae5665565fcaae42
+      connection:
+      - keep-alive
+      content-length:
+      - '3675'
+      content-type:
+      - application/json
+      host:
+      - eastus.api.cognitive.microsoft.com
+      ms-azure-ai-promptflow:
+      - '{}'
+      ms-azure-ai-promptflow-called-from:
+      - promptflow-core
+      user-agent:
+      - AsyncAzureOpenAI/Python 1.35.14
+      x-ms-useragent:
+      - promptflow-sdk/1.14.0.dev0 promptflow-tracing/1.14.0.dev0 promptflow-evals/0.1.0.dev0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.35.14
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.9.19
+    method: POST
+    uri: https://eastus.api.cognitive.microsoft.com//openai/deployments/gpt-35-turbo/chat/completions?api-version=2024-06-01
+  response:
+    content: '{"choices": [{"content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}, "finish_reason": "length", "index": 0, "logprobs": null, "message":
+      {"content": "5", "role": "assistant"}}], "created": 1721427511, "id": "chatcmpl-9mqDnIeTxlp8NbTA6yRlS3UMKzTxc",
+      "model": "gpt-35-turbo", "object": "chat.completion", "prompt_filter_results":
+      [{"prompt_index": 0, "content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}}], "system_fingerprint": null, "usage": {"completion_tokens": 1, "prompt_tokens":
+      711, "total_tokens": 712}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      apim-request-id:
+      - fe85f988-66eb-457d-ab41-95c812e74f4d
+      azureml-model-session:
+      - turbo-0301-24753d03
+      cache-control:
+      - no-cache, must-revalidate
+      content-length:
+      - '799'
+      content-type:
+      - application/json
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-accel-buffering:
+      - 'no'
+      x-content-type-options:
+      - nosniff
+      x-ms-rai-invoked:
+      - 'true'
+      x-ms-region:
+      - East US
+      x-ratelimit-remaining-requests:
+      - '235'
+      x-ratelimit-remaining-tokens:
+      - '239985'
+      x-request-id:
+      - 58ce539a-a1ab-45ea-807d-14d6407e04a8
+    http_version: HTTP/1.1
+    status_code: 200
+version: 1

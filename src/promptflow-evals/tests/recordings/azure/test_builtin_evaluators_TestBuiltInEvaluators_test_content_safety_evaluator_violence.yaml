@@ -18,14 +18,14 @@ interactions:
     body:
       string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
         "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
-        "eastus2", "tags": {}, "etag": null, "kind": "Default", "sku": {"name": "Basic",
-        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus2.api.azureml.ms/discovery",
-        "mlFlowTrackingUri": "azureml://eastus2.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}}'
+        "swedencentral", "tags": {}, "etag": null, "kind": "Project", "sku": {"name":
+        "Basic", "tier": "Basic"}, "properties": {"discoveryUrl": "https://swedencentral.api.azureml.ms/discovery",
+        "mlFlowTrackingUri": "azureml://swedencentral.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '2853'
+      - '2952'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -41,7 +41,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.018'
+      - '0.023'
     status:
       code: 200
       message: OK
@@ -59,7 +59,7 @@ interactions:
       User-Agent:
       - promptflow-evals/0.1.0.dev0
     method: GET
-    uri: https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/checkannotation
+    uri: https://swedencentral.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/checkannotation
   response:
     body:
       string: '["content harm", "groundedness"]'
@@ -75,7 +75,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.058'
+      - '1.407'
     status:
       code: 200
       message: OK
@@ -96,10 +96,10 @@ interactions:
       User-Agent:
       - promptflow-evals/0.1.0.dev0
     method: POST
-    uri: https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/submitannotation
+    uri: https://swedencentral.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/submitannotation
   response:
     body:
-      string: '{"location": "https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/5a6fa1c3-d586-48a6-8430-619ca1004b6f",
+      string: '{"location": "https://swedencentral.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/bcb43a32-8e80-434e-a336-fbe5344a74c3",
         "operationResult": null}'
     headers:
       connection:
@@ -109,13 +109,13 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       location:
-      - https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/b17253fa-f327-42d6-9686-f3e553e24763/resourceGroups/promptflow-evals-ci/providers/Microsoft.MachineLearningServices/workspaces/pf-evals-ws/operations/5a6fa1c3-d586-48a6-8430-619ca1004b6f
+      - https://swedencentral.api.azureml.ms/raisvc/v1.0/subscriptions/b17253fa-f327-42d6-9686-f3e553e24763/resourceGroups/hanchi-test/providers/Microsoft.MachineLearningServices/workspaces/hancwang-9193/operations/bcb43a32-8e80-434e-a336-fbe5344a74c3
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.112'
+      - '0.169'
     status:
       code: 202
       message: Accepted
@@ -133,39 +133,7 @@ interactions:
       User-Agent:
       - python-requests/2.32.3
     method: GET
-    uri: https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/5a6fa1c3-d586-48a6-8430-619ca1004b6f
-  response:
-    body:
-      string: ''
-    headers:
-      connection:
-      - keep-alive
-      content-length:
-      - '0'
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      x-content-type-options:
-      - nosniff
-      x-request-time:
-      - '0.028'
-    status:
-      code: 202
-      message: Accepted
-- request:
-    body: null
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      User-Agent:
-      - python-requests/2.32.3
-    method: GET
-    uri: https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/5a6fa1c3-d586-48a6-8430-619ca1004b6f
+    uri: https://swedencentral.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/bcb43a32-8e80-434e-a336-fbe5344a74c3
   response:
     body:
       string: '[{"violence": "{\"label\":0,\"reasoning\":\"The system''s response
@@ -183,7 +151,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.022'
+      - '1.475'
     status:
       code: 200
       message: OK

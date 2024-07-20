@@ -1,0 +1,143 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "system", "content": "You are an AI assistant. You
+      will be given the definition of an evaluation metric for assessing the quality
+      of an answer in a question-answering task. Your job is to compute an accurate
+      evaluation score using the provided evaluation metric. You should return a single
+      integer value between 1 to 5 representing the evaluation metric. You will include
+      no other text or information."}, {"role": "user", "content": "Equivalence, as
+      a metric, measures the similarity between the predicted answer and the correct
+      answer. If the information and content in the predicted answer is similar or
+      equivalent to the correct answer, then the value of the Equivalence metric should
+      be high, else it should be low. Given the question, correct answer, and predicted
+      answer, determine the value of Equivalence metric using the following rating
+      scale:\nOne star: the predicted answer is not at all similar to the correct
+      answer\nTwo stars: the predicted answer is mostly not similar to the correct
+      answer\nThree stars: the predicted answer is somewhat similar to the correct
+      answer\nFour stars: the predicted answer is mostly similar to the correct answer\nFive
+      stars: the predicted answer is completely similar to the correct answer\n\nThis
+      rating value should always be an integer between 1 and 5. So the rating produced
+      should be 1 or 2 or 3 or 4 or 5.\n\nThe examples below show the Equivalence
+      score for a question, a correct answer, and a predicted answer.\n\nquestion:
+      What is the role of ribosomes?\ncorrect answer: Ribosomes are cellular structures
+      responsible for protein synthesis. They interpret the genetic information carried
+      by messenger RNA (mRNA) and use it to assemble amino acids into proteins.\npredicted
+      answer: Ribosomes participate in carbohydrate breakdown by removing nutrients
+      from complex sugar molecules.\nstars: 1\n\nquestion: Why did the Titanic sink?\ncorrect
+      answer: The Titanic sank after it struck an iceberg during its maiden voyage
+      in 1912. The impact caused the ship''s hull to breach, allowing water to flood
+      into the vessel. The ship''s design, lifeboat shortage, and lack of timely rescue
+      efforts contributed to the tragic loss of life.\npredicted answer: The sinking
+      of the Titanic was a result of a large iceberg collision. This caused the ship
+      to take on water and eventually sink, leading to the death of many passengers
+      due to a shortage of lifeboats and insufficient rescue attempts.\nstars: 2\n\nquestion:
+      What causes seasons on Earth?\ncorrect answer: Seasons on Earth are caused by
+      the tilt of the Earth''s axis and its revolution around the Sun. As the Earth
+      orbits the Sun, the tilt causes different parts of the planet to receive varying
+      amounts of sunlight, resulting in changes in temperature and weather patterns.\npredicted
+      answer: Seasons occur because of the Earth''s rotation and its elliptical orbit
+      around the Sun. The tilt of the Earth''s axis causes regions to be subjected
+      to different sunlight intensities, which leads to temperature fluctuations and
+      alternating weather conditions.\nstars: 3\n\nquestion: How does photosynthesis
+      work?\ncorrect answer: Photosynthesis is a process by which green plants and
+      some other organisms convert light energy into chemical energy. This occurs
+      as light is absorbed by chlorophyll molecules, and then carbon dioxide and water
+      are converted into glucose and oxygen through a series of reactions.\npredicted
+      answer: In photosynthesis, sunlight is transformed into nutrients by plants
+      and certain microorganisms. Light is captured by chlorophyll molecules, followed
+      by the conversion of carbon dioxide and water into sugar and oxygen through
+      multiple reactions.\nstars: 4\n\nquestion: What are the health benefits of regular
+      exercise?\ncorrect answer: Regular exercise can help maintain a healthy weight,
+      increase muscle and bone strength, and reduce the risk of chronic diseases.
+      It also promotes mental well-being by reducing stress and improving overall
+      mood.\npredicted answer: Routine physical activity can contribute to maintaining
+      ideal body weight, enhancing muscle and bone strength, and preventing chronic
+      illnesses. In addition, it supports mental health by alleviating stress and
+      augmenting general mood.\nstars: 5\n\nquestion: What is the capital of Japan?\ncorrect
+      answer:Tokyo is Japan''s capital.\npredicted answer: The capital of Japan is
+      Tokyo.\nstars:"}], "model": "gpt-35-turbo", "frequency_penalty": 0, "max_tokens":
+      1, "presence_penalty": 0, "response_format": {"type": "text"}, "temperature":
+      0.0, "top_p": 1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      api-key:
+      - 73963c03086243b3ae5665565fcaae42
+      connection:
+      - keep-alive
+      content-length:
+      - '4553'
+      content-type:
+      - application/json
+      host:
+      - eastus.api.cognitive.microsoft.com
+      ms-azure-ai-promptflow:
+      - '{}'
+      ms-azure-ai-promptflow-called-from:
+      - promptflow-core
+      user-agent:
+      - AsyncAzureOpenAI/Python 1.35.14
+      x-ms-useragent:
+      - promptflow-sdk/1.14.0.dev0 promptflow-tracing/1.14.0.dev0 promptflow-evals/0.1.0.dev0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.35.14
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.9.19
+    method: POST
+    uri: https://eastus.api.cognitive.microsoft.com//openai/deployments/gpt-35-turbo/chat/completions?api-version=2024-06-01
+  response:
+    content: '{"choices": [{"content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}, "finish_reason": "length", "index": 0, "logprobs": null, "message":
+      {"content": "5", "role": "assistant"}}], "created": 1721427442, "id": "chatcmpl-9mqCgEn3D0iIqHE1rpf3fw28eUV5m",
+      "model": "gpt-35-turbo", "object": "chat.completion", "prompt_filter_results":
+      [{"prompt_index": 0, "content_filter_results": {"hate": {"filtered": false,
+      "severity": "safe"}, "self_harm": {"filtered": false, "severity": "safe"}, "sexual":
+      {"filtered": false, "severity": "safe"}, "violence": {"filtered": false, "severity":
+      "safe"}}}], "system_fingerprint": null, "usage": {"completion_tokens": 1, "prompt_tokens":
+      841, "total_tokens": 842}}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      apim-request-id:
+      - 538f1663-73ea-4d98-a234-75ca4c67c08a
+      azureml-model-session:
+      - turbo-0301-a605b9fb
+      cache-control:
+      - no-cache, must-revalidate
+      content-length:
+      - '799'
+      content-type:
+      - application/json
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-accel-buffering:
+      - 'no'
+      x-content-type-options:
+      - nosniff
+      x-ms-rai-invoked:
+      - 'true'
+      x-ms-region:
+      - East US
+      x-ratelimit-remaining-requests:
+      - '237'
+      x-ratelimit-remaining-tokens:
+      - '239997'
+      x-request-id:
+      - 4288c957-8285-409c-b20a-62fa7fa17464
+    http_version: HTTP/1.1
+    status_code: 200
+version: 1
