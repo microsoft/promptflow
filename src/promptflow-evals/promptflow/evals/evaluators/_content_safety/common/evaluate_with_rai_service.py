@@ -49,16 +49,16 @@ def ensure_service_availability(rai_svc_url: str, token: str, capability: str = 
     response = requests.get(svc_liveness_url, headers=headers)
 
     if response.status_code != 200:
-        raise Exception(
+        raise Exception(  # pylint: disable=broad-exception-raised
             f"RAI service is not available in this region. Status Code: {response.status_code}"
-        )  # pylint: disable=broad-exception-raised
+        )
 
     capabilities = response.json()
 
     if capability and capability not in capabilities:
-        raise Exception(
+        raise Exception(  # pylint: disable=broad-exception-raised
             f"Capability '{capability}' is not available in this region"
-        )  # pylint: disable=broad-exception-raised
+        )
 
 
 def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, token: str) -> str:
@@ -132,9 +132,9 @@ def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredentia
         time.sleep(sleep_time)
 
 
-def parse_response(
+def parse_response(  # pylint: disable=too-many-branches,too-many-statements
     batch_response: List[Dict], metric_name: str
-) -> List[List[dict]]:  # pylint: disable=too-many-branches,too-many-statements
+) -> List[List[dict]]:
     """Parse the annotation response from Responsible AI service
 
     :param batch_response: The annotation response from Responsible AI service.

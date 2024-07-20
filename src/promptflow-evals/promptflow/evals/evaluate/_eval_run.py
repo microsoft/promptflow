@@ -157,7 +157,7 @@ class EvalRun(
         self._status = RunStatus.STARTED
         if self._tracking_uri is None:
             LOGGER.warning(
-                "tracking_uri was not provided, " "The results will be saved locally, but will not be logged to Azure."
+                "A tracking_uri was not provided, The results will be saved locally, but will not be logged to Azure."
             )
             self._url_base = None
             self._status = RunStatus.BROKEN
