@@ -33,13 +33,14 @@ class SimulationRequestDTO:
     :param template_parameters: The template parameters to use for the request.
     :type template_parameters: Dict
     """
-    def __init__(self, url, headers, payload, params, template_key, template_parameters):
+
+    def __init__(self, url, headers, payload, params, templatekey, template_parameters):
         self.url = url
         self.headers = headers
         self.json = json.dumps(payload)
         self.params = params
-        self.template_key = template_key
-        self.template_parameters = template_parameters
+        self.templatekey = templatekey
+        self.templateParameters = template_parameters
 
     def to_dict(self) -> Dict:
         """Convert the DTO to a dictionary.
@@ -47,8 +48,8 @@ class SimulationRequestDTO:
         :return: The DTO as a dictionary.
         :rtype: Dict
         """
-        if self.template_parameters is not None:
-            self.template_parameters = {str(k): str(v) for k, v in self.template_parameters.items()}
+        if self.templateParameters is not None:
+            self.templateParameters = {str(k): str(v) for k, v in self.templateParameters.items()}
         return self.__dict__
 
     def to_json(self):
@@ -72,6 +73,7 @@ class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
     :keyword args: Additional arguments to pass to the parent class.
     :keyword kwargs: Additional keyword arguments to pass to the parent class.
     """
+
     def __init__(self, name: str, template_key: str, template_parameters, *args, **kwargs) -> None:
         self.tkey = template_key
         self.tparam = template_parameters
@@ -169,7 +171,7 @@ class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
             headers=headers,
             payload=request_data,
             params=params,
-            template_key=self.tkey,
+            templatekey=self.tkey,
             template_parameters=self.tparam,
         )
 
