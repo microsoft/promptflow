@@ -596,7 +596,7 @@ class TestToolResolver:
                     "type": "function",
                     "function": {
                         "name": "sample_tool",
-                        "description": "This is a sample tool.",
+                        "description": "This is a sample tool.\n",
                         "parameters": {"type": "object", "properties": properties, "required": required},
                     },
                 }
@@ -642,7 +642,7 @@ class TestToolResolver:
                 "type": "function",
                 "function": {
                     "name": "echo",
-                    "description": "This tool is used to echo the message back.",
+                    "description": "This tool is used to echo the message back.\n",
                     "parameters": {
                         "type": "object",
                         "properties": {"message": {"type": "string", "description": "The message to echo."}},
