@@ -7,12 +7,46 @@ import re
 
 import numpy as np
 
-from promptflow.client import load_flow
-from promptflow.core import AzureOpenAIModelConfiguration
+from promptflow._utils.async_utils import async_run_allowing_running_loop
+from promptflow.core import AsyncPrompty, AzureOpenAIModelConfiguration
+
 try:
     from ..._user_agent import USER_AGENT
 except ImportError:
     USER_AGENT = None
+
+
+class _AsyncGroundednessEvaluator:
+    def __init__(self, model_config: AzureOpenAIModelConfiguration):
+        if model_config.api_version is None:
+            model_config.api_version = "2024-02-15-preview"
+
+        prompty_model_config = {"configuration": model_config}
+        prompty_model_config.update(
+            {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
+        ) if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration) else None
+        current_dir = os.path.dirname(__file__)
+        prompty_path = os.path.join(current_dir, "groundedness.prompty")
+        self._flow = AsyncPrompty.load(source=prompty_path, model=prompty_model_config)
+
+    async def __call__(self, *, answer: str, context: str, **kwargs):
+        # Validate input parameters
+        answer = str(answer or "")
+        context = str(context or "")
+
+        if not (answer.strip()) or not (context.strip()):
+            raise ValueError("Both 'answer' and 'context' must be non-empty strings.")
+
+        # Run the evaluation flow
+        llm_output = await self._flow(answer=answer, context=context)
+
+        score = np.nan
+        if llm_output:
+            match = re.search(r"\d", llm_output)
+            if match:
+                score = float(match.group())
+
+        return {"gpt_groundedness": float(score)}
 
 
 class GroundednessEvaluator:
@@ -42,19 +76,7 @@ class GroundednessEvaluator:
     """
 
     def __init__(self, model_config: AzureOpenAIModelConfiguration):
-        # TODO: Remove this block once the bug is fixed
-        # https://msdata.visualstudio.com/Vienna/_workitems/edit/3151324
-        if model_config.api_version is None:
-            model_config.api_version = "2024-02-15-preview"
-
-        prompty_model_config = {"configuration": model_config}
-
-        prompty_model_config.update({"parameters": {"extra_headers": {"x-ms-user-agent": USER_AGENT}}}) \
-            if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration) else None
-
-        current_dir = os.path.dirname(__file__)
-        prompty_path = os.path.join(current_dir, "groundedness.prompty")
-        self._flow = load_flow(source=prompty_path, model=prompty_model_config)
+        self._async_evaluator = _AsyncGroundednessEvaluator(model_config)
 
     def __call__(self, *, answer: str, context: str, **kwargs):
         """
@@ -67,20 +89,7 @@ class GroundednessEvaluator:
         :return: The groundedness score.
         :rtype: dict
         """
-        # Validate input parameters
-        answer = str(answer or "")
-        context = str(context or "")
+        return async_run_allowing_running_loop(self._async_evaluator, answer=answer, context=context, **kwargs)
 
-        if not (answer.strip()) or not (context.strip()):
-            raise ValueError("Both 'answer' and 'context' must be non-empty strings.")
-
-        # Run the evaluation flow
-        llm_output = self._flow(answer=answer, context=context)
-
-        score = np.nan
-        if llm_output:
-            match = re.search(r"\d", llm_output)
-            if match:
-                score = float(match.group())
-
-        return {"gpt_groundedness": float(score)}
+    def _to_async(self):
+        return self._async_evaluator
