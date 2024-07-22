@@ -1,0 +1,61 @@
+name: promptflow-evals-installation-test
+
+on:
+  schedule:
+    - cron: "40 10 * * *" # 2:40 PST every day
+  pull_request:
+    paths:
+      - src/promptflow-evals/**
+      - .github/workflows/promptflow-evals-installation-test.yml
+  workflow_dispatch:
+
+env:
+  IS_IN_CI_PIPELINE: "true"
+  WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-evals
+  PROMPT_FLOW_TEST_MODE: "live"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: snok/install-poetry@v1
+    - name: build
+      run: poetry build
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - uses: actions/upload-artifact@v4
+      with:
+        name: promptflow-evals
+        path: ${{ env.WORKING_DIRECTORY }}/dist/promptflow_evals-*.whl
+
+  test:
+    needs: build
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-13]
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+      fail-fast: false
+    # snok/install-poetry need this to support Windows
+    defaults:
+      run:
+        shell: bash
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: promptflow-evals
+          path: ${{ env.WORKING_DIRECTORY }}
+      - name: install virtualenv
+        run: python -m pip install virtualenv
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install promptflow-evals from wheel
+        id: install_promptflow_no_extras
+        run: |
+          bash ../../scripts/code_qa/calculate_install_time.sh -r ${{ github.run_id }} -w ${{ github.workflow }} -a ${{ github.action }} -b ${{ github.ref }} -l "300"
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install promptflow-evals from wheel
+        id: install_promptflow_with_extras
+        run: |
+          bash ../../scripts/code_qa/calculate_install_time.sh -r ${{ github.run_id }} -w ${{ github.workflow }} -a ${{ github.action }} -b ${{ github.ref }} -e "[azure]" -l "300"
+        working-directory: ${{ env.WORKING_DIRECTORY }}

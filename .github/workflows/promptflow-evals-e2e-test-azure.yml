@@ -14,28 +14,11 @@ env:
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-evals
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: snok/install-poetry@v1
-    - name: build
-      run: poetry build
-      working-directory: ${{ env.WORKING_DIRECTORY }}
-    - uses: actions/upload-artifact@v4
-      with:
-        name: promptflow-evals
-        path: ${{ env.WORKING_DIRECTORY }}/dist/promptflow_evals-*.whl
-
   test:
-    needs: build
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
-        # TODO: Encounter hash mismatch for ubuntu-latest and 3.9 combination during installing promptflow-evals package
-        # https://github.com/microsoft/promptflow/actions/runs/9009397933/job/24753518853?pr=3158
-        # Add 3.9 back after we figure out the issue
-        python-version: ['3.8', '3.10', '3.11']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
       fail-fast: false
     # snok/install-poetry need this to support Windows
     defaults:
@@ -52,10 +35,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1
-      - uses: actions/download-artifact@v4
-        with:
-          name: promptflow-evals
-          path: ${{ env.WORKING_DIRECTORY }}
       - name: install test dependency group
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -67,10 +46,7 @@ jobs:
           poetry run pip install -e ../promptflow-tracing
           poetry run pip install -e ../promptflow-tools
           poetry run pip install -e ../promptflow-azure
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: install promptflow-evals from wheel
-        # wildcard expansion (*) does not work in Windows, so leverage python to find and install
-        run: poetry run pip install --pre $(python -c "import glob; print(glob.glob('promptflow_evals-*.whl')[0])")
+          poetry run pip install -e ../promptflow-evals
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install recording
         run: poetry run pip install -e ../promptflow-recording

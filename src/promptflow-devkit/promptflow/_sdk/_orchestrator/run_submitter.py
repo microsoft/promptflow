@@ -131,7 +131,7 @@ class RunSubmitter:
             with flow_overwrite_context(
                 flow_obj, tuning_node, variant, connections=run.connections, init_kwargs=run.init
             ) as flow:
-                self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
+                self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage, **kwargs)
 
     @classmethod
     def _validate_inputs(cls, run: Run):
@@ -140,7 +140,7 @@ class RunSubmitter:
             raise UserErrorException(message=str(error), error=error)
 
     def _submit_bulk_run(
-        self, flow: Union[Flow, FlexFlow, Prompty], run: Run, local_storage: LocalStorageOperations
+        self, flow: Union[Flow, FlexFlow, Prompty], run: Run, local_storage: LocalStorageOperations, **kwargs
     ) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
@@ -183,6 +183,7 @@ class RunSubmitter:
                 storage=local_storage,
                 log_path=local_storage.logger.file_path,
                 init_kwargs=run.init,
+                **kwargs,
             )
             batch_result = batch_engine.run(
                 input_dirs=input_dirs,
