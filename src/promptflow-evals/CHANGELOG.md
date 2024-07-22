@@ -13,6 +13,8 @@
 - Converted built-in evaluators to async-based implementation, leveraging async batch run for performance improvement.
 - Parity between evals and Simulator on signature, passing credentials.
 - The `AdversarialSimulator` responds with `category` of harm in the response.
+- Reduced chances of NaNs in GPT based evaluators.
+
 
 ## v0.3.1 (2022-07-09)
 - This release contains minor bug fixes and improvements.
