@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import inspect
+import os
 import re
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
@@ -10,16 +11,16 @@ import pandas as pd
 
 from promptflow._sdk._constants import LINE_NUMBER
 from promptflow.client import PFClient
-from ._telemetry import log_evaluate_activity
 
 from .._constants import CONTENT_SAFETY_DEFECT_RATE_THRESHOLD_DEFAULT, EvaluationMetrics, Prefixes
 from .._user_agent import USER_AGENT
 from ._batch_run_client import BatchRunContext, CodeClient, ProxyClient
+from ._telemetry import log_evaluate_activity
 from ._utils import (
     _apply_column_mapping,
     _log_metrics_and_instance_results,
-    _write_output,
     _trace_destination_from_project_scope,
+    _write_output,
 )
 
 
@@ -376,7 +377,6 @@ def _evaluate(
     output_path: Optional[str] = None,
     **kwargs,
 ):
-
     input_data_df = _validate_and_load_data(target, data, evaluators, output_path, azure_ai_project, evaluation_name)
 
     # Process evaluator config to replace ${target.} with ${data.}
@@ -387,8 +387,9 @@ def _evaluate(
 
     # Target Run
     pf_client = PFClient(
-        config={
-            "trace.destination": _trace_destination_from_project_scope(azure_ai_project)} if azure_ai_project else None,
+        config={"trace.destination": _trace_destination_from_project_scope(azure_ai_project)}
+        if azure_ai_project
+        else None,
         user_agent=USER_AGENT,
     )
 
@@ -427,7 +428,15 @@ def _evaluate(
     # Batch Run
     evaluators_info = {}
     use_pf_client = kwargs.get("_use_pf_client", True)
-    batch_run_client = ProxyClient(pf_client) if use_pf_client else CodeClient()
+    if use_pf_client:
+        batch_run_client = ProxyClient(pf_client)
+
+        # Ensure the absolute path is passed to pf.run, as relative path doesn't work with
+        # multiple evaluators. If the path is already absolute, abspath will return the original path.
+        data = os.path.abspath(data)
+    else:
+        batch_run_client = CodeClient()
+        data = input_data_df
 
     with BatchRunContext(batch_run_client):
         for evaluator_name, evaluator in evaluators.items():
@@ -437,7 +446,7 @@ def _evaluate(
                 run=target_run,
                 evaluator_name=evaluator_name,
                 column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-                data=input_data_df if isinstance(batch_run_client, CodeClient) else data,
+                data=data,
                 stream=True,
                 name=kwargs.get("_run_name"),
             )
@@ -486,7 +495,11 @@ def _evaluate(
     metrics.update(evaluators_metric)
 
     studio_url = _log_metrics_and_instance_results(
-        metrics, result_df, trace_destination, target_run, evaluation_name,
+        metrics,
+        result_df,
+        trace_destination,
+        target_run,
+        evaluation_name,
     )
 
     result = {"rows": result_df.to_dict("records"), "metrics": metrics, "studio_url": studio_url}
