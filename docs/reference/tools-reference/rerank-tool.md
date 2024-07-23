@@ -17,7 +17,7 @@ Rerank is a semantic search tool that improves search quality with a semantic-ba
 
 ## Prerequisites
 
-BM25 and Scaled Score Fusion are included as default reranking methos. To use cohere rerank model, you should create serverless deployment to the model, and establish connection between the tool and the resource as follows.
+BM25 and Scaled Score Fusion are included as default reranking methods. To use cohere rerank model, you should create serverless deployment to the model, and establish connection between the tool and the resource as follows.
 
 - Add Serverless Model connection. Fill "API base" and "API key" field to your serverless deployment.
 
