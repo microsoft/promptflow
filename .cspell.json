@@ -243,7 +243,10 @@
     "openaimodelconfiguration",
     "usecwd",
     "locustio",
-    "euap"
+    "euap",
+    "Rerank",
+    "rerank",
+    "reranker"
   ],
   "flagWords": [
     "Prompt Flow"
