@@ -1,8 +1,23 @@
-# promptflow-evals package
+# Release History
 
-Please insert change log into "Next Release" ONLY.
+## v0.3.2 (Upcoming)
 
-## Next release
+### Features Added
+- Introduced `JailbreakAdversarialSimulator` for customers who need to do run jailbreak and non jailbreak adversarial simulations at the same time. More info in the README.md in `/promptflow/evals/synthetic/README.md#jailbreak-simulator`
+- Exposed batch evaluation run timeout via "PF_BATCH_TIMEOUT_SEC" environment variable. This variable can be used to set the timeout for the batch evaluation for each evaluator and target separately only, not the entire API call.
 
-## 0.0.1
-- Introduced package
+### Bugs Fixed
+- Large simulation was causing a jinja exception, this has been fixed.
+
+### Improvements
+- Converted built-in evaluators to async-based implementation, leveraging async batch run for performance improvement.
+- Parity between evals and Simulator on signature, passing credentials.
+- The `AdversarialSimulator` responds with `category` of harm in the response.
+- Reduced chances of NaNs in GPT based evaluators.
+
+
+## v0.3.1 (2022-07-09)
+- This release contains minor bug fixes and improvements.
+
+## v0.3.0 (2024-05-17)
+- Initial release of promptflow-evals package.

@@ -14,7 +14,6 @@ import pandas as pd
 from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME, Prefixes
 from promptflow.evals.evaluate._eval_run import EvalRun
 
-
 LOGGER = logging.getLogger(__name__)
 
 AZURE_WORKSPACE_REGEX_FORMAT = (
@@ -48,22 +47,6 @@ def load_jsonl(path):
         return [json.loads(line) for line in f.readlines()]
 
 
-def _write_properties_to_run_history(properties: dict) -> None:
-    run = EvalRun.get_instance()
-    try:
-        # update host to run history and request PATCH API
-        response = run.request_with_retry(
-            url=run.get_run_history_uri(),
-            method="PATCH",
-            json_dict={"runId": run.info.run_id, "properties": properties},
-        )
-        if response.status_code != 200:
-            LOGGER.error("Fail writing properties '%s' to run history: %s", properties, response.text)
-            response.raise_for_status()
-    except AttributeError as e:
-        LOGGER.error("Fail writing properties '%s' to run history: %s", properties, e)
-
-
 def _azure_pf_client_and_triad(trace_destination):
     from promptflow.azure._cli._utils import _get_azure_pf_client
 
@@ -78,7 +61,11 @@ def _azure_pf_client_and_triad(trace_destination):
 
 
 def _log_metrics_and_instance_results(
-    metrics, instance_results, trace_destination, run, evaluation_name,
+    metrics,
+    instance_results,
+    trace_destination,
+    run,
+    evaluation_name,
 ) -> str:
     if trace_destination is None:
         LOGGER.error("Unable to log traces as trace destination was not defined.")
@@ -90,7 +77,7 @@ def _log_metrics_and_instance_results(
     # Adding line_number as index column this is needed by UI to form link to individual instance run
     instance_results["line_number"] = instance_results.index.values
 
-    ev_run = EvalRun(
+    with EvalRun(
         run_name=run.name if run is not None else evaluation_name,
         tracking_uri=tracking_uri,
         subscription_id=ws_triad.subscription_id,
@@ -98,35 +85,34 @@ def _log_metrics_and_instance_results(
         workspace_name=ws_triad.workspace_name,
         ml_client=azure_pf_client.ml_client,
         promptflow_run=run,
-    )
+    ) as ev_run:
 
-    artifact_name = EvalRun.EVALUATION_ARTIFACT if run else EvalRun.EVALUATION_ARTIFACT_DUMMY_RUN
+        artifact_name = EvalRun.EVALUATION_ARTIFACT if run else EvalRun.EVALUATION_ARTIFACT_DUMMY_RUN
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_path = os.path.join(tmpdir, artifact_name)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = os.path.join(tmpdir, artifact_name)
 
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            f.write(instance_results.to_json(orient="records", lines=True))
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                f.write(instance_results.to_json(orient="records", lines=True))
 
-        ev_run.log_artifact(tmpdir, artifact_name)
+            ev_run.log_artifact(tmpdir, artifact_name)
 
-        # Using mlflow to create a dummy run since once created via PF show traces of dummy run in UI.
-        # Those traces can be confusing.
-        # adding these properties to avoid showing traces if a dummy run is created.
-        # We are doing that only for the pure evaluation runs.
-        if run is None:
-            _write_properties_to_run_history(
-                properties={
-                    "_azureml.evaluation_run": "azure-ai-generative-parent",
-                    "_azureml.evaluate_artifacts": json.dumps([{"path": artifact_name, "type": "table"}]),
-                    "isEvaluatorRun": "true",
-                }
-            )
+            # Using mlflow to create a dummy run since once created via PF show traces of dummy run in UI.
+            # Those traces can be confusing.
+            # adding these properties to avoid showing traces if a dummy run is created.
+            # We are doing that only for the pure evaluation runs.
+            if run is None:
+                ev_run.write_properties_to_run_history(
+                    properties={
+                        "_azureml.evaluation_run": "azure-ai-generative-parent",
+                        "_azureml.evaluate_artifacts": json.dumps([{"path": artifact_name, "type": "table"}]),
+                        "isEvaluatorRun": "true",
+                    }
+                )
 
-    for metric_name, metric_value in metrics.items():
-        ev_run.log_metric(metric_name, metric_value)
+        for metric_name, metric_value in metrics.items():
+            ev_run.log_metric(metric_name, metric_value)
 
-    ev_run.end_run("FINISHED")
     evaluation_id = ev_run.info.run_name if run is not None else ev_run.info.run_id
     return _get_ai_studio_url(trace_destination=trace_destination, evaluation_id=evaluation_id)
 
@@ -192,7 +178,7 @@ def _apply_column_mapping(source_df: pd.DataFrame, mapping_config: dict, inplace
             if match is not None:
                 pattern = match.group(1)
                 if pattern.startswith(pattern_prefix):
-                    map_from_key = pattern[len(pattern_prefix):]
+                    map_from_key = pattern[len(pattern_prefix) :]
                 elif pattern.startswith(run_outputs_prefix):
                     # Target-generated columns always starts from .outputs.
                     map_from_key = f"{Prefixes._TGT_OUTPUTS}{pattern[len(run_outputs_prefix) :]}"
@@ -216,3 +202,29 @@ def _apply_column_mapping(source_df: pd.DataFrame, mapping_config: dict, inplace
 
 def _has_aggregator(evaluator):
     return hasattr(evaluator, "__aggregate__")
+
+
+def get_int_env_var(env_var_name, default_value=None):
+    """
+    The function `get_int_env_var` retrieves an integer environment variable value, with an optional
+    default value if the variable is not set or cannot be converted to an integer.
+
+    :param env_var_name: The name of the environment variable you want to retrieve the value of
+    :param default_value: The default value is the value that will be returned if the environment
+    variable is not found or if it cannot be converted to an integer
+    :return: an integer value.
+    """
+    try:
+        return int(os.environ.get(env_var_name, default_value))
+    except Exception:
+        return default_value
+
+
+def set_event_loop_policy():
+    import asyncio
+    import platform
+
+    if platform.system().lower() == "windows":
+        # Reference: https://stackoverflow.com/questions/45600579/asyncio-event-loop-is-closed-when-getting-loop
+        # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

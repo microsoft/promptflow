@@ -20,17 +20,33 @@
     max-width: 70em;
 }
 
+/* Background color for feature announcement */
 html[data-theme="light"] {
-    --header-announcement-color: #fff070;
+    --header-announcement-color: #3278e5;
 }
 
 html[data-theme="dark"] {
-    --header-announcement-color: #4d4d00;
+    --header-announcement-color: #67d6ed;
 }
 
 .bd-header-announcement {
     background: var(--header-announcement-color);
 }
+/* Background color for feature announcement */
+
+/* Background color for warning announcement */
+/*html[data-theme="light"] {*/
+/*    --header-announcement-color: #fff070;*/
+/*}*/
+
+/*html[data-theme="dark"] {*/
+/*    --header-announcement-color: #4d4d00;*/
+/*}*/
+
+/*.bd-header-announcement {*/
+/*    background: var(--header-announcement-color);*/
+/*}*/
+/* Background color for warning announcement */
 
 /* (A) LIGHTBOX BACKGROUND */
 #lightbox {
