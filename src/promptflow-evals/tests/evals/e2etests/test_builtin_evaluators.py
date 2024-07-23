@@ -6,6 +6,7 @@ from promptflow.evals.evaluators import (
     CoherenceEvaluator,
     ContentSafetyChatEvaluator,
     ContentSafetyEvaluator,
+    F1ScoreEvaluator,
     FluencyEvaluator,
     GroundednessEvaluator,
     HateUnfairnessEvaluator,
@@ -68,6 +69,15 @@ class TestBuiltInEvaluators:
         )
         assert score is not None
         assert score["gpt_relevance"] > 1.0
+
+    def test_quality_evaluator_f1_score(self):
+        eval_fn = F1ScoreEvaluator()
+        score = eval_fn(
+            answer="The capital of Japan is Tokyo.",
+            ground_truth="Tokyo is Japan's capital.",
+        )
+        assert score is not None
+        assert score["f1_score"] > 0.0
 
     def test_quality_evaluator_prompt_based_with_dict_input(self, model_config):
         eval_fn = FluencyEvaluator(model_config)
