@@ -40,7 +40,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.027'
+      - '0.030'
     status:
       code: 200
       message: OK
@@ -64,13 +64,13 @@ interactions:
     uri: https://eastus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/create
   response:
     body:
-      string: '{"run": {"info": {"run_uuid": "b4c2c5f1-a910-4418-ad38-5febe495de00",
+      string: '{"run": {"info": {"run_uuid": "f9b3610c-e60c-49a6-bb92-38f4720f007f",
         "experiment_id": "34fb7f85-4f86-428b-9c6f-333adf9733a8", "run_name": "test",
         "user_id": "00000000-0000-0000-0000-000000000000", "status": "RUNNING", "start_time":
-        "1721757167016", "artifact_uri": "azureml://eastus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experiments/0/runs/b4c2c5f1-a910-4418-ad38-5febe495de00/artifacts",
-        "lifecycle_stage": "active", "run_id": "b4c2c5f1-a910-4418-ad38-5febe495de00"},
+        "1721759902457", "artifact_uri": "azureml://eastus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experiments/0/runs/f9b3610c-e60c-49a6-bb92-38f4720f007f/artifacts",
+        "lifecycle_stage": "active", "run_id": "f9b3610c-e60c-49a6-bb92-38f4720f007f"},
         "data": {"tags": [{"key": "mlflow.user", "value": "promptflow-evals"}, {"key":
-        "mlflow.rootRunId", "value": "b4c2c5f1-a910-4418-ad38-5febe495de00"}, {"key":
+        "mlflow.rootRunId", "value": "f9b3610c-e60c-49a6-bb92-38f4720f007f"}, {"key":
         "mlflow.runName", "value": "test"}, {"key": "mlflow.user", "value": "First
         Last"}]}, "inputs": {}}}'
     headers:
@@ -89,7 +89,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.114'
+      - '0.115'
     status:
       code: 200
       message: OK
@@ -141,7 +141,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.066'
+      - '0.076'
     status:
       code: 200
       message: OK
@@ -182,7 +182,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.143'
+      - '0.153'
     status:
       code: 200
       message: OK
@@ -204,7 +204,7 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Tue, 23 Jul 2024 17:52:52 GMT
+      - Tue, 23 Jul 2024 18:38:27 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
@@ -218,7 +218,7 @@ interactions:
       content-md5:
       - diUhBBdPqiF5HmMm8IgKdw==
       last-modified:
-      - Tue, 23 Jul 2024 17:52:53 GMT
+      - Tue, 23 Jul 2024 18:38:28 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -248,7 +248,7 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Tue, 23 Jul 2024 17:52:52 GMT
+      - Tue, 23 Jul 2024 18:38:28 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
@@ -262,7 +262,7 @@ interactions:
       content-md5:
       - ajrc77H5/pKmiiAzHB+q7A==
       last-modified:
-      - Tue, 23 Jul 2024 17:52:53 GMT
+      - Tue, 23 Jul 2024 18:38:29 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -322,7 +322,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.047'
+      - '0.049'
     status:
       code: 200
       message: OK
@@ -363,7 +363,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.074'
+      - '0.077'
     status:
       code: 200
       message: OK
@@ -385,7 +385,7 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Tue, 23 Jul 2024 17:52:54 GMT
+      - Tue, 23 Jul 2024 18:38:29 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
@@ -399,7 +399,7 @@ interactions:
       content-md5:
       - diUhBBdPqiF5HmMm8IgKdw==
       last-modified:
-      - Tue, 23 Jul 2024 17:52:55 GMT
+      - Tue, 23 Jul 2024 18:38:30 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -429,7 +429,7 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-date:
-      - Tue, 23 Jul 2024 17:52:54 GMT
+      - Tue, 23 Jul 2024 18:38:30 GMT
       x-ms-version:
       - '2023-11-03'
     method: PUT
@@ -443,7 +443,7 @@ interactions:
       content-md5:
       - ajrc77H5/pKmiiAzHB+q7A==
       last-modified:
-      - Tue, 23 Jul 2024 17:52:55 GMT
+      - Tue, 23 Jul 2024 18:38:30 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       x-ms-content-crc64:
@@ -476,17 +476,17 @@ interactions:
     uri: https://eastus2.api.azureml.ms/artifact/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/artifacts/register
   response:
     body:
-      string: '{"artifactId": "ExperimentRun/dcid.b4c2c5f1-a910-4418-ad38-5febe495de00/instance_results.jsonl",
-        "origin": "ExperimentRun", "container": "dcid.b4c2c5f1-a910-4418-ad38-5febe495de00",
-        "path": "instance_results.jsonl", "etag": "\"96012ee8-0000-0200-0000-669fedf80000\"",
-        "createdTime": "2024-07-23T17:52:56.0277226+00:00", "dataPath": {"dataStoreName":
+      string: '{"artifactId": "ExperimentRun/dcid.f9b3610c-e60c-49a6-bb92-38f4720f007f/instance_results.jsonl",
+        "origin": "ExperimentRun", "container": "dcid.f9b3610c-e60c-49a6-bb92-38f4720f007f",
+        "path": "instance_results.jsonl", "etag": "\"d0001d10-0000-0200-0000-669ff8a70000\"",
+        "createdTime": "2024-07-23T18:38:31.415546+00:00", "dataPath": {"dataStoreName":
         "workspaceblobstore", "relativePath": "promptflow/PromptFlowArtifacts/test/instance_results.jsonl"},
         "tags": {}}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '492'
+      - '491'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -498,7 +498,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.061'
+      - '0.161'
     status:
       code: 200
       message: OK
@@ -522,10 +522,10 @@ interactions:
     uri: https://eastus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/update
   response:
     body:
-      string: '{"run_info": {"run_uuid": "b4c2c5f1-a910-4418-ad38-5febe495de00", "experiment_id":
+      string: '{"run_info": {"run_uuid": "f9b3610c-e60c-49a6-bb92-38f4720f007f", "experiment_id":
         "34fb7f85-4f86-428b-9c6f-333adf9733a8", "run_name": "test", "user_id": "00000000-0000-0000-0000-000000000000",
-        "status": "FINISHED", "start_time": "1721757167016", "end_time": "1721757176487",
-        "lifecycle_stage": "active", "run_id": "b4c2c5f1-a910-4418-ad38-5febe495de00"}}'
+        "status": "FINISHED", "start_time": "1721759902457", "end_time": "1721759911885",
+        "lifecycle_stage": "active", "run_id": "f9b3610c-e60c-49a6-bb92-38f4720f007f"}}'
     headers:
       connection:
       - keep-alive
@@ -542,7 +542,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.384'
+      - '0.603'
     status:
       code: 200
       message: OK
