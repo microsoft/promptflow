@@ -43,7 +43,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.022'
+      - '0.028'
     status:
       code: 200
       message: OK
@@ -66,21 +66,22 @@ interactions:
     uri: https://westus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/checkannotation
   response:
     body:
-      string: unknown to cluster
+      string: "<html>\r\n<head><title>503 Service Temporarily Unavailable</title></head>\r\n<body>\r\n<center><h1>503
+        Service Temporarily Unavailable</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>\r\n"
     headers:
       connection:
       - keep-alive
       content-length:
-      - '18'
+      - '190'
       content-type:
-      - application/octet-stream
+      - text/html
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.005'
+      - '0.000'
     status:
-      code: 530
-      message: <none>
+      code: 503
+      message: Service Temporarily Unavailable
 version: 1
