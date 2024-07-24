@@ -1,12 +1,13 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+
 try:
-    from .common.constants import EvaluationMetrics
     from ._content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
+    from .common.constants import EvaluationMetrics
 except ImportError:
-    from common.constants import EvaluationMetrics
     from _content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
+    from common.constants import EvaluationMetrics
 
 
 class HateUnfairnessEvaluator(ContentSafetySubEvaluatorBase):
@@ -42,7 +43,7 @@ class HateUnfairnessEvaluator(ContentSafetySubEvaluatorBase):
         }
     """
 
-    def __init__(self, project_scope: dict, credential=None):
+    def __init__(self, project_scope: dict, credential=None) -> None:
         # Hate_fairness is the actual backend metric name. Which, uh, doesn't sound great.
         # so invert the name.
         super().__init__(
@@ -50,16 +51,3 @@ class HateUnfairnessEvaluator(ContentSafetySubEvaluatorBase):
             project_scope=project_scope,
             credential=credential,
         )
-
-    def __call__(self, *, question: str, answer: str, **kwargs):
-        """
-        Evaluates hate unfairness content.
-
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :return: The hate unfairness score.
-        :rtype: dict
-        """
-        return super().__call__(question=question, answer=answer, **kwargs)

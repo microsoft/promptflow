@@ -23,12 +23,12 @@ class ContentSafetySubEvaluatorBase(ABC):
     :type metric: ~promptflow.evals.evaluators._content_safety.flow.constants.EvaluationMetrics
     :param project_scope: The scope of the Azure AI project.
         It contains subscription id, resource group, and project name.
-    :type project_scope: dict
+    :type project_scope: Dict
     :param credential: The credential for connecting to Azure AI project.
     :type credential: TokenCredential
     """
 
-    def __init__(self,  metric: EvaluationMetrics, project_scope: dict, credential=None):
+    def __init__(self, metric: EvaluationMetrics, project_scope: dict, credential=None):
         self._metric = metric
         self._project_scope = project_scope
         self._credential = credential
@@ -37,18 +37,17 @@ class ContentSafetySubEvaluatorBase(ABC):
         """
         Evaluates content according to this evaluator's metric.
 
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :return: The evaluation score.
-        :rtype: dict
+        :keyword question: The question to be evaluated.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
+        :return: The evaluation score computation based on the Content Safety metric (self.metric).
+        :rtype: Any
         """
         # Validate inputs
         # Raises value error if failed, so execution alone signifies success.
         _ = validate_inputs(question=question, answer=answer)
 
-        # question: str, answer: str, metric_name: str, project_scope: dict, credential: TokenCredential
         # Run score computation based on supplied metric.
         result = evaluate_with_rai_service(
             metric_name=self._metric,

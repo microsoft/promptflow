@@ -95,8 +95,8 @@ class ContentSafetyChatEvaluator:
         """
         Evaluates content-safety metrics for "chat" scenario.
 
-        :param conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
-        :type conversation: List[Dict]
+        :keyword conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
+        :paramtype conversation: List[Dict]
         :return: The scores for Chat scenario.
         :rtype: dict
         """
@@ -154,7 +154,7 @@ class ContentSafetyChatEvaluator:
             score = evaluator(question=question, answer=answer)
 
             return score
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(
                 f"Evaluator {evaluator.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}"
             )
@@ -209,8 +209,7 @@ class ContentSafetyChatEvaluator:
             one_based_turn_num = turn_num + 1
 
             if not isinstance(turn, dict):
-                raise ValueError(
-                    f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
+                raise ValueError(f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
 
             if "role" not in turn or "content" not in turn:
                 raise ValueError(
@@ -245,7 +244,7 @@ class ContentSafetyChatEvaluator:
             return np.nan
 
         for harm_level, harm_score_range in HARM_SEVERITY_LEVEL_MAPPING.items():
-            if harm_score >= harm_score_range[0] and harm_score <= harm_score_range[1]:
+            if harm_score_range[0] <= harm_score <= harm_score_range[1]:
                 return harm_level
 
         return np.nan

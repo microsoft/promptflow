@@ -1,9 +1,9 @@
 import os
 from pprint import pprint
 
-from promptflow.evals.evaluators import ChatEvaluator
-from promptflow.evals.evaluate import evaluate
 from promptflow.core import AzureOpenAIModelConfiguration
+from promptflow.evals.evaluate import evaluate
+from promptflow.evals.evaluators import ChatEvaluator
 
 if __name__ == "__main__":
     # Initialize Chat Evaluator

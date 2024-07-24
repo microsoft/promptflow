@@ -2,11 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 try:
-    from .common.constants import EvaluationMetrics
     from ._content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
+    from .common.constants import EvaluationMetrics
 except ImportError:
-    from common.constants import EvaluationMetrics
     from _content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
+    from common.constants import EvaluationMetrics
 
 
 class SelfHarmEvaluator(ContentSafetySubEvaluatorBase):
@@ -48,17 +48,3 @@ class SelfHarmEvaluator(ContentSafetySubEvaluatorBase):
             project_scope=project_scope,
             credential=credential,
         )
-
-    def __call__(self, *, question: str, answer: str, **kwargs):
-        """
-        Evaluates self harm content.
-
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :return: The self harm score.
-        :rtype: dict
-        """
-
-        return super().__call__(question=question, answer=answer, **kwargs)
