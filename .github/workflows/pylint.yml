@@ -1,0 +1,32 @@
+name: Pylint
+
+on:
+  pull_request:
+    paths:
+      - src/promptflow-evals/**
+
+jobs:
+  run_pylint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+
+      - name: setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - uses: snok/install-poetry@v1
+      - name: install pylint and azure-pylint-guidelines-checker
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          set -xe
+          poetry install -C src/promptflow-evals --with dev
+          poetry show -C src/promptflow-evals
+      - name: run pylint
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          cd src/promptflow-evals
+          poetry run pylint promptflow/evals --rcfile=../../pylintrc

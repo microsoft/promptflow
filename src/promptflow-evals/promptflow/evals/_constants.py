@@ -1,4 +1,10 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
+
 class EvaluationMetrics:
+    """Metrics for model evaluation."""
     GPT_GROUNDEDNESS = "gpt_groundedness"
     GPT_RELEVANCE = "gpt_relevance"
     GPT_COHERENCE = "gpt_coherence"
@@ -14,9 +20,10 @@ class EvaluationMetrics:
 
 
 class Prefixes:
-    _INPUTS = "inputs."
-    _OUTPUTS = "outputs."
-    _TGT_OUTPUTS = "__outputs."
+    """Column prefixes for inputs and outputs."""
+    INPUTS = "inputs."
+    OUTPUTS = "outputs."
+    TSG_OUTPUTS = "__outputs."
 
 
 DEFAULT_EVALUATION_RESULTS_FILE_NAME = "evaluation_results.json"
