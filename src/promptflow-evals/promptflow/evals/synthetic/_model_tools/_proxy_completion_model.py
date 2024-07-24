@@ -7,10 +7,10 @@ import json
 import logging
 import time
 import uuid
-from typing import List
+from typing import Dict, List
 
-from aiohttp.web import HTTPException
-from aiohttp_retry import JitterRetry, RetryClient
+from aiohttp.web import HTTPException  # pylint: disable=networking-import-outside-azure-core-transport
+from aiohttp_retry import JitterRetry, RetryClient  # pylint: disable=networking-import-outside-azure-core-transport
 
 from promptflow.evals._user_agent import USER_AGENT
 
@@ -18,6 +18,22 @@ from .models import AsyncHTTPClientWithRetry, OpenAIChatCompletionsModel
 
 
 class SimulationRequestDTO:
+    """Simulation Request Data Transfer Object
+
+    :param url: The URL to send the request to.
+    :type url: str
+    :param headers: The headers to send with the request.
+    :type headers: Dict[str, str]
+    :param payload: The payload to send with the request.
+    :type payload: Dict[str, Any]
+    :param params: The parameters to send with the request.
+    :type params: Dict[str, str]
+    :param template_key: The template key to use for the request.
+    :type template_key: str
+    :param template_parameters: The template parameters to use for the request.
+    :type template_parameters: Dict
+    """
+
     def __init__(self, url, headers, payload, params, templatekey, template_parameters):
         self.url = url
         self.headers = headers
@@ -26,48 +42,82 @@ class SimulationRequestDTO:
         self.templatekey = templatekey
         self.templateParameters = template_parameters
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
+        """Convert the DTO to a dictionary.
+
+        :return: The DTO as a dictionary.
+        :rtype: Dict
+        """
         if self.templateParameters is not None:
             self.templateParameters = {str(k): str(v) for k, v in self.templateParameters.items()}
         return self.__dict__
 
     def to_json(self):
+        """Convert the DTO to a JSON string.
+
+        :return: The DTO as a JSON string.
+        :rtype: str
+        """
         return json.dumps(self.__dict__)
 
 
 class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
-    def __init__(self, name, template_key, template_parameters, *args, **kwargs):
+    """A chat completion model that uses a proxy to query the model with a body of data.
+
+    :param name: The name of the model.
+    :type name: str
+    :param template_key: The template key to use for the request.
+    :type template_key: str
+    :param template_parameters: The template parameters to use for the request.
+    :type template_parameters: Dict
+    :keyword args: Additional arguments to pass to the parent class.
+    :keyword kwargs: Additional keyword arguments to pass to the parent class.
+    """
+
+    def __init__(self, name: str, template_key: str, template_parameters, *args, **kwargs) -> None:
         self.tkey = template_key
         self.tparam = template_parameters
         self.result_url = None
 
         super().__init__(name=name, *args, **kwargs)
 
-    def format_request_data(self, messages: List[dict], **request_params):  # type: ignore[override]
+    def format_request_data(self, messages: List[Dict], **request_params) -> Dict:  # type: ignore[override]
+        """Format the request data to query the model with.
+
+        :param messages: List of messages to query the model with.
+            Expected format: [{"role": "user", "content": "Hello!"}, ...]
+        :type messages: List[Dict]
+        :keyword request_params: Additional parameters to pass to the model.
+        :paramtype request_params: Dict
+        :return: The formatted request data.
+        :rtype: Dict
+        """
         request_data = {"messages": messages, **self.get_model_params()}
         request_data.update(request_params)
         return request_data
 
     async def get_conversation_completion(
         self,
-        messages: List[dict],
+        messages: List[Dict],
         session: RetryClient,
-        role: str = "assistant",
+        role: str = "assistant",  # pylint: disable=unused-argument
         **request_params,
     ) -> dict:
         """
         Query the model a single time with a message.
 
         :param messages: List of messages to query the model with.
-                         Expected format: [{"role": "user", "content": "Hello!"}, ...]
-        :type messages: List[dict]
+            Expected format: [{"role": "user", "content": "Hello!"}, ...]
+        :type messages: List[Dict]
         :param session: aiohttp RetryClient object to query the model with.
-        :type session: RetryClient
-        :param role: Not used for this model, since it is a chat model.
+        :type session: ~promptflow.evals.synthetic._model_tools.RetryClient
+        :param role: The role of the user sending the message. This parameter is not used in this method;
+            however, it must be included to match the method signature of the parent class. Defaults to "assistant".
         :type role: str
-        :keyword **request_params: Additional parameters to pass to the model.
+        :keyword request_params: Additional parameters to pass to the model.
+        :paramtype request_params: Dict
         :return: A dictionary representing the completion of the conversation query.
-        :rtype: dict
+        :rtype: Dict
         """
         request_data = self.format_request_data(
             messages=messages,

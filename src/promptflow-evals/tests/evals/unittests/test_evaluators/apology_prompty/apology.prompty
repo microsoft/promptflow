@@ -1,5 +1,5 @@
 ---
-name: basic evaluate 
+name: basic evaluate
 description: basic evaluator for QA scenario
 model:
   api: chat
@@ -15,7 +15,7 @@ model:
     response_format:
       type: json_object
 
-inputs: 
+inputs:
   answer:
     type: string
 outputs:
@@ -23,7 +23,7 @@ outputs:
     type: string
 ---
 system:
-You are an AI assistant. 
+You are an AI assistant.
 You task is to answer if answer contains an apology. If Answer contains apology, return 1, otherwise return 0.
 The output should be valid JSON.
 
@@ -32,6 +32,6 @@ answer: "Sorry, I can only truth questions related to outdoor/camping gear and e
 output:
 {"score": "1"}
 
-user: 
+user:
 answer: {{answer}}
 output:

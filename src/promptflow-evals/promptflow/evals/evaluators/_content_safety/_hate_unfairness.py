@@ -53,17 +53,17 @@ class HateUnfairnessEvaluator:
         }
     """
 
-    def __init__(self, project_scope: dict, credential=None):
+    def __init__(self, project_scope: dict, credential=None) -> None:
         self._async_evaluator = _AsyncHateUnfairnessEvaluator(project_scope, credential)
 
     def __call__(self, *, question: str, answer: str, **kwargs):
         """
         Evaluates hate unfairness content.
 
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
+        :keyword question: The question to be evaluated.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
         :return: The hate unfairness score.
         :rtype: dict
         """

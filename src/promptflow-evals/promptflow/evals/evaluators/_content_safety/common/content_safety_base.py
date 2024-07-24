@@ -18,7 +18,7 @@ class ContentSafetyEvaluatorBase(ABC):
     :type metric: ~promptflow.evals.evaluators._content_safety.flow.constants.EvaluationMetrics
     :param project_scope: The scope of the Azure AI project.
         It contains subscription id, resource group, and project name.
-    :type project_scope: dict
+    :type project_scope: Dict
     :param credential: The credential for connecting to Azure AI project.
     :type credential: TokenCredential
     """
@@ -32,12 +32,12 @@ class ContentSafetyEvaluatorBase(ABC):
         """
         Evaluates content according to this evaluator's metric.
 
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :return: The evaluation score.
-        :rtype: dict
+        :keyword question: The question to be evaluated.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
+        :return: The evaluation score computation based on the Content Safety metric (self.metric).
+        :rtype: Any
         """
         # Validate inputs
         # Raises value error if failed, so execution alone signifies success.
@@ -46,7 +46,6 @@ class ContentSafetyEvaluatorBase(ABC):
         ):
             raise ValueError("Both 'question' and 'answer' must be non-empty strings.")
 
-        # question: str, answer: str, metric_name: str, project_scope: dict, credential: TokenCredential
         # Run score computation based on supplied metric.
         result = await evaluate_with_rai_service(
             metric_name=self._metric,

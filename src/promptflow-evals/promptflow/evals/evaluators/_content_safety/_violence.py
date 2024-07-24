@@ -58,10 +58,10 @@ class ViolenceEvaluator:
         """
         Evaluates violence content.
 
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
+        :keyword question: The question to be evaluated.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
         :return: The violence score.
         :rtype: dict
         """

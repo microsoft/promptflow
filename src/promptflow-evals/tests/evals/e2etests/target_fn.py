@@ -15,5 +15,5 @@ def target_fn2(question: str) -> str:
 
 def target_fn3(question: str) -> str:
     response = target_fn(question)
-    response['question'] = f'The question is as follows: {question}'
+    response["question"] = f"The question is as follows: {question}"
     return response

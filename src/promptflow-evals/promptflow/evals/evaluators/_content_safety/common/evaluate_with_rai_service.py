@@ -1,8 +1,12 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
 import asyncio
 import importlib.metadata
 import re
 import time
-from typing import List
+from ast import literal_eval
+from typing import Dict, List
 from urllib.parse import urlparse
 
 import httpx
@@ -21,7 +25,17 @@ except importlib.metadata.PackageNotFoundError:
 USER_AGENT = "{}/{}".format("promptflow-evals", version)
 
 
-async def ensure_service_availability(rai_svc_url: str, token: str, capability: str = None):
+async def ensure_service_availability(rai_svc_url: str, token: str, capability: str = None) -> None:
+    """Check if the Responsible AI service is available in the region and has the required capability, if relevant.
+
+    :param rai_svc_url: The Responsible AI service URL.
+    :type rai_svc_url: str
+    :param token: The Azure authentication token.
+    :type token: str
+    :param capability: The capability to check. Default is None.
+    :type capability: str
+    :raises Exception: If the service is not available in the region or the capability is not available.
+    """
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
@@ -33,15 +47,34 @@ async def ensure_service_availability(rai_svc_url: str, token: str, capability: 
         response = await client.get(svc_liveness_url, headers=headers)
 
     if response.status_code != 200:
-        raise Exception(f"RAI service is not available in this region. Status Code: {response.status_code}")
+        raise Exception(  # pylint: disable=broad-exception-raised
+            f"RAI service is not available in this region. Status Code: {response.status_code}"
+        )
 
     capabilities = response.json()
 
     if capability and capability not in capabilities:
-        raise Exception(f"Capability '{capability}' is not available in this region")
+        raise Exception(  # pylint: disable=broad-exception-raised
+            f"Capability '{capability}' is not available in this region"
+        )
 
 
-async def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, token: str):
+async def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, token: str) -> str:
+    """Submit request to Responsible AI service for evaluation and return operation ID
+
+    :param question: The question to evaluate.
+    :type question: str
+    :param answer: The answer to evaluate.
+    :type answer: str
+    :param metric: The evaluation metric to use.
+    :type metric: str
+    :param rai_svc_url: The Responsible AI service URL.
+    :type rai_svc_url: str
+    :param token: The Azure authentication token.
+    :type token: str
+    :return: The operation ID.
+    :rtype: str
+    """
     user_text = f"<Human>{question}</><System>{answer}</>"
     normalized_user_text = user_text.replace("'", '\\"')
     payload = {"UserTextList": [normalized_user_text], "AnnotationTask": Tasks.CONTENT_HARM, "MetricList": [metric]}
@@ -65,7 +98,20 @@ async def submit_request(question: str, answer: str, metric: str, rai_svc_url: s
     return operation_id
 
 
-async def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredential, token: str):
+async def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredential, token: str) -> Dict:
+    """Fetch the annotation result from Responsible AI service
+
+    :param operation_id: The operation ID.
+    :type operation_id: str
+    :param rai_svc_url: The Responsible AI service URL.
+    :type rai_svc_url: str
+    :param credential: The Azure authentication credential.
+    :type credential: TokenCredential
+    :param token: The Azure authentication token.
+    :type token: str
+    :return: The annotation result.
+    :rtype: Dict
+    """
     start = time.time()
     request_count = 0
 
@@ -89,7 +135,18 @@ async def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCre
         await asyncio.sleep(sleep_time)
 
 
-def parse_response(batch_response: List[dict], metric_name: str) -> List[List[dict]]:
+def parse_response(  # pylint: disable=too-many-branches,too-many-statements
+    batch_response: List[Dict], metric_name: str
+) -> List[List[dict]]:
+    """Parse the annotation response from Responsible AI service
+
+    :param batch_response: The annotation response from Responsible AI service.
+    :type batch_response: List[Dict]
+    :param metric_name: The evaluation metric to use.
+    :type metric_name: str
+    :return: The parsed annotation result.
+    :rtype: List[List[Dict]]
+    """
     # Fix the metric name if it's "hate_fairness"
     # Eventually we will remove this fix once the RAI service is updated
     key = metric_name
@@ -103,17 +160,17 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
         return result
 
     try:
-        harm_response = eval(response[metric_name])
+        harm_response = literal_eval(response[metric_name])
     except NameError as e:
         # fix the eval error if there's "true" in the response
         m = re.findall(r"name '(\w+)' is not defined", str(e))
         if m:
             for word in m:
                 response[metric_name] = response[metric_name].replace(word, word.title())
-            harm_response = eval(response[metric_name])
+            harm_response = literal_eval(response[metric_name])
         else:
             harm_response = ""
-    except Exception:
+    except Exception:  # pylint: disable=broad-exception-caught
         harm_response = response[metric_name]
 
     if harm_response != "" and isinstance(harm_response, dict):
@@ -143,8 +200,8 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
         else:
             metric_value = np.nan
         reason = harm_response
-    elif harm_response != "" and (isinstance(harm_response, int) or isinstance(harm_response, float)):
-        if harm_response >= 0 and harm_response <= 7:
+    elif harm_response != "" and isinstance(harm_response, (int, float)):
+        if 0 < harm_response <= 7:
             metric_value = harm_response
         else:
             metric_value = np.nan
@@ -161,7 +218,16 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
     return result
 
 
-async def _get_service_discovery_url(azure_ai_project, token):
+async def _get_service_discovery_url(azure_ai_project: dict, token: str) -> str:
+    """Get the discovery service URL for the Azure AI project
+
+    :param azure_ai_project: The Azure AI project details.
+    :type azure_ai_project: Dict
+    :param token: The Azure authentication token.
+    :type token: str
+    :return: The discovery service URL.
+    :rtype: str
+    """
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     async with httpx.AsyncClient() as client:
         response = await client.get(
@@ -173,12 +239,21 @@ async def _get_service_discovery_url(azure_ai_project, token):
             timeout=5,
         )
     if response.status_code != 200:
-        raise Exception("Failed to retrieve the discovery service URL")
+        raise Exception("Failed to retrieve the discovery service URL")  # pylint: disable=broad-exception-raised
     base_url = urlparse(response.json()["properties"]["discoveryUrl"])
     return f"{base_url.scheme}://{base_url.netloc}"
 
 
-async def get_rai_svc_url(project_scope: dict, token: str):
+async def get_rai_svc_url(project_scope: dict, token: str) -> str:
+    """Get the Responsible AI service URL
+
+    :param project_scope: The Azure AI project scope details.
+    :type project_scope: Dict
+    :param token: The Azure authentication token.
+    :type token: str
+    :return: The Responsible AI service URL.
+    :rtype: str
+    """
     discovery_url = await _get_service_discovery_url(azure_ai_project=project_scope, token=token)
     subscription_id = project_scope["subscription_id"]
     resource_group_name = project_scope["resource_group_name"]
@@ -193,7 +268,15 @@ async def get_rai_svc_url(project_scope: dict, token: str):
     return rai_url
 
 
-async def fetch_or_reuse_token(credential: TokenCredential, token: str = None):
+async def fetch_or_reuse_token(credential: TokenCredential, token: str = None) -> str:
+    """Get token. Fetch a new token if the current token is near expiry
+
+    :param credential: The Azure authentication credential.
+    :type credential: TokenCredential
+    :param token: The Azure authentication token. Defaults to None. If none, a new token will be fetched.
+    :type token: str
+    :return: The Azure authentication token.
+    """
     acquire_new_token = True
     try:
         if token:
@@ -205,7 +288,7 @@ async def fetch_or_reuse_token(credential: TokenCredential, token: str = None):
             # Check if the token is near expiry
             if (exp_time - current_time) >= 300:
                 acquire_new_token = False
-    except Exception:
+    except Exception:  # pylint: disable=broad-exception-caught
         pass
 
     if acquire_new_token:
@@ -217,6 +300,21 @@ async def fetch_or_reuse_token(credential: TokenCredential, token: str = None):
 async def evaluate_with_rai_service(
     question: str, answer: str, metric_name: str, project_scope: dict, credential: TokenCredential
 ):
+    """ "Evaluate the content safety of the answer using Responsible AI service
+
+    :param question: The question to evaluate.
+    :type question: str
+    :param answer: The answer to evaluate.
+    :type answer: str
+    :param metric_name: The evaluation metric to use.
+    :type metric_name: str
+    :param project_scope: The Azure AI project scope details.
+    :type project_scope: Dict
+    :param credential: The Azure authentication credential.
+    :type credential: TokenCredential
+    :return: The parsed annotation result.
+    :rtype: List[List[Dict]]
+    """
     # Use DefaultAzureCredential if no credential is provided
     # This is for the for batch run scenario as the credential cannot be serialized by promoptflow
     if credential is None or credential == {}:

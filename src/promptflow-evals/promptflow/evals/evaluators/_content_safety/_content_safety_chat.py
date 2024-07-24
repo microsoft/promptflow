@@ -88,8 +88,8 @@ class ContentSafetyChatEvaluator:
         """
         Evaluates content-safety metrics for "chat" scenario.
 
-        :param conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
-        :type conversation: List[Dict]
+        :keyword conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
+        :paramtype conversation: List[Dict]
         :return: The scores for Chat scenario.
         :rtype: dict
         """
@@ -147,7 +147,7 @@ class ContentSafetyChatEvaluator:
             score = evaluator(question=question, answer=answer)
 
             return score
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(
                 f"Evaluator {evaluator.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}"
             )
@@ -237,7 +237,7 @@ class ContentSafetyChatEvaluator:
             return np.nan
 
         for harm_level, harm_score_range in HARM_SEVERITY_LEVEL_MAPPING.items():
-            if harm_score >= harm_score_range[0] and harm_score <= harm_score_range[1]:
+            if harm_score_range[0] <= harm_score <= harm_score_range[1]:
                 return harm_level
 
         return np.nan

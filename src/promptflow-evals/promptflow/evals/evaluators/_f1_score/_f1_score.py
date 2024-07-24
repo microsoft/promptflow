@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 from collections import Counter
+from typing import List
 
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 
@@ -11,7 +12,7 @@ class _AsyncF1ScoreEvaluator:
     def __init__(self):
         pass
 
-    async def __call__(self, *, answer: str, ground_truth: str, **kwargs):
+    def __call__(self, *, answer: str, ground_truth: str, **kwargs):
         # Validate inputs
         if not (answer and answer.strip() and answer != "None") or not (
             ground_truth and ground_truth.strip() and ground_truth != "None"
@@ -29,17 +30,27 @@ class _AsyncF1ScoreEvaluator:
         import string
 
         class QASplitTokenizer:
-            def __call__(self, line):
+            """Quality assurance tokenizer that splits text on whitespace."""
+
+            def __call__(self, line) -> List[str]:
                 """Tokenizes an input line using split() on whitespace
 
-                :param line: a segment to tokenize
-                :return: the tokenized line
+                :param line: The input segment to be tokenized
+                :type line: str
+                :return: The tokenized segment
+                :rtype: List[str]
                 """
 
                 return line.split()
 
-        def normalize_text(text) -> str:
-            """Lower text and remove punctuation, articles and extra whitespace."""
+        def normalize_text(text: str) -> str:
+            """Lower text and remove punctuation, articles and extra whitespace.
+
+            :param text: The text to be normalized
+            :type text: str
+            :return: The normalized text
+            :rtype: str
+            """
 
             def remove_articles(text):
                 return re.sub(r"\b(a|an|the)\b", " ", text)
@@ -106,13 +117,14 @@ class F1ScoreEvaluator:
         """
         Evaluate F1 score.
 
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :param ground_truth: The ground truth to be evaluated.
-        :type ground_truth: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
+        :keyword ground_truth: The ground truth to be evaluated.
+        :paramtype ground_truth: str
         :return: The F1 score.
         :rtype: dict
         """
+
         return async_run_allowing_running_loop(
             self._async_evaluator, answer=answer, ground_truth=ground_truth, **kwargs
         )
