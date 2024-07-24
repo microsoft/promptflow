@@ -15,8 +15,12 @@ import numpy as np
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
 
-from promptflow.evals.evaluators._content_safety.common.constants import EvaluationMetrics, RAIService, Tasks
-from promptflow.evals.evaluators._content_safety.common.utils import get_harm_severity_level
+try:
+    from .constants import EvaluationMetrics, RAIService, Tasks
+    from .utils import get_harm_severity_level
+except ImportError:
+    from constants import EvaluationMetrics, RAIService, Tasks
+    from utils import get_harm_severity_level
 
 try:
     version = importlib.metadata.version("promptflow-evals")

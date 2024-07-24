@@ -7,10 +7,16 @@ from typing import Dict, List
 
 import numpy as np
 
-from promptflow.evals.evaluators._content_safety._hate_unfairness import HateUnfairnessEvaluator
-from promptflow.evals.evaluators._content_safety._self_harm import SelfHarmEvaluator
-from promptflow.evals.evaluators._content_safety._sexual import SexualEvaluator
-from promptflow.evals.evaluators._content_safety._violence import ViolenceEvaluator
+try:
+    from ._hate_unfairness import HateUnfairnessEvaluator
+    from ._self_harm import SelfHarmEvaluator
+    from ._sexual import SexualEvaluator
+    from ._violence import ViolenceEvaluator
+except ImportError:
+    from _hate_unfairness import HateUnfairnessEvaluator
+    from _self_harm import SelfHarmEvaluator
+    from _sexual import SexualEvaluator
+    from _violence import ViolenceEvaluator
 
 logger = logging.getLogger(__name__)
 

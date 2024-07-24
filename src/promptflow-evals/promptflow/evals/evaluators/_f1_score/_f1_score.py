@@ -12,7 +12,7 @@ class _AsyncF1ScoreEvaluator:
     def __init__(self):
         pass
 
-    def __call__(self, *, answer: str, ground_truth: str, **kwargs):
+    async def __call__(self, *, answer: str, ground_truth: str, **kwargs):
         # Validate inputs
         if not (answer and answer.strip() and answer != "None") or not (
             ground_truth and ground_truth.strip() and ground_truth != "None"

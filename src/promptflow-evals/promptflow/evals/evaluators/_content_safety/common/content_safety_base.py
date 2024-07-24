@@ -4,8 +4,12 @@
 
 from abc import ABC
 
-from promptflow.evals.evaluators._content_safety.common.constants import EvaluationMetrics
-from promptflow.evals.evaluators._content_safety.common.evaluate_with_rai_service import evaluate_with_rai_service
+try:
+    from .constants import EvaluationMetrics
+    from .evaluate_with_rai_service import evaluate_with_rai_service
+except ImportError:
+    from constants import EvaluationMetrics
+    from evaluate_with_rai_service import evaluate_with_rai_service
 
 
 class ContentSafetyEvaluatorBase(ABC):
