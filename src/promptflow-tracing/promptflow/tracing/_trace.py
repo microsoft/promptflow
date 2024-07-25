@@ -412,6 +412,35 @@ def serialize_attribute(value):
 
 
 def log_evaluation_event(name: str, scores: dict, span_context: dict) -> None:
+    """Logs an evaluation as an opentelemetry LogRecord for a particular trace
+
+    :param name: The name of the evaluation to be logged
+    :type name: str
+    :param scores: A json-serializable dictionary of the evaluation results to be logged
+    :type scores: dict
+    :param span_context: A dictionary containing the 'traceparent' key that will be used to
+        determine which trace/span evaluation will be logged to
+    :type span_context: dict
+    :rtype: None
+
+    :Examples:
+
+    .. code-block:: python
+
+        @trace
+        def greetings(user_id, span_context):
+            from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+
+            TraceContextTextMapPropagator().inject(span_context)
+            name = get_name(user_id)
+            return f"Hello, {name}"
+
+        span_context = {}
+        greetings("user_id", span_context)
+
+        log_evaluation_result("eval", {"event": "eval1", score: "0.5"}, span_context)
+    """
+
     # local import since _logs is not GA in both opentelemetry and opentelemetry-sdk
     import opentelemetry.sdk._logs
     from opentelemetry import _logs
