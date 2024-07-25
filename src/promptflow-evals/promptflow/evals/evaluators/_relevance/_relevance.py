@@ -22,9 +22,10 @@ class _AsyncRelevanceEvaluator:
             model_config.api_version = "2024-02-15-preview"
 
         prompty_model_config = {"configuration": model_config}
-        prompty_model_config.update(
-            {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
-        ) if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration) else None
+        if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration):
+            prompty_model_config.update(
+                {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
+            )
         current_dir = os.path.dirname(__file__)
         prompty_path = os.path.join(current_dir, "relevance.prompty")
         self._flow = AsyncPrompty.load(source=prompty_path, model=prompty_model_config)
@@ -84,12 +85,12 @@ class RelevanceEvaluator:
         """
         Evaluate relevance.
 
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :param context: The context to be evaluated.
-        :type context: str
+        :keyword question: The question to be evaluated.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
+        :keyword context: The context to be evaluated.
+        :paramtype context: str
         :return: The relevance score.
         :rtype: dict
         """

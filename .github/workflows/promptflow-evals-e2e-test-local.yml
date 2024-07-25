@@ -53,6 +53,10 @@ jobs:
       - name: generate end-to-end test config from secret
         run: echo '${{ secrets.PF_EVALS_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.PF_EVALS_SP_CREDENTIALS }}
+          enable-AzPSSession: true
       - name: check azure is not installed
         run: poetry run pytest ../../scripts/code_qa/assert_local_install.py
         working-directory: ${{ env.WORKING_DIRECTORY }}

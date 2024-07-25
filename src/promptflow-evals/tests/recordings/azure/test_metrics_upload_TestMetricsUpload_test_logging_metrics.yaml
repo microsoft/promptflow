@@ -9,7 +9,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azure-ai-ml/1.15.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.9.19
+      - azure-ai-ml/1.16.1 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.10.14
         (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
@@ -40,7 +40,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.023'
+      - '0.045'
     status:
       code: 200
       message: OK
@@ -64,20 +64,20 @@ interactions:
     uri: https://eastus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/create
   response:
     body:
-      string: '{"run": {"info": {"run_uuid": "02884e9b-e307-4701-b303-e289430faa3e",
+      string: '{"run": {"info": {"run_uuid": "b3b167ac-1d40-41b0-866f-66b08da8862e",
         "experiment_id": "34fb7f85-4f86-428b-9c6f-333adf9733a8", "run_name": "test",
         "user_id": "00000000-0000-0000-0000-000000000000", "status": "RUNNING", "start_time":
-        "1720472291597", "artifact_uri": "azureml://eastus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experiments/0/runs/02884e9b-e307-4701-b303-e289430faa3e/artifacts",
-        "lifecycle_stage": "active", "run_id": "02884e9b-e307-4701-b303-e289430faa3e"},
+        "1721759885543", "artifact_uri": "azureml://eastus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experiments/0/runs/b3b167ac-1d40-41b0-866f-66b08da8862e/artifacts",
+        "lifecycle_stage": "active", "run_id": "b3b167ac-1d40-41b0-866f-66b08da8862e"},
         "data": {"tags": [{"key": "mlflow.user", "value": "promptflow-evals"}, {"key":
-        "mlflow.rootRunId", "value": "02884e9b-e307-4701-b303-e289430faa3e"}, {"key":
+        "mlflow.rootRunId", "value": "b3b167ac-1d40-41b0-866f-66b08da8862e"}, {"key":
         "mlflow.runName", "value": "test"}, {"key": "mlflow.user", "value": "First
         Last"}]}, "inputs": {}}}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '891'
+      - '886'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -89,7 +89,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.122'
+      - '0.136'
     status:
       code: 200
       message: OK
@@ -126,7 +126,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '1.878'
+      - '1.473'
     status:
       code: 200
       message: OK
@@ -150,10 +150,10 @@ interactions:
     uri: https://eastus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/update
   response:
     body:
-      string: '{"run_info": {"run_uuid": "02884e9b-e307-4701-b303-e289430faa3e", "experiment_id":
+      string: '{"run_info": {"run_uuid": "b3b167ac-1d40-41b0-866f-66b08da8862e", "experiment_id":
         "34fb7f85-4f86-428b-9c6f-333adf9733a8", "run_name": "test", "user_id": "00000000-0000-0000-0000-000000000000",
-        "status": "FINISHED", "start_time": "1720472291597", "end_time": "1720472296805",
-        "lifecycle_stage": "active", "run_id": "02884e9b-e307-4701-b303-e289430faa3e"}}'
+        "status": "FINISHED", "start_time": "1721759885543", "end_time": "1721759890920",
+        "lifecycle_stage": "active", "run_id": "b3b167ac-1d40-41b0-866f-66b08da8862e"}}'
     headers:
       connection:
       - keep-alive
@@ -170,7 +170,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.440'
+      - '1.748'
     status:
       code: 200
       message: OK

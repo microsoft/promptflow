@@ -96,9 +96,9 @@ class ChatEvaluator:
         """
         Evaluates chat scenario.
 
-        :param conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
+        :keyword conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
             "context" key is optional for assistant's turn and should have "citations" key with list of citations.
-        :type conversation: List[Dict]
+        :paramtype conversation: List[Dict]
         :return: The scores for Chat scenario.
         :rtype: dict
         """
@@ -197,7 +197,7 @@ class ChatEvaluator:
             score = evaluator(question=question, answer=answer, context=context)
 
             return score
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(
                 f"Evaluator {evaluator.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}"
             )
@@ -243,8 +243,7 @@ class ChatEvaluator:
             one_based_turn_num = turn_num + 1
 
             if not isinstance(turn, dict):
-                raise ValueError(
-                    f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
+                raise ValueError(f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
 
             if "role" not in turn or "content" not in turn:
                 raise ValueError(

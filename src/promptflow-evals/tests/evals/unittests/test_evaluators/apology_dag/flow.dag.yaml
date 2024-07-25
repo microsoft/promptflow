@@ -15,4 +15,3 @@ nodes:
     path: apology.py
   inputs:
     answer: ${inputs.answer}
-

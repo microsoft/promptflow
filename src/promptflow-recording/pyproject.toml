@@ -36,7 +36,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
-vcrpy = ">=5.1"
+vcrpy = ">=6.0.1"
 filelock = "*"
 promptflow-tracing = ">=0.1.0b1, <2.0.0"
 

@@ -67,8 +67,8 @@ class RetrievalChatEvaluator:
     def __call__(self, *, conversation, **kwargs):
         """Evaluates retrieval score chat scenario.
 
-        :param conversation: The conversation to be evaluated.
-        :type conversation: List[Dict]
+        :keyword conversation: The conversation to be evaluated.
+        :paramtype conversation: List[Dict]
         :return: The scores for Chat scenario.
         :rtype: dict
         """
@@ -90,9 +90,9 @@ class RetrievalChatEvaluator:
         # Evaluate each turn
         per_turn_scores = []
         history = []
-        for turn_num in range(len(questions)):
+        for turn_num, question in enumerate(questions):
             try:
-                question = questions[turn_num] if turn_num < len(questions) else ""
+                question = question if turn_num < len(questions) else ""
                 answer = answers[turn_num] if turn_num < len(answers) else ""
                 context = contexts[turn_num] if turn_num < len(contexts) else ""
 
@@ -107,7 +107,7 @@ class RetrievalChatEvaluator:
 
                 per_turn_scores.append(score)
 
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.warning(
                     f"Evaluator {self.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}"
                 )
