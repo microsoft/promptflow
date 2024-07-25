@@ -1,6 +1,8 @@
 # promptflow-core package
 
 ## v1.14.0 (2024.07.25)
+### Improvements
+- Remove dependency on docutils package.
 
 ## v1.13.0 (2024.06.28)
 
