@@ -1,7 +1,6 @@
 # promptflow-core package
 
-## v1.14.0 (Upcoming)
-TODO
+## v1.14.0 (2024.07.25)
 
 ## v1.13.0 (2024.06.28)
 
