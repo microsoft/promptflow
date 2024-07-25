@@ -7,16 +7,18 @@ import openai
 import pytest
 from opentelemetry.trace.status import StatusCode
 
+from promptflow.tracing._experimental import log_evaluation_event
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing._trace import TracedIterator
 from promptflow.tracing.contracts.trace import TraceType
 
-from ..utils import execute_function_in_subprocess, prepare_memory_exporter
+from ..utils import execute_function_in_subprocess, prepare_memory_exporter, prepare_memory_log_exporter
 from .simple_functions import (
     dummy_llm_tasks_async,
     dummy_llm_tasks_threadpool,
     greetings,
     openai_chat,
+    openai_chat_add_span_context,
     openai_chat_async,
     openai_completion,
     openai_completion_async,
@@ -143,6 +145,52 @@ class TestTracing:
         execute_function_in_subprocess(
             self.assert_otel_traces_with_prompt, dev_connections, func, inputs, expected_span_length
         )
+
+    @pytest.mark.parametrize(
+        "func, inputs",
+        [
+            (openai_chat_add_span_context, {"prompt": "Tell me a funny joke", "span_context": {}}),
+        ],
+    )
+    def test_log_evaluation_result(self, dev_connections, func, inputs):
+        execute_function_in_subprocess(self.assert_evaluation_logged, dev_connections, func, inputs)
+
+    def assert_evaluation_logged(self, dev_connections, func, inputs):
+        log_exporter = prepare_memory_log_exporter()
+        in_memory_span_exporter = prepare_memory_exporter()  # noqa: F841
+
+        inputs = self.add_azure_connection_to_inputs(inputs, dev_connections)
+        self.run_func(func, inputs)
+
+        span_context = inputs["span_context"]
+        split_traceparent = span_context["traceparent"].split("-")
+        trace_id = int(split_traceparent[1], 16)
+        span_id = int(split_traceparent[2], 16)
+        trace_flags = int(split_traceparent[3], 16)
+
+        def generate_random_evaluation():
+            # randomly decide if the response is funny
+            import random
+
+            score = random.uniform(0, 1)
+            return {"funny": score > 0.5, "score": score}
+
+        evaluation_result = generate_random_evaluation()
+
+        eval_name = "test.eval.random_eval_result"
+        log_evaluation_event(eval_name, evaluation_result, span_context)
+
+        log_list = log_exporter.get_finished_logs()
+        assert len(log_list) == 1, f"Expected 1 log, but got {len(log_list)}."
+        evaluation_log = log_list[0]
+        log_record = evaluation_log.log_record
+        assert log_record.body == json.dumps(evaluation_result)
+        assert log_record.attributes == {"event.name": "gen_ai.evaluation", "gen_ai.evaluation": eval_name}
+        assert log_record.trace_id == trace_id
+        assert log_record.span_id == span_id
+        assert log_record.trace_flags == trace_flags
+        assert log_record.timestamp is not None
+        assert log_record.observed_timestamp is not None
 
     def assert_otel_traces_with_prompt(self, dev_connections, func, inputs, expected_span_length):
         memory_exporter = prepare_memory_exporter()

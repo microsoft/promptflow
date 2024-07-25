@@ -8,6 +8,7 @@ import functools
 import inspect
 import json
 import logging
+import time
 from collections.abc import AsyncIterator, Iterator
 from importlib.metadata import version
 from threading import Lock
@@ -15,7 +16,7 @@ from typing import Callable, Dict, List, Optional, Sequence
 
 import opentelemetry.trace as otel_trace
 from opentelemetry.trace import Span
-from opentelemetry.trace.span import format_trace_id
+from opentelemetry.trace.span import TraceFlags, format_trace_id
 from opentelemetry.trace.status import Status, StatusCode
 from opentelemetry.util import types
 
@@ -408,6 +409,33 @@ def serialize_attribute(value):
     except Exception as e:
         logging.warning(f"Failed to serialize attribute: {e}")
         return None
+
+
+def log_evaluation_event(name: str, scores: dict, span_context: dict) -> None:
+    # local import since _logs is not GA in both opentelemetry and opentelemetry-sdk
+    import opentelemetry.sdk._logs
+    from opentelemetry import _logs
+
+    split_traceparent = span_context["traceparent"].split("-")
+    trace_id = int(split_traceparent[1], 16)
+    span_id = int(split_traceparent[2], 16)
+    trace_flags = TraceFlags(split_traceparent[3], 16)
+
+    attributes = {"event.name": "gen_ai.evaluation", "gen_ai.evaluation": name}
+    body = json.dumps(scores)
+
+    event = opentelemetry.sdk._logs.LogRecord(
+        timestamp=time.time_ns(),
+        observed_timestamp=time.time_ns(),
+        trace_id=trace_id,
+        span_id=span_id,
+        trace_flags=trace_flags,
+        severity_text=None,
+        severity_number=_logs.SeverityNumber.UNSPECIFIED,
+        body=body,
+        attributes=attributes,
+    )
+    _logs.get_logger(__name__).emit(event)
 
 
 def _traced(

@@ -4,6 +4,7 @@ from time import sleep
 from typing import Union
 
 from openai import AsyncAzureOpenAI, AzureOpenAI
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 from promptflow.tracing import ThreadPoolExecutorWithContext
 from promptflow.tracing._trace import trace
@@ -71,6 +72,26 @@ def dummy_llm_tasks_threadpool(prompt: str, models: list):
 @trace
 def openai_chat(connection: dict, prompt: str, stream: bool = False):
     client = AzureOpenAI(**connection)
+
+    messages = [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": prompt}]
+    response = client.chat.completions.create(model="gpt-35-turbo", messages=messages, stream=stream)
+
+    if stream:
+
+        def generator():
+            for chunk in response:
+                if chunk.choices:
+                    yield chunk.choices[0].delta.content or ""
+
+        return "".join(generator())
+    return response.choices[0].message.content or ""
+
+
+@trace
+def openai_chat_add_span_context(connection: dict, prompt: str, span_context: dict, stream: bool = False):
+    client = AzureOpenAI(**connection)
+
+    TraceContextTextMapPropagator().inject(span_context)
 
     messages = [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": prompt}]
     response = client.chat.completions.create(model="gpt-35-turbo", messages=messages, stream=stream)

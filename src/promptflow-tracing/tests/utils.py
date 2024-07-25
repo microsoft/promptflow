@@ -38,3 +38,17 @@ def prepare_memory_exporter():
     provider.add_span_processor(processor)
     set_tracer_provider(provider)
     return exporter
+
+
+def prepare_memory_log_exporter():
+    # local imports since _logs is experimental
+    from opentelemetry import _logs
+    from opentelemetry.sdk._logs import LoggerProvider
+    from opentelemetry.sdk._logs.export import InMemoryLogExporter, SimpleLogRecordProcessor
+
+    provider = LoggerProvider()
+    _logs.set_logger_provider(provider)
+    in_memory_log_exporter = InMemoryLogExporter()
+    provider.add_log_record_processor(SimpleLogRecordProcessor(in_memory_log_exporter))
+
+    return in_memory_log_exporter
