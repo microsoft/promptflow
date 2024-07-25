@@ -18,7 +18,6 @@ except ImportError:
     from _sexual import SexualEvaluator
     from _violence import ViolenceEvaluator
 
-
 logger = logging.getLogger(__name__)
 
 
