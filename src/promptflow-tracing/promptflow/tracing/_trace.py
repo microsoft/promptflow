@@ -425,6 +425,8 @@ def log_evaluation_event(name: str, scores: dict, span_context: dict) -> None:
 
     :Examples:
 
+    Adding an evaluation result to a trace:
+
     .. code-block:: python
 
         @trace
