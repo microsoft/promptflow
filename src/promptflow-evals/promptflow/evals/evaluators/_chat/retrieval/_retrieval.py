@@ -9,10 +9,80 @@ import re
 
 import numpy as np
 
-from promptflow.client import load_flow
-from promptflow.core import AzureOpenAIModelConfiguration
+from promptflow._utils.async_utils import async_run_allowing_running_loop
+from promptflow.core import AsyncPrompty, AzureOpenAIModelConfiguration
 
 logger = logging.getLogger(__name__)
+
+try:
+    from ..._user_agent import USER_AGENT
+except ImportError:
+    USER_AGENT = None
+
+
+class _AsyncRetrievalChatEvaluator:
+    def __init__(self, model_config: AzureOpenAIModelConfiguration):
+        if model_config.api_version is None:
+            model_config.api_version = "2024-02-15-preview"
+
+        prompty_model_config = {"configuration": model_config}
+        if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration):
+            prompty_model_config.update({"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}})
+        current_dir = os.path.dirname(__file__)
+        prompty_path = os.path.join(current_dir, "retrieval.prompty")
+        self._flow = AsyncPrompty.load(source=prompty_path, model=prompty_model_config)
+
+    async def __call__(self, *, conversation, **kwargs):
+        # Extract questions, answers and contexts from conversation
+        questions = []
+        answers = []
+        contexts = []
+
+        for each_turn in conversation:
+            role = each_turn["role"]
+            if role == "user":
+                questions.append(each_turn["content"])
+            elif role == "assistant":
+                answers.append(each_turn["content"])
+                if "context" in each_turn and "citations" in each_turn["context"]:
+                    citations = json.dumps(each_turn["context"]["citations"])
+                    contexts.append(citations)
+
+        # Evaluate each turn
+        per_turn_scores = []
+        history = []
+        for turn_num, question in enumerate(questions):
+            try:
+                question = question if turn_num < len(questions) else ""
+                answer = answers[turn_num] if turn_num < len(answers) else ""
+                context = contexts[turn_num] if turn_num < len(contexts) else ""
+
+                history.append({"user": question, "assistant": answer})
+
+                llm_output = await self._flow(query=question, history=history, documents=context)
+                score = np.nan
+                if llm_output:
+                    parsed_score_response = re.findall(r"\d+", llm_output.split("# Result")[-1].strip())
+                    if len(parsed_score_response) > 0:
+                        score = float(parsed_score_response[0].replace("'", "").strip())
+
+                per_turn_scores.append(score)
+
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                logger.warning(
+                    f"Evaluator {self.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}"
+                )
+
+                per_turn_scores.append(np.nan)
+
+        return {
+            "gpt_retrieval": np.nanmean(per_turn_scores),
+            "evaluation_per_turn": {
+                "gpt_retrieval": {
+                    "score": per_turn_scores,
+                }
+            },
+        }
 
 
 class RetrievalChatEvaluator:
@@ -54,15 +124,7 @@ class RetrievalChatEvaluator:
     """
 
     def __init__(self, model_config: AzureOpenAIModelConfiguration):
-        # TODO: Remove this block once the bug is fixed
-        # https://msdata.visualstudio.com/Vienna/_workitems/edit/3151324
-        if model_config.api_version is None:
-            model_config.api_version = "2024-02-15-preview"
-
-        prompty_model_config = {"configuration": model_config}
-        current_dir = os.path.dirname(__file__)
-        prompty_path = os.path.join(current_dir, "retrieval.prompty")
-        self._flow = load_flow(source=prompty_path, model=prompty_model_config)
+        self._async_evaluator = _AsyncRetrievalChatEvaluator(model_config)
 
     def __call__(self, *, conversation, **kwargs):
         """Evaluates retrieval score chat scenario.
@@ -72,53 +134,7 @@ class RetrievalChatEvaluator:
         :return: The scores for Chat scenario.
         :rtype: dict
         """
-        # Extract questions, answers and contexts from conversation
-        questions = []
-        answers = []
-        contexts = []
+        return async_run_allowing_running_loop(self._async_evaluator, conversation=conversation, **kwargs)
 
-        for each_turn in conversation:
-            role = each_turn["role"]
-            if role == "user":
-                questions.append(each_turn["content"])
-            elif role == "assistant":
-                answers.append(each_turn["content"])
-                if "context" in each_turn and "citations" in each_turn["context"]:
-                    citations = json.dumps(each_turn["context"]["citations"])
-                    contexts.append(citations)
-
-        # Evaluate each turn
-        per_turn_scores = []
-        history = []
-        for turn_num, question in enumerate(questions):
-            try:
-                question = question if turn_num < len(questions) else ""
-                answer = answers[turn_num] if turn_num < len(answers) else ""
-                context = contexts[turn_num] if turn_num < len(contexts) else ""
-
-                history.append({"user": question, "assistant": answer})
-
-                llm_output = self._flow(query=question, history=history, documents=context)
-                score = np.nan
-                if llm_output:
-                    parsed_score_response = re.findall(r"\d+", llm_output.split("# Result")[-1].strip())
-                    if len(parsed_score_response) > 0:
-                        score = float(parsed_score_response[0].replace("'", "").strip())
-
-                per_turn_scores.append(score)
-
-            except Exception as e:  # pylint: disable=broad-exception-caught
-                logger.warning(
-                    f"Evaluator {self.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}"
-                )
-
-                per_turn_scores.append(np.nan)
-
-        return {
-            "gpt_retrieval": np.nanmean(per_turn_scores),
-            "evaluation_per_turn": {
-                "gpt_retrieval": {
-                    "score": per_turn_scores,
-                }
-            },
-        }
+    def _to_async(self):
+        return self._async_evaluator
