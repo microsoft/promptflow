@@ -250,11 +250,7 @@ class TestEvalRun:
         ), "Wrong Metrics URL"
 
     @pytest.mark.parametrize(
-        'log_function,expected_str',
-        [
-            ('log_artifact', 'register artifact'),
-            ('log_metric', 'save metrics')
-        ]
+        "log_function,expected_str", [("log_artifact", "register artifact"), ("log_metric", "save metrics")]
     )
     def test_log_artifacts_logs_error(self, token_mock, tmp_path, caplog, log_function, expected_str):
         """Test that the error is logged."""
@@ -295,11 +291,12 @@ class TestEvalRun:
         assert expected_str in caplog.records[0].message
 
     @pytest.mark.parametrize(
-        'dir_exists,dir_empty,expected_error', [
+        "dir_exists,dir_empty,expected_error",
+        [
             (True, True, "The path to the artifact is empty."),
             (False, True, "The path to the artifact is either not a directory or does not exist."),
-            (True, False, "The run results file was not found, skipping artifacts upload.")
-        ]
+            (True, False, "The run results file was not found, skipping artifacts upload."),
+        ],
     )
     def test_wrong_artifact_path(
         self,
@@ -409,10 +406,10 @@ class TestEvalRun:
         run = EvalRun(
             run_name=None,
             tracking_uri=None,
-            subscription_id='mock',
-            group_name='mock',
-            workspace_name='mock',
-            ml_client=MagicMock()
+            subscription_id="mock",
+            group_name="mock",
+            workspace_name="mock",
+            ml_client=MagicMock(),
         )
         assert run.status == RunStatus.NOT_STARTED, f'Get {run.status}, expected {RunStatus.NOT_STARTED}'
         run._start_run()

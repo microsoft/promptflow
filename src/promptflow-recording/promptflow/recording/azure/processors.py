@@ -128,9 +128,7 @@ class AzureResourceProcessor(RecordingProcessor):
             f"/providers/Microsoft.MachineLearningServices/workspaces/00000"
         )
         # need during the constructor of FlowServiceCaller (for vNet case)
-        body["properties"] = {
-            "discoveryUrl": discovery_url,
-            "mlFlowTrackingUri": ml_flow_tracking_uri}
+        body["properties"] = {"discoveryUrl": discovery_url, "mlFlowTrackingUri": ml_flow_tracking_uri}
         name = body["name"]
         body["name"] = SanitizedValues.WORKSPACE_NAME
         body["id"] = body["id"].replace(name, SanitizedValues.WORKSPACE_NAME)
@@ -219,7 +217,7 @@ class PFSProcessor(RecordingProcessor):
     """Sanitize request/response for PFS operations."""
 
     def process_request(self, request: Request) -> Request:
-        if is_json_payload_request(request) and request.body is not None:
+        if is_json_payload_request(request) and request.body is not None and request.body != b"":
             body = request.body.decode("utf-8")
             body = sanitize_pfs_request_body(body)
             request.body = body.encode("utf-8")

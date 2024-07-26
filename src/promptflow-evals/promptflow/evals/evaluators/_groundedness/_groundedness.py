@@ -22,9 +22,10 @@ class _AsyncGroundednessEvaluator:
             model_config.api_version = "2024-02-15-preview"
 
         prompty_model_config = {"configuration": model_config}
-        prompty_model_config.update(
-            {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
-        ) if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration) else None
+        if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration):
+            prompty_model_config.update(
+                {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
+            )
         current_dir = os.path.dirname(__file__)
         prompty_path = os.path.join(current_dir, "groundedness.prompty")
         self._flow = AsyncPrompty.load(source=prompty_path, model=prompty_model_config)
@@ -34,7 +35,7 @@ class _AsyncGroundednessEvaluator:
         answer = str(answer or "")
         context = str(context or "")
 
-        if not (answer.strip()) or not (context.strip()):
+        if not answer.strip() or not context.strip():
             raise ValueError("Both 'answer' and 'context' must be non-empty strings.")
 
         # Run the evaluation flow
@@ -82,10 +83,10 @@ class GroundednessEvaluator:
         """
         Evaluate groundedness of the answer in the context.
 
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :param context: The context in which the answer is evaluated.
-        :type context: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
+        :keyword context: The context in which the answer is evaluated.
+        :paramtype context: str
         :return: The groundedness score.
         :rtype: dict
         """

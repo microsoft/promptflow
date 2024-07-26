@@ -17,7 +17,7 @@ class TestDocstringParser:
         :type connection: AzureOpenAIConnection
         """
 
-        expected_des = "Hello world."
+        expected_des = "Hello world.\n"
         assert expected_des == DocstringParser.parse_description(docstring)[0]
 
         # Multiple lines of description
@@ -43,7 +43,7 @@ class TestDocstringParser:
         docstring = """
         line 1.
 
-        line2.
+        line 2.
 
         :param name: The name to be say thanks to.
         :type name: str
@@ -51,7 +51,7 @@ class TestDocstringParser:
         :type connection: AzureOpenAIConnection
         """
 
-        expected_des = "line 1. line2."
+        expected_des = "line 1.\n\nline 2."
         assert expected_des == DocstringParser.parse_description(docstring)[0]
 
         # Multiple lines of description
@@ -59,7 +59,7 @@ class TestDocstringParser:
         docstring = """
         line 1
 
-        line2
+        line 2
 
         :param name: The name to be say thanks to.
         :type name: str
@@ -67,13 +67,13 @@ class TestDocstringParser:
         :type connection: AzureOpenAIConnection
         """
 
-        expected_des = "line 1 line2"
+        expected_des = "line 1\n\nline 2"
         assert expected_des == DocstringParser.parse_description(docstring)[0]
 
         docstring = """
         line 1
 
-        line2.
+        line 2.
 
         :param name: The name to be say thanks to.
         :type name: str
@@ -81,12 +81,12 @@ class TestDocstringParser:
         :type connection: AzureOpenAIConnection
         """
 
-        expected_des = "line 1 line2."
+        expected_des = "line 1\n\nline 2."
         assert expected_des == DocstringParser.parse_description(docstring)[0]
 
         docstring = """
         line 1
-        line2.
+        line 2.
 
         :param name: The name to be say thanks to.
         :type name: str
@@ -94,7 +94,7 @@ class TestDocstringParser:
         :type connection: AzureOpenAIConnection
         """
 
-        expected_des = "line 1\nline2."
+        expected_des = "line 1\nline 2."
         assert expected_des == DocstringParser.parse_description(docstring)[0]
 
         docstring = """

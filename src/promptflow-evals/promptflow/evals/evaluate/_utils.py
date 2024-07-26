@@ -28,7 +28,7 @@ def is_none(value):
     return value is None or str(value).lower() == "none"
 
 
-def extract_workspace_triad_from_trace_provider(trace_provider: str):
+def extract_workspace_triad_from_trace_provider(trace_provider: str):  # pylint: disable=name-too-long
     match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, trace_provider)
     if not match or len(match.groups()) != 5:
         raise ValueError(
@@ -181,7 +181,7 @@ def _apply_column_mapping(source_df: pd.DataFrame, mapping_config: dict, inplace
                     map_from_key = pattern[len(pattern_prefix) :]
                 elif pattern.startswith(run_outputs_prefix):
                     # Target-generated columns always starts from .outputs.
-                    map_from_key = f"{Prefixes._TGT_OUTPUTS}{pattern[len(run_outputs_prefix) :]}"
+                    map_from_key = f"{Prefixes.TSG_OUTPUTS}{pattern[len(run_outputs_prefix) :]}"
                 # if we are not renaming anything, skip.
                 if map_from_key == map_to_key:
                     continue
@@ -202,6 +202,22 @@ def _apply_column_mapping(source_df: pd.DataFrame, mapping_config: dict, inplace
 
 def _has_aggregator(evaluator):
     return hasattr(evaluator, "__aggregate__")
+
+
+def get_int_env_var(env_var_name, default_value=None):
+    """
+    The function `get_int_env_var` retrieves an integer environment variable value, with an optional
+    default value if the variable is not set or cannot be converted to an integer.
+
+    :param env_var_name: The name of the environment variable you want to retrieve the value of
+    :param default_value: The default value is the value that will be returned if the environment
+    variable is not found or if it cannot be converted to an integer
+    :return: an integer value.
+    """
+    try:
+        return int(os.environ.get(env_var_name, default_value))
+    except Exception:
+        return default_value
 
 
 def set_event_loop_policy():
