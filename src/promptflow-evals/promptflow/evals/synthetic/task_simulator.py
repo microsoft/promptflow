@@ -16,6 +16,7 @@ from promptflow.core import AzureOpenAIModelConfiguration
 from .._user_agent import USER_AGENT
 from ._conversation.constants import ConversationRole
 from ._tracing import monitor_task_simulator
+from ._utils import JsonLineChatProtocol
 
 
 class ConvTurn:
@@ -76,38 +77,6 @@ class TaskSimulator:
         self.azure_ai_project["api_version"] = "2024-02-15-preview"
         self.credential = credential
 
-    async def build_query(
-        self, *, user_persona, conversation_history, user_simulator_prompty, user_simulator_prompty_kwargs
-    ):
-        # make a call to llm with user_persona and query
-        prompty_model_config = {"configuration": self.azure_ai_project}
-        prompty_model_config.update(
-            {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
-        ) if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration) else None
-        try:
-            if not user_simulator_prompty:
-                current_dir = os.path.dirname(__file__)
-                prompty_path = os.path.join(current_dir, "_prompty", "task_simulate_with_persona.prompty")
-                _flow = load_flow(source=prompty_path, model=prompty_model_config)
-            else:
-                _flow = load_flow(
-                    source=user_simulator_prompty,
-                    model=prompty_model_config,
-                    **user_simulator_prompty_kwargs,
-                )
-            response = _flow(user_persona=user_persona, conversation_history=conversation_history)
-        except Exception as e:
-            print("Something went wrong running the prompty")
-            raise e
-        try:
-            response_dict = ast.literal_eval(response)
-            response = json.dumps(response_dict)
-            user_simulator_prompty_response = json.loads(response)
-        except Exception as e:
-            print("Something went wrong parsing the user_simulator_prompty_response output")
-            raise e
-        return user_simulator_prompty_response["content"]
-
     @monitor_task_simulator
     async def __call__(
         self,
@@ -162,7 +131,7 @@ class TaskSimulator:
             raise e
         i = 0
         progress_bar = tqdm(
-            total=len(query_response_list) * len(user_persona),
+            total=len(query_response_list) * max_conversation_turns,
             desc="generating simulations",
             ncols=100,
             unit="simulations",
@@ -185,15 +154,49 @@ class TaskSimulator:
                 progress_bar=progress_bar,
             )
             all_conversations.append(
-                {
-                    "messsages": conversation,
-                    "finish_reason": ["stop"],
-                    "context": f"User persona: {user_persona_item} Expected response: {response}",
-                    "$schema": "http://azureml/sdk-2-0/ChatConversation.json",
-                }
+                JsonLineChatProtocol(
+                    {
+                        "messages": conversation,
+                        "finish_reason": ["stop"],
+                        "context": f"User persona: {user_persona_item} Expected response: {response}",
+                        "$schema": "http://azureml/sdk-2-0/ChatConversation.json",
+                    }
+                )
             )
         progress_bar.close()
         return all_conversations
+
+    async def build_query(
+        self, *, user_persona, conversation_history, user_simulator_prompty, user_simulator_prompty_kwargs
+    ):
+        # make a call to llm with user_persona and query
+        prompty_model_config = {"configuration": self.azure_ai_project}
+        prompty_model_config.update(
+            {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
+        ) if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration) else None
+        try:
+            if not user_simulator_prompty:
+                current_dir = os.path.dirname(__file__)
+                prompty_path = os.path.join(current_dir, "_prompty", "task_simulate_with_persona.prompty")
+                _flow = load_flow(source=prompty_path, model=prompty_model_config)
+            else:
+                _flow = load_flow(
+                    source=user_simulator_prompty,
+                    model=prompty_model_config,
+                    **user_simulator_prompty_kwargs,
+                )
+            response = _flow(user_persona=user_persona, conversation_history=conversation_history)
+        except Exception as e:
+            print("Something went wrong running the prompty")
+            raise e
+        try:
+            response_dict = ast.literal_eval(response)
+            response = json.dumps(response_dict)
+            user_simulator_prompty_response = json.loads(response)
+        except Exception as e:
+            print("Something went wrong parsing the user_simulator_prompty_response output")
+            raise e
+        return user_simulator_prompty_response["content"]
 
     async def complete_conversation(
         self,

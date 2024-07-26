@@ -5,19 +5,14 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
+import wikipedia
 from azure.identity import DefaultAzureCredential
 
 from promptflow.client import load_flow
+from promptflow.core import AzureOpenAIModelConfiguration
+from promptflow.evals.evaluate import evaluate
+from promptflow.evals.evaluators import FluencyEvaluator, GroundednessEvaluator, RelevanceEvaluator, SimilarityEvaluator
 from promptflow.evals.synthetic import TaskSimulator
-
-azure_ai_project = {
-    "subscription_id": os.environ.get("AZURE_SUBSCRIPTION_ID"),
-    "resource_group_name": os.environ.get("RESOURCE_GROUP"),
-    "project_name": os.environ.get("PROJECT_NAME"),
-    "credential": DefaultAzureCredential(),
-}
-
-import wikipedia
 
 wiki_search_term = "Leonardo da vinci"
 wiki_title = wikipedia.search(wiki_search_term)[0]
@@ -53,7 +48,38 @@ async def callback(
     return {"messages": messages["messages"], "stream": stream, "session_state": session_state, "context": context}
 
 
-async def main():
+async def evaluate_responses(model_config, azure_ai_project):
+    relevance_evaluator = RelevanceEvaluator(model_config)
+    groundedness_evaluator = GroundednessEvaluator(model_config)
+    similarity_evaluator = SimilarityEvaluator(model_config)
+    fluency_evaluator = FluencyEvaluator(model_config)
+    try:
+        result = evaluate(
+            evaluation_name="task_simulator_eval",
+            data="output.jsonl",
+            evaluators={
+                "relevance": relevance_evaluator,
+                "groundedness": groundedness_evaluator,
+                "fluency": fluency_evaluator,
+            },
+            # evaluator_config={
+            #     "default": {
+            #         "ground_truth": "${data.context}",
+            #         "context": "${data.context}",
+            #     }
+            # },
+            azure_ai_project=azure_ai_project,
+        )
+        print(result["studio_url"])
+        return result
+    except Exception as e:
+        print(e)
+        import pdb
+
+        pdb.set_trace()
+
+
+async def main(model_config, azure_ai_project):
     current_dir = os.path.dirname(__file__)
     query_response_prompty_override = os.path.join(current_dir, "query_generator_long_answer.prompty")
     simulator = TaskSimulator(azure_ai_project=azure_ai_project, credential=DefaultAzureCredential())
@@ -61,7 +87,7 @@ async def main():
         target=callback,
         text=text,
         num_queries=4,
-        max_conversation_turns=4,
+        max_conversation_turns=2,
         query_response_generating_prompty=query_response_prompty_override,
         user_persona=[
             f"I am a student and I want to learn more about {wiki_search_term}",
@@ -70,7 +96,20 @@ async def main():
             f"I am a statistician and I want to do a detailed table of factual data concerning {wiki_search_term}",
         ],
     )
-    print(json.dumps(outputs, indent=2))
+
+    for output in outputs:
+        with open("output.jsonl", "a") as f:
+            f.write(output.to_eval_qa_json_lines())
+
+        # run eval on the output file
+    try:
+        result = await evaluate_responses(model_config, azure_ai_project)
+        print(json.dumps(result, indent=2))
+    except Exception as e:
+        print(e)
+        import pdb
+
+        pdb.set_trace()
 
 
 if __name__ == "__main__":
@@ -80,6 +119,17 @@ if __name__ == "__main__":
     os.environ["AZURE_OPENAI_API_KEY"] = ""
     os.environ["AZURE_OPENAI_ENDPOINT"] = ""
     os.environ["AZURE_DEPLOYMENT"] = ""
+    model_config = AzureOpenAIModelConfiguration(
+        azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+        api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
+        azure_deployment=os.environ.get("AZURE_OPENAI_DEPLOYMENT"),
+        api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
+    )
+    azure_ai_project = {
+        "subscription_id": os.environ.get("AZURE_SUBSCRIPTION_ID"),
+        "resource_group_name": os.environ.get("RESOURCE_GROUP"),
+        "project_name": os.environ.get("PROJECT_NAME"),
+    }
 
-    asyncio.run(main())
+    asyncio.run(main(model_config=model_config, azure_ai_project=azure_ai_project))
     print("done!")

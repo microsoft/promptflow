@@ -64,3 +64,48 @@ class JsonLineList(list):
                         user_message = assistant_message = None
 
         return json_lines
+
+
+class JsonLineChatProtocol(dict):
+    """
+    A util to manage a JSON object that follows the chat protocol.
+    """
+
+    def to_json(self):
+        """
+        Converts the object to a JSON string.
+
+        :returns: A JSON representation of the object.
+        :rtype: str
+        """
+        return json.dumps(self)
+
+    def to_eval_qa_json_lines(self):
+        """
+        Converts the object to a string of JSON lines suitable for evaluation in a Q&A format.
+        The object is expected to be a dictionary with 'messages' key.
+        """
+        user_message = None
+        assistant_message = None
+        if "context" in self:
+            context = self["context"]
+        else:
+            context = None
+        json_lines = ""
+        for message in self["messages"]:
+            if message["role"] == "user":
+                user_message = message["content"]
+            elif message["role"] == "assistant":
+                assistant_message = message["content"]
+            if "context" in message and message["context"] is not None:
+                context = message.get("context", context)
+            if user_message and assistant_message:
+                if context:
+                    json_lines += (
+                        json.dumps({"question": user_message, "answer": assistant_message, "context": context}) + "\n"
+                    )
+                    user_message = assistant_message = None
+                else:
+                    json_lines += json.dumps({"question": user_message, "answer": assistant_message}) + "\n"
+                    user_message = assistant_message = None
+        return json_lines
