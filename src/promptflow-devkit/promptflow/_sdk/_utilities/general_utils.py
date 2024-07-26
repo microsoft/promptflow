@@ -763,7 +763,7 @@ _refresh_connection_dir_lock = FileLock(REFRESH_CONNECTIONS_DIR_LOCK_PATH)
 # DO NOT easily move this function to elsewhere, as it's used by extension pfutil to generate the connection files
 # every time collect tools. If you want to move it, please make sure the extension can still work. Refer to the
 # pfutil code for more details:
-# https://msdata.visualstudio.com/Vienna/_git/prompt-flow-vsc?path=/packages/extension/pfutil/_pf_vsc_tool.py&line=150&lineEnd=150&lineStartColumn=9&lineEndColumn=85
+# https://msdata.visualstudio.com/Vienna/_git/prompt-flow-vsc?path=/packages/extension/pfutil/_pf_vsc_tool.py&version=GBmain&line=147&lineEnd=147&lineStartColumn=9&lineEndColumn=67&lineStyle=plain&_a=contents
 def refresh_connections_dir(connection_spec_files, connection_template_yamls):
     connections_dir = _generate_connections_dir()
 
