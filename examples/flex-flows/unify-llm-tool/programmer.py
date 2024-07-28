@@ -29,7 +29,12 @@ def write_simple_program(
 ) -> Result:
     """Ask LLM to write a simple program."""
     prompt = load_prompt("hello.jinja2", text)
-    output = my_llm_tool(prompt=prompt, model_name=model_name, provider_name=provider_name, max_tokens=120)
+    output = my_llm_tool(
+        prompt=prompt,
+        model_name=model_name,
+        provider_name=provider_name,
+        max_tokens=120,
+    )
     return Result(output=output)
 
 

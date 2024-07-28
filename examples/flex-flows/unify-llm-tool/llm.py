@@ -20,16 +20,14 @@ def my_llm_tool(
         load_dotenv()
 
     if "UNIFY_API_KEY" not in os.environ:
-        raise Exception(
-            "Please specify environment variables: UNIFY_API_KEY"
-        )
+        raise Exception("Please specify environment variables: UNIFY_API_KEY")
     messages = [{"content": prompt, "role": "system"}]
     api_key = os.environ.get("UNIFY_API_KEY", None)
     unify_client = Unify(
-            api_key=api_key,
-            model=model_name,
-            provider=provider_name,
-        )
+        api_key=api_key,
+        model=model_name,
+        provider=provider_name,
+    )
     response = unify_client.generate(
         messages=messages,
         max_tokens=int(max_tokens),
