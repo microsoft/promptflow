@@ -152,9 +152,9 @@ class Simulator:
             num_queries = len(user_persona)
 
         prompty_model_config = {"configuration": self.azure_ai_project}
-        prompty_model_config.update(
-            {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
-        ) if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration) else None
+
+        if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration):
+            prompty_model_config.update({"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}})
 
         if not query_response_generating_prompty:
             current_dir = os.path.dirname(__file__)
@@ -182,9 +182,6 @@ class Simulator:
             query_response_list = json.loads(query_responses)
         except Exception as e:
             print("Something went wrong parsing the prompty output")
-            import pdb
-
-            pdb.set_trace()
             raise e
 
         i = 0
@@ -232,9 +229,9 @@ class Simulator:
         """
         # make a call to llm with user_persona and query
         prompty_model_config = {"configuration": self.azure_ai_project}
-        prompty_model_config.update(
-            {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
-        ) if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration) else None
+
+        if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration):
+            prompty_model_config.update({"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}})
         try:
             if not user_simulator_prompty:
                 current_dir = os.path.dirname(__file__)
