@@ -1,3 +1,6 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
 # flake8: noqa
 
 import asyncio
@@ -11,7 +14,7 @@ from azure.identity import DefaultAzureCredential
 from promptflow.client import load_flow
 from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.evals.evaluate import evaluate
-from promptflow.evals.evaluators import FluencyEvaluator, GroundednessEvaluator, RelevanceEvaluator, SimilarityEvaluator
+from promptflow.evals.evaluators import FluencyEvaluator, GroundednessEvaluator, RelevanceEvaluator
 from promptflow.evals.synthetic import TaskSimulator
 
 wiki_search_term = "Leonardo da vinci"
@@ -51,12 +54,13 @@ async def callback(
 async def evaluate_responses(model_config, azure_ai_project):
     relevance_evaluator = RelevanceEvaluator(model_config)
     groundedness_evaluator = GroundednessEvaluator(model_config)
-    similarity_evaluator = SimilarityEvaluator(model_config)
     fluency_evaluator = FluencyEvaluator(model_config)
+    current_dir = os.path.dirname(__file__)
+    output_file_path = os.path.join(current_dir, "output.jsonl")
     try:
         result = evaluate(
             evaluation_name="task_simulator_eval",
-            data="output.jsonl",
+            data=output_file_path,
             evaluators={
                 "relevance": relevance_evaluator,
                 "groundedness": groundedness_evaluator,
@@ -74,9 +78,6 @@ async def evaluate_responses(model_config, azure_ai_project):
         return result
     except Exception as e:
         print(e)
-        import pdb
-
-        pdb.set_trace()
 
 
 async def main(model_config, azure_ai_project):
@@ -107,9 +108,6 @@ async def main(model_config, azure_ai_project):
         print(json.dumps(result, indent=2))
     except Exception as e:
         print(e)
-        import pdb
-
-        pdb.set_trace()
 
 
 if __name__ == "__main__":
