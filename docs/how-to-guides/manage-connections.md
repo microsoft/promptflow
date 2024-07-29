@@ -194,7 +194,7 @@ from promptflow.client import PFClient
 # Get a pf client to manage connections
 pf = PFClient()
 # Delete the connection with specific name
-client.connections.delete(name="my_custom_connection")
+pf.connections.delete(name="my_custom_connection")
 ```
 :::
 
