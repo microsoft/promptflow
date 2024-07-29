@@ -1,4 +1,5 @@
 # flake8: noqa
+# pylint: disable=W0102,R0914,C4741,C4742
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
@@ -74,7 +75,8 @@ class Simulator:
         - query_response_generating_prompty (str): The path to the query response generating prompty file.
         - user_simulator_prompty (str): The path to the user simulator prompty file.
         - api_call_delay_sec (float): The delay in seconds between API calls.
-        - query_response_generating_prompty_kwargs (Dict[str, Any]): Additional keyword arguments for the query response generating prompty.
+        - query_response_generating_prompty_kwargs (Dict[str, Any]): Additional keyword arguments for
+        the query response generating prompty.
         - user_simulator_prompty_kwargs (Dict[str, Any]): Additional keyword arguments for the user simulator prompty.
         - **kwargs: Additional keyword arguments.
 

@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+# pylint: disable=C4739,C4741,C4742
 from promptflow.evals.synthetic._conversation.constants import ConversationRole
 
 
