@@ -300,7 +300,7 @@ for output in outputs_in_json:
 
 print(eval_result)
 ```
-## Task simulator
+## Simulator
 
 Sample application prompty
 
@@ -341,7 +341,7 @@ Application code:
 import json
 import asyncio
 from typing import Any, Dict, List, Optional
-from promptflow.evals.synthetic import TaskSimulator
+from promptflow.evals.synthetic import Simulator
 from promptflow.client import load_flow
 from azure.identity import DefaultAzureCredential
 import os
@@ -396,7 +396,7 @@ async def callback(
 
 
 async def main():
-    simulator = TaskSimulator(azure_ai_project=azure_ai_project, credential=DefaultAzureCredential())
+    simulator = Simulator(azure_ai_project=azure_ai_project, credential=DefaultAzureCredential())
     outputs = await simulator(
         target=callback,
         text=text,
