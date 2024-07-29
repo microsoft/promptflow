@@ -114,7 +114,6 @@ class TestTracing:
         span_list = exporter.get_finished_spans()
         self.validate_span_list(span_list, expected_span_length)
 
-    @pytest.mark.skip(reason="TODO: Fix this test in following PRs.")
     @pytest.mark.parametrize(
         "func, inputs, expected_span_length",
         [
