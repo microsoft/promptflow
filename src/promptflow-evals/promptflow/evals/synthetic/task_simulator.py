@@ -20,12 +20,22 @@ from ._utils import JsonLineChatProtocol
 
 
 class ConvTurn:
+    """
+    Conversation turn class to keep track of the role, content and context of a turn in a conversation.
+    """
+
     def __init__(self, role, content, context=None):
+        """
+        Initializes the conversation turn with the role, content and context.
+        """
         self.role = role
         self.content = content
         self.context = context
 
     def to_dict(self):
+        """
+        Converts the conversation turn to a dictionary.
+        """
         return {
             "role": self.role.value if isinstance(self.role, ConversationRole) else self.role,
             "content": self.content,
@@ -33,29 +43,55 @@ class ConvTurn:
         }
 
     def __repr__(self):
+        """
+        Returns the string representation of the conversation turn.
+        """
         return f"ConvTurn(role={self.role}, content={self.content})"
 
 
 class ConvHistory:
+    """
+    Conversation history class to keep track of the conversation turns in a conversation.
+    """
+
     def __init__(self):
+        """
+        Initializes the conversation history with an empty list of turns.
+        """
         self.history = []
 
     def add_to_history(self, turn):
+        """
+        Adds a turn to the conversation history.
+        """
         self.history.append(turn)
 
     def to_conv_history(self):
+        """
+        Converts the conversation history to a list of dictionaries
+        """
         return [turn.to_dict() for turn in self.history]
 
     def get_length(self):
+        """
+        Returns the length of the conversation
+        """
         return len(self.history)
 
     def __repr__(self):
+        """
+        Returns the string representation of the conversation history.
+        """
         for turn in self.history:
             print(turn)
         return ""
 
 
-class TaskSimulator:
+class Simulator:
+    """
+    Task simulator for generating synthetic conversations based on a user persona and a query.
+    """
+
     def __init__(self, azure_ai_project: Dict[str, Any], credential=None):
         """
         Initializes the task simulator with a project scope.
@@ -92,15 +128,34 @@ class TaskSimulator:
         query_response_generating_prompty_kwargs: Dict[str, Any] = {},
         user_simulator_prompty_kwargs: Dict[str, Any] = {},
         **kwargs,
-    ):
+    ) -> List[JsonLineChatProtocol]:
+        """
+        Generate simulations based on the provided parameters.
+
+        Parameters:
+        - target (callable): The target function to be called during the simulation.
+        - max_conversation_turns (int): The maximum number of conversation turns.
+        - user_persona (List[Dict]): A list of user personas, each represented as a dictionary.
+        - text (str): The input text for the simulation.
+        - num_queries (int): The number of queries to be generated.
+        - query_response_generating_prompty (str): The path to the query response generating prompty file.
+        - user_simulator_prompty (str): The path to the user simulator prompty file.
+        - api_call_delay_sec (float): The delay in seconds between API calls.
+        - query_response_generating_prompty_kwargs (Dict[str, Any]): Additional keyword arguments for the query response generating prompty.
+        - user_simulator_prompty_kwargs (Dict[str, Any]): Additional keyword arguments for the user simulator prompty.
+        - **kwargs: Additional keyword arguments.
+
+        Returns:
+        - List[JsonLineChatProtocol]: A list of simulated conversations represented as JsonLineChatProtocol objects.
+        """
         if num_queries != len(user_persona):
             num_queries = len(user_persona)
-        # if not text or not user_persona:
-        #     raise ValueError("Text and persona cannot be empty")
+
         prompty_model_config = {"configuration": self.azure_ai_project}
         prompty_model_config.update(
             {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
         ) if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration) else None
+
         if not query_response_generating_prompty:
             current_dir = os.path.dirname(__file__)
             prompty_path = os.path.join(current_dir, "_prompty", "task_query_response.prompty")
@@ -113,6 +168,7 @@ class TaskSimulator:
                 model=prompty_model_config,
                 **query_response_generating_prompty_kwargs,
             )
+
         try:
             query_responses = _flow(
                 text=text,
@@ -121,6 +177,7 @@ class TaskSimulator:
         except Exception as e:
             print("Something went wrong running the prompty")
             raise e
+
         try:
             query_response_list = json.loads(query_responses)
         except Exception as e:
@@ -129,6 +186,7 @@ class TaskSimulator:
 
             pdb.set_trace()
             raise e
+
         i = 0
         progress_bar = tqdm(
             total=len(query_response_list) * max_conversation_turns,
@@ -169,6 +227,9 @@ class TaskSimulator:
     async def build_query(
         self, *, user_persona, conversation_history, user_simulator_prompty, user_simulator_prompty_kwargs
     ):
+        """
+        Build a query using the user simulator prompty.
+        """
         # make a call to llm with user_persona and query
         prompty_model_config = {"configuration": self.azure_ai_project}
         prompty_model_config.update(
@@ -210,6 +271,9 @@ class TaskSimulator:
         api_call_delay_sec,
         progress_bar,
     ):
+        """
+        Complete a conversation with the target model.
+        """
         conversation_history = ConvHistory()
         turn = ConvTurn(role=ConversationRole.USER, content=conversation_starter)
         conversation_history.add_to_history(turn)
