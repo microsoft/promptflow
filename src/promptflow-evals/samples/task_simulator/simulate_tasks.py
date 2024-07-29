@@ -15,7 +15,7 @@ from promptflow.client import load_flow
 from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluators import FluencyEvaluator, GroundednessEvaluator, RelevanceEvaluator
-from promptflow.evals.synthetic import TaskSimulator
+from promptflow.evals.synthetic import Simulator
 
 wiki_search_term = "Leonardo da vinci"
 wiki_title = wikipedia.search(wiki_search_term)[0]
@@ -83,7 +83,7 @@ async def evaluate_responses(model_config, azure_ai_project):
 async def main(model_config, azure_ai_project):
     current_dir = os.path.dirname(__file__)
     query_response_prompty_override = os.path.join(current_dir, "query_generator_long_answer.prompty")
-    simulator = TaskSimulator(azure_ai_project=azure_ai_project, credential=DefaultAzureCredential())
+    simulator = Simulator(azure_ai_project=azure_ai_project, credential=DefaultAzureCredential())
     outputs = await simulator(
         target=callback,
         text=text,
