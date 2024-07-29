@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from promptflow.evals.synthetic._conversation.constants import ConversationRole
 
 
 class ConvTurn:
