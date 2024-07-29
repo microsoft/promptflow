@@ -69,7 +69,7 @@ pf = PFClient()
 connection = AzureOpenAIConnection(
     name="my_azure_open_ai_connection", 
     api_key="<your-api-key>", 
-    api_base="<your-endpoint>"
+    api_base="<your-endpoint>",
     api_version="2023-03-15-preview"
 )
 
