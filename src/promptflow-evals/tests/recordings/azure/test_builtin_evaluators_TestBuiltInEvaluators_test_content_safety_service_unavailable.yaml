@@ -7,13 +7,13 @@ interactions:
       accept-encoding:
       - gzip, deflate
       connection:
-      - keep-alive
+      - close
       content-type:
       - application/json
       host:
       - management.azure.com
       user-agent:
-      - python-httpx/0.27.0
+      - promptflow-evals/0.1.0.dev0
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000?api-version=2023-08-01-preview
   response:
@@ -26,6 +26,8 @@ interactions:
     headers:
       cache-control:
       - no-cache
+      connection:
+      - close
       content-length:
       - '2911'
       content-type:
@@ -43,7 +45,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.034'
+      - '0.041'
     status:
       code: 200
       message: OK
@@ -55,7 +57,7 @@ interactions:
       accept-encoding:
       - gzip, deflate
       connection:
-      - keep-alive
+      - close
       content-type:
       - application/json
       host:
@@ -69,7 +71,7 @@ interactions:
       string: unknown to cluster
     headers:
       connection:
-      - keep-alive
+      - close
       content-length:
       - '18'
       content-type:
@@ -79,7 +81,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.007'
+      - '0.006'
     status:
       code: 530
       message: <none>
