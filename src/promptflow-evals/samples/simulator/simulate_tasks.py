@@ -90,7 +90,7 @@ async def main(model_config, azure_ai_project):
         num_queries=4,
         max_conversation_turns=2,
         query_response_generating_prompty=query_response_prompty_override,
-        user_persona=[
+        tasks=[
             f"I am a student and I want to learn more about {wiki_search_term}",
             f"I am a teacher and I want to teach my students about {wiki_search_term}",
             f"I am a researcher and I want to do a detailed research on {wiki_search_term}",

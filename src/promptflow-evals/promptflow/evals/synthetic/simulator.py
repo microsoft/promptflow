@@ -53,7 +53,7 @@ class Simulator:
         *,
         target: callable,
         max_conversation_turns: int = 5,
-        user_persona: List[Dict] = [],
+        tasks: List[Dict] = [],
         text: str = "",
         num_queries: int = 5,
         query_response_generating_prompty: str = None,
@@ -69,7 +69,7 @@ class Simulator:
         Parameters:
         - target (callable): The target function to be called during the simulation.
         - max_conversation_turns (int): The maximum number of conversation turns.
-        - user_persona (List[Dict]): A list of user personas, each represented as a dictionary.
+        - tasks (List[Dict]): A list of user personas, each represented as a dictionary.
         - text (str): The input text for the simulation.
         - num_queries (int): The number of queries to be generated.
         - query_response_generating_prompty (str): The path to the query response generating prompty file.
@@ -83,8 +83,8 @@ class Simulator:
         Returns:
         - List[JsonLineChatProtocol]: A list of simulated conversations represented as JsonLineChatProtocol objects.
         """
-        if num_queries != len(user_persona):
-            num_queries = len(user_persona)
+        if num_queries != len(tasks):
+            num_queries = len(tasks)
 
         prompty_model_config = {"configuration": self.azure_ai_project}
 
@@ -131,12 +131,12 @@ class Simulator:
             query = query_response_pair["q"]
             response = query_response_pair["r"]
             # TODO: handle index out of range
-            user_persona_item = user_persona[i]
+            tasks_item = tasks[i]
             i += 1
             conversation = await self.complete_conversation(
                 conversation_starter=query,
                 max_conversation_turns=max_conversation_turns,
-                user_persona=user_persona_item,
+                tasks=tasks_item,
                 user_simulator_prompty=user_simulator_prompty,
                 user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
                 target=target,
@@ -148,7 +148,7 @@ class Simulator:
                     {
                         "messages": conversation,
                         "finish_reason": ["stop"],
-                        "context": f"User persona: {user_persona_item} Expected response: {response}",
+                        "context": f"User persona: {tasks_item} Expected response: {response}",
                         "$schema": "http://azureml/sdk-2-0/ChatConversation.json",
                     }
                 )
@@ -156,14 +156,12 @@ class Simulator:
         progress_bar.close()
         return all_conversations
 
-    async def build_query(
-        self, *, user_persona, conversation_history, user_simulator_prompty, user_simulator_prompty_kwargs
-    ):
+    async def build_query(self, *, tasks, conversation_history, user_simulator_prompty, user_simulator_prompty_kwargs):
         """
         Build a query using the user simulator prompty.
 
         Args:
-            user_persona (str): The persona of the user.
+            tasks (str): The persona of the user.
             conversation_history (list): The history of the conversation.
             user_simulator_prompty (str): The path to the user simulator prompty file.
             user_simulator_prompty_kwargs (dict): Additional keyword arguments for the user simulator prompty.
@@ -174,7 +172,7 @@ class Simulator:
         Raises:
             Exception: If there is an error running the prompty or parsing the response.
         """
-        # make a call to llm with user_persona and query
+        # make a call to llm with tasks and query
         prompty_model_config = {"configuration": self.azure_ai_project}
 
         if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration):
@@ -190,7 +188,7 @@ class Simulator:
                     model=prompty_model_config,
                     **user_simulator_prompty_kwargs,
                 )
-            response = _flow(user_persona=user_persona, conversation_history=conversation_history)
+            response = _flow(tasks=tasks, conversation_history=conversation_history)
         except Exception as e:
             print("Something went wrong running the prompty")
             raise e
@@ -208,7 +206,7 @@ class Simulator:
         *,
         conversation_starter,
         max_conversation_turns,
-        user_persona,
+        tasks,
         user_simulator_prompty,
         user_simulator_prompty_kwargs,
         target,
@@ -221,7 +219,7 @@ class Simulator:
         Args:
             conversation_starter (str): The initial message to start the conversation.
             max_conversation_turns (int): The maximum number of turns in the conversation.
-            user_persona (str): The persona of the user.
+            tasks (str): The persona of the user.
             user_simulator_prompty (str): The path to the user simulator prompty file.
             user_simulator_prompty_kwargs (dict): Additional keyword arguments for the user simulator prompty.
             target (callable): The target model to interact with.
@@ -259,7 +257,7 @@ class Simulator:
 
             # Get response from user simulator
             response_from_user_simulating_prompty = await self.build_query(
-                user_persona=user_persona,
+                tasks=tasks,
                 conversation_history=conversation_history.to_conv_history(),
                 user_simulator_prompty=user_simulator_prompty,
                 user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
