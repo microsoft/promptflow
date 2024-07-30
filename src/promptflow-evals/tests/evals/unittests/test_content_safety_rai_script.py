@@ -107,15 +107,15 @@ class TestContentSafetyEvaluator:
         assert res == 100
 
     @patch("httpx.AsyncClient.get", return_value=httpx.Response(200, json={"result": "stuff"}))
-    @patch("promptflow.evals.evaluators._content_safety.common.constants.RAIService.TIMEOUT", 3.5)
-    @patch("promptflow.evals.evaluators._content_safety.common.constants.RAIService.SLEEP_TIME", 1)
+    @patch("promptflow.evals.evaluators._content_safety.common.constants.RAIService.TIMEOUT", 1)
+    @patch("promptflow.evals.evaluators._content_safety.common.constants.RAIService.SLEEP_TIME", 1.2)
     @pytest.mark.usefixtures("mock_token")
     @pytest.mark.asyncio
     async def test_fetch_result(self, client_mock, mock_token):
         # These asserts aren't necessary, but given the scarcity of constant patches,
         # it's nice to include an obvious example.
-        assert RAIService.TIMEOUT == 3.5
-        assert RAIService.SLEEP_TIME == 1
+        assert RAIService.TIMEOUT == 1
+        assert RAIService.SLEEP_TIME == 1.2
         res = await fetch_result(
             operation_id="op-id", rai_svc_url="www.notarealurl.com", credential=None, token=mock_token
         )
@@ -127,9 +127,10 @@ class TestContentSafetyEvaluator:
             _ = await fetch_result(
                 operation_id="op-id", rai_svc_url="www.notarealurl.com", credential=None, token=mock_token
             )
-        assert client_mock._mock_await_count == 6
+        # We expect 2 more calls; the initial call, then one more ~2 seconds later.
+        assert client_mock._mock_await_count == 3
         # Don't bother checking exact time beyond seconds, that's never going to be consistent across machines.
-        assert "Fetching annotation result 5 times out after 4" in str(exc_info._excinfo[1])
+        assert "Fetching annotation result 2 times out after 1" in str(exc_info._excinfo[1])
 
     def test_parse_response(self):
         batch_response = [{"not-a-metric": "not-a-value"}]
