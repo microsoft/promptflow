@@ -140,11 +140,11 @@ async def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCre
         if response.status_code == 200:
             return response.json()
 
+        request_count += 1
         time_elapsed = time.time() - start
         if time_elapsed > RAIService.TIMEOUT:
-            raise TimeoutError(f"Fetching annotation result times out after {time_elapsed:.2f} seconds")
+            raise TimeoutError(f"Fetching annotation result {request_count} times out after {time_elapsed:.2f} seconds")
 
-        request_count += 1
         sleep_time = RAIService.SLEEP_TIME**request_count
         await asyncio.sleep(sleep_time)
 
@@ -175,15 +175,6 @@ def parse_response(  # pylint: disable=too-many-branches,too-many-statements
 
     try:
         harm_response = literal_eval(response[metric_name])
-    except NameError as e:
-        # fix the eval error if there's "true" in the response
-        m = re.findall(r"name '(\w+)' is not defined", str(e))
-        if m:
-            for word in m:
-                response[metric_name] = response[metric_name].replace(word, word.title())
-            harm_response = literal_eval(response[metric_name])
-        else:
-            harm_response = ""
     except Exception:  # pylint: disable=broad-exception-caught
         harm_response = response[metric_name]
 
@@ -224,7 +215,11 @@ def parse_response(  # pylint: disable=too-many-branches,too-many-statements
         metric_value = np.nan
         reason = ""
 
-    harm_score = int(metric_value)
+    harm_score = metric_value
+    if not np.isnan(metric_value):
+        # int(np.nan) causes a value error, and np.nan is already handled
+        # by get_harm_severity_level
+        harm_score = int(metric_value)
     result[key] = get_harm_severity_level(harm_score)
     result[key + "_score"] = harm_score
     result[key + "_reason"] = reason
