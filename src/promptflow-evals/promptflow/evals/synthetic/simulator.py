@@ -61,6 +61,7 @@ class Simulator:
         api_call_delay_sec: float = 1,
         query_response_generating_prompty_kwargs: Dict[str, Any] = {},
         user_simulator_prompty_kwargs: Dict[str, Any] = {},
+        conversation_turns: List[List[str]] = [],
         **kwargs,
     ) -> List[JsonLineChatProtocol]:
         """
@@ -78,6 +79,7 @@ class Simulator:
         - query_response_generating_prompty_kwargs (Dict[str, Any]): Additional keyword arguments for
         the query response generating prompty.
         - user_simulator_prompty_kwargs (Dict[str, Any]): Additional keyword arguments for the user simulator prompty.
+        - conversation_turns (List[List[str]]): A list of predefined conversation turns.
         - **kwargs: Additional keyword arguments.
 
         Returns:
@@ -90,7 +92,28 @@ class Simulator:
 
         if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration):
             prompty_model_config.update({"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}})
-
+        if conversation_turns:
+            simulated_conversation = []
+            for simulation in conversation_turns:
+                current_simulation = ConvHistory()
+                for simulated_turn in simulation:
+                    # initialize a conversation and for every simulated_turn, call the target
+                    simulators_turn = ConvTurn(role=ConversationRole.USER, content=simulated_turn)
+                    current_simulation.add_to_history(simulators_turn)
+                    response = await target(
+                        messages={"messages": current_simulation.to_conv_history()},
+                        stream=False,
+                        session_state=None,
+                        context=None,
+                    )
+                    await asyncio.sleep(api_call_delay_sec)
+                    messages_list = response["messages"]
+                    latest_message = messages_list[-1]
+                    response_from_target = latest_message["content"]
+                    turn = ConvTurn(role=ConversationRole.ASSISTANT, content=response_from_target)
+                    current_simulation.add_to_history(turn)
+                simulated_conversation.append(current_simulation.to_conv_history())
+            return simulated_conversation
         if not query_response_generating_prompty:
             current_dir = os.path.dirname(__file__)
             prompty_path = os.path.join(current_dir, "_prompty", "task_query_response.prompty")
