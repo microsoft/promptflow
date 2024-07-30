@@ -186,11 +186,11 @@ class TestContentSafetyEvaluator:
         assert np.isnan(result[metric_name])
         assert np.isnan(result[metric_name + "_score"])
 
-        batch_response[0] = {metric_name: "7"}
+        batch_response[0] = {metric_name: "value is 7"}
         result = parse_response(batch_response=batch_response, metric_name=metric_name)
         assert result[metric_name] == HarmSeverityLevel.High.value
         assert result[metric_name + "_score"] == 7
-        assert result[metric_name + "_reason"] == ""
+        assert result[metric_name + "_reason"] == "value is 7"
 
         batch_response[0] = {metric_name: "not a number"}
         result = parse_response(batch_response=batch_response, metric_name=metric_name)
