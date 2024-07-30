@@ -29,6 +29,24 @@ except importlib.metadata.PackageNotFoundError:
 USER_AGENT = "{}/{}".format("promptflow-evals", version)
 
 
+def get_common_headers(token: str) -> Dict:
+    """Get common headers for the HTTP request
+
+    :param token: The Azure authentication token.
+    :type token: str
+    :return: The common headers.
+    :rtype: Dict
+    """
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "User-Agent": USER_AGENT,
+        # Handle "RuntimeError: Event loop is closed" from httpx AsyncClient
+        # https://github.com/encode/httpx/discussions/2959
+        "Connection": "close",
+    }
+
+
 async def ensure_service_availability(rai_svc_url: str, token: str, capability: str = None) -> None:
     """Check if the Responsible AI service is available in the region and has the required capability, if relevant.
 
@@ -40,15 +58,11 @@ async def ensure_service_availability(rai_svc_url: str, token: str, capability: 
     :type capability: str
     :raises Exception: If the service is not available in the region or the capability is not available.
     """
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-        "User-Agent": USER_AGENT,
-    }
-
+    headers = get_common_headers(token)
     svc_liveness_url = rai_svc_url + "/checkannotation"
+
     async with httpx.AsyncClient() as client:
-        response = await client.get(svc_liveness_url, headers=headers)
+        response = await client.get(svc_liveness_url, headers=headers, timeout=60)
 
     if response.status_code != 200:
         raise Exception(  # pylint: disable=broad-exception-raised
@@ -84,14 +98,10 @@ async def submit_request(question: str, answer: str, metric: str, rai_svc_url: s
     payload = {"UserTextList": [normalized_user_text], "AnnotationTask": Tasks.CONTENT_HARM, "MetricList": [metric]}
 
     url = rai_svc_url + "/submitannotation"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-        "User-Agent": USER_AGENT,
-    }
+    headers = get_common_headers(token)
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(url, json=payload, headers=headers)
+        response = await client.post(url, json=payload, headers=headers, timeout=60)
 
     if response.status_code != 202:
         print("Fail evaluating '%s' with error message: %s" % (payload["UserTextList"], response.text))
@@ -122,10 +132,10 @@ async def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCre
     url = rai_svc_url + "/operations/" + operation_id
     while True:
         token = await fetch_or_reuse_token(credential, token)
-        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        headers = get_common_headers(token)
 
         async with httpx.AsyncClient() as client:
-            response = await client.get(url, headers=headers)
+            response = await client.get(url, headers=headers, timeout=60)
 
         if response.status_code == 200:
             return response.json()
@@ -232,7 +242,7 @@ async def _get_service_discovery_url(azure_ai_project: dict, token: str) -> str:
     :return: The discovery service URL.
     :rtype: str
     """
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    headers = get_common_headers(token)
     async with httpx.AsyncClient() as client:
         response = await client.get(
             f"https://management.azure.com/subscriptions/{azure_ai_project['subscription_id']}/"
@@ -240,7 +250,7 @@ async def _get_service_discovery_url(azure_ai_project: dict, token: str) -> str:
             f"providers/Microsoft.MachineLearningServices/workspaces/{azure_ai_project['project_name']}?"
             f"api-version=2023-08-01-preview",
             headers=headers,
-            timeout=5,
+            timeout=60,
         )
     if response.status_code != 200:
         raise Exception("Failed to retrieve the discovery service URL")  # pylint: disable=broad-exception-raised

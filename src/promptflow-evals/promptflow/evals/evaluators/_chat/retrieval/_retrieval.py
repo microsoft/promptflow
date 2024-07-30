@@ -15,7 +15,7 @@ from promptflow.core import AsyncPrompty, AzureOpenAIModelConfiguration
 logger = logging.getLogger(__name__)
 
 try:
-    from ..._user_agent import USER_AGENT
+    from ...._user_agent import USER_AGENT
 except ImportError:
     USER_AGENT = None
 
@@ -25,9 +25,15 @@ class _AsyncRetrievalChatEvaluator:
         if model_config.api_version is None:
             model_config.api_version = "2024-02-15-preview"
 
-        prompty_model_config = {"configuration": model_config}
+        prompty_model_config = {"configuration": model_config, "parameters": {"extra_headers": {}}}
+
+        # Handle "RuntimeError: Event loop is closed" from httpx AsyncClient
+        # https://github.com/encode/httpx/discussions/2959
+        prompty_model_config["parameters"]["extra_headers"].update({"Connection": "close"})
+
         if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration):
-            prompty_model_config.update({"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}})
+            prompty_model_config["parameters"]["extra_headers"].update({"x-ms-useragent": USER_AGENT})
+
         current_dir = os.path.dirname(__file__)
         prompty_path = os.path.join(current_dir, "retrieval.prompty")
         self._flow = AsyncPrompty.load(source=prompty_path, model=prompty_model_config)
@@ -59,7 +65,7 @@ class _AsyncRetrievalChatEvaluator:
 
                 history.append({"user": question, "assistant": answer})
 
-                llm_output = await self._flow(query=question, history=history, documents=context)
+                llm_output = await self._flow(query=question, history=history, documents=context, timeout=600, **kwargs)
                 score = np.nan
                 if llm_output:
                     parsed_score_response = re.findall(r"\d+", llm_output.split("# Result")[-1].strip())
