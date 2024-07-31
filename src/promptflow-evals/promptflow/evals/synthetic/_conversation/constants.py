@@ -24,5 +24,6 @@ CHAT_END_TOKEN = "<|im_end|>"
 
 
 class ConversationRole(Enum):
+    """Role in a chatbot conversation"""
     USER = "user"
     ASSISTANT = "assistant"

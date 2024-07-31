@@ -66,16 +66,16 @@ class QAEvaluator:
         """
         Evaluates question-answering scenario.
 
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :param context: The context to be evaluated.
-        :type context: str
-        :param ground_truth: The ground truth to be evaluated.
-        :type ground_truth: str
-        :param parallel: Whether to evaluate in parallel. Defaults to True.
-        :type parallel: bool
+        :keyword question: The question to be evaluated.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
+        :keyword context: The context to be evaluated.
+        :paramtype context: str
+        :keyword ground_truth: The ground truth to be evaluated.
+        :paramtype ground_truth: str
+        :keyword parallel: Whether to evaluate in parallel. Defaults to True.
+        :paramtype parallel: bool
         :return: The scores for QA scenario.
         :rtype: dict
         """

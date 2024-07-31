@@ -80,8 +80,7 @@ def _validate_input_data_for_evaluator(evaluator, evaluator_name, df_data, is_ta
     if missing_inputs:
         if not is_target_fn:
             raise ValueError(f"Missing required inputs for evaluator {evaluator_name} : {missing_inputs}.")
-        else:
-            raise ValueError(f"Missing required inputs for target : {missing_inputs}.")
+        raise ValueError(f"Missing required inputs for target : {missing_inputs}.")
 
 
 def _validate_and_load_data(target, data, evaluators, output_path, azure_ai_project, evaluation_name):
@@ -115,7 +114,9 @@ def _validate_and_load_data(target, data, evaluators, output_path, azure_ai_proj
     try:
         initial_data_df = pd.read_json(data, lines=True)
     except Exception as e:
-        raise ValueError(f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}.")
+        raise ValueError(
+            f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}."
+        ) from e
 
     return initial_data_df
 
@@ -129,16 +130,19 @@ def _validate_columns(
     """
     Check that all columns needed by evaluator or target function are present.
 
-    :keyword df: The data frame to be validated.
-    :paramtype df: pd.DataFrame
-    :keyword evaluators: The dictionary of evaluators.
-    :paramtype evaluators: Dict[str, Any]
-    :keyword target: The callable to be applied to data set.
-    :paramtype target: Optional[Callable]
+    :param df: The data frame to be validated.
+    :type df: pd.DataFrame
+    :param evaluators: The dictionary of evaluators.
+    :type evaluators: Dict[str, Any]
+    :param target: The callable to be applied to data set.
+    :type target: Optional[Callable]
+    :param evaluator_config: The configuration for evaluators.
+    :type evaluator_config: Dict[str, Dict[str, str]]
+    :raises ValueError: If column starts from "__outputs." while target is defined.
     """
     if target:
-        if any(c.startswith(Prefixes._TGT_OUTPUTS) for c in df.columns):
-            raise ValueError("The column cannot start from " f'"{Prefixes._TGT_OUTPUTS}" if target was defined.')
+        if any(c.startswith(Prefixes.TSG_OUTPUTS) for c in df.columns):
+            raise ValueError("The column cannot start from " f'"{Prefixes.TSG_OUTPUTS}" if target was defined.')
         # If the target function is given, it may return
         # several columns and hence we cannot check the availability of columns
         # without knowing target function semantics.
@@ -165,18 +169,20 @@ def _apply_target_to_data(
     """
     Apply the target function to the data set and return updated data and generated columns.
 
-    :keyword target: The function to be applied to data.
-    :paramtype target: Callable
-    :keyword data: The path to input jsonl file.
-    :paramtype data: str
-    :keyword pf_client: The promptflow client to be used.
-    :paramtype pf_client: PFClient
-    :keyword initial_data: The data frame with the loaded data.
-    :paramtype initial_data: pd.DataFrame
-    :keyword _run_name: The name of target run. Used for testing only.
-    :paramtype _run_name: Optional[str]
+    :param target: The function to be applied to data.
+    :type target: Callable
+    :param data: The path to input jsonl file.
+    :type data: str
+    :param pf_client: The promptflow client to be used.
+    :type pf_client: PFClient
+    :param initial_data: The data frame with the loaded data.
+    :type initial_data: pd.DataFrame
+    :param evaluation_name: The name of the evaluation.
+    :type evaluation_name: Optional[str]
+    :param _run_name: The name of target run. Used for testing only.
+    :type _run_name: Optional[str]
     :return: The tuple, containing data frame and the list of added columns.
-    :rtype: Tuple[pd.DataFrame, List[str]]
+    :rtype: Tuple[pandas.DataFrame, List[str]]
     """
     # We are manually creating the temporary directory for the flow
     # because the way tempdir remove temporary directories will
@@ -192,7 +198,7 @@ def _apply_target_to_data(
     target_output = pf_client.runs.get_details(run, all_results=True)
     # Remove input and output prefix
     generated_columns = {
-        col[len(Prefixes._OUTPUTS) :] for col in target_output.columns if col.startswith(Prefixes._OUTPUTS)
+        col[len(Prefixes.OUTPUTS) :] for col in target_output.columns if col.startswith(Prefixes.OUTPUTS)
     }
     # Sort output by line numbers
     target_output.set_index(f"inputs.{LINE_NUMBER}", inplace=True)
@@ -203,15 +209,22 @@ def _apply_target_to_data(
     drop_columns = list(filter(lambda x: x.startswith("inputs"), target_output.columns))
     target_output.drop(drop_columns, inplace=True, axis=1)
     # Rename outputs columns to __outputs
-    rename_dict = {col: col.replace(Prefixes._OUTPUTS, Prefixes._TGT_OUTPUTS) for col in target_output.columns}
+    rename_dict = {col: col.replace(Prefixes.OUTPUTS, Prefixes.TSG_OUTPUTS) for col in target_output.columns}
     target_output.rename(columns=rename_dict, inplace=True)
     # Concatenate output to input
     target_output = pd.concat([target_output, initial_data], axis=1)
+
     return target_output, generated_columns, run
 
 
-def _process_evaluator_config(evaluator_config: Dict[str, Dict[str, str]]):
-    """Process evaluator_config to replace ${target.} with ${data.}"""
+def _process_evaluator_config(evaluator_config: Dict[str, Dict[str, str]]) -> Dict[str, Dict[str, str]]:
+    """Process evaluator_config to replace ${target.} with ${data.}
+
+    :param evaluator_config: The configuration for evaluators.
+    :type evaluator_config: Dict[str, Dict[str, str]]
+    :return: The processed configuration.
+    :rtype: Dict[str, Dict[str, str]]
+    """
 
     processed_config = {}
 
@@ -223,7 +236,6 @@ def _process_evaluator_config(evaluator_config: Dict[str, Dict[str, str]]):
                 processed_config[evaluator] = {}
 
                 for map_to_key, map_value in mapping_config.items():
-
                     # Check if there's any unexpected reference other than ${target.} or ${data.}
                     if unexpected_references.search(map_value):
                         raise ValueError(
@@ -237,21 +249,24 @@ def _process_evaluator_config(evaluator_config: Dict[str, Dict[str, str]]):
     return processed_config
 
 
-def _rename_columns_conditionally(df: pd.DataFrame):
+def _rename_columns_conditionally(df: pd.DataFrame) -> pd.DataFrame:
     """
     Change the column names for data frame. The change happens inplace.
 
     The columns with _OUTPUTS prefix will not be changed. _OUTPUTS prefix will
     will be added to columns in target_generated set. The rest columns will get
     ".inputs" prefix.
+
     :param df: The data frame to apply changes to.
+    :type df: pandas.DataFrame
     :return: The changed data frame.
+    :rtype: pandas.DataFrame
     """
     rename_dict = {}
     for col in df.columns:
         # Rename columns generated by target.
-        if Prefixes._TGT_OUTPUTS in col:
-            rename_dict[col] = col.replace(Prefixes._TGT_OUTPUTS, Prefixes._OUTPUTS)
+        if Prefixes.TSG_OUTPUTS in col:
+            rename_dict[col] = col.replace(Prefixes.TSG_OUTPUTS, Prefixes.OUTPUTS)
         else:
             rename_dict[col] = f"inputs.{col}"
     df.rename(columns=rename_dict, inplace=True)
@@ -361,12 +376,12 @@ def evaluate(
                 "    if __name__ == '__main__':\n"
                 "        evaluate(...)"
             )
-            raise RuntimeError(error_message)
+            raise RuntimeError(error_message) from e
 
         raise e
 
 
-def _evaluate(
+def _evaluate(  # pylint: disable=too-many-locals
     *,
     evaluation_name: Optional[str] = None,
     target: Optional[Callable] = None,
@@ -419,7 +434,7 @@ def _evaluate(
                 # We will add our mapping only if
                 # customer did not mapped target output.
                 if col not in mapping and run_output not in mapped_to_values:
-                    evaluator_config[evaluator_name][col] = run_output
+                    evaluator_config[evaluator_name][col] = run_output  # pylint: disable=unnecessary-dict-index-lookup
 
         # After we have generated all columns we can check if we have
         # everything we need for evaluators.
@@ -464,14 +479,14 @@ def _evaluate(
 
         # drop input columns
         evaluator_result_df = evaluator_result_df.drop(
-            columns=[col for col in evaluator_result_df.columns if str(col).startswith(Prefixes._INPUTS)]
+            columns=[col for col in evaluator_result_df.columns if str(col).startswith(Prefixes.INPUTS)]
         )
 
         # rename output columns
         # Assuming after removing inputs columns, all columns are output columns
         evaluator_result_df.rename(
             columns={
-                col: f"outputs.{evaluator_name}.{str(col).replace(Prefixes._OUTPUTS, '')}"
+                col: f"outputs.{evaluator_name}.{str(col).replace(Prefixes.OUTPUTS, '')}"
                 for col in evaluator_result_df.columns
             },
             inplace=True,

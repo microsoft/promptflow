@@ -1,8 +1,9 @@
 # Release History
 
-## v1.14.0 (Upcoming)
+## v1.14.0 (2024.07.25)
 ### Improvements
 - [promptflow-devkit] Add `promptflow` to dockerfile when build flow with `python_requirements_txt` incase promptflow not exists in custom requirements.
+- [promptflow-core] Remove dependency on docutils package.
 
 ## v1.13.0 (2024.06.28)
 

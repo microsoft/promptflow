@@ -1,0 +1,8 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+entry: flow:chat
+sample: 
+  inputs:
+    question: What's Azure Machine Learning?
+environment:
+  # image: mcr.microsoft.com/azureml/promptflow/promptflow-python
+  python_requirements_txt: requirements.txt

@@ -1,4 +1,3 @@
-
 class BlocklistEvaluator:
     def __init__(self, blocklist):
         self._blocklist = blocklist

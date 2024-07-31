@@ -7,7 +7,7 @@ import copy
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import jinja2
 
@@ -17,20 +17,59 @@ from .constants import ConversationRole
 
 @dataclass
 class ConversationTurn:
+    """Class to represent a turn in a conversation.
+
+    A "turn" involves only one exchange between the user and the chatbot.
+
+    :param role: The role of the participant in the conversation. Accepted values are
+        "user" and "assistant".
+    :type role: ~promptflow.evals.synthetic._conversation.constants.ConversationRole
+    :param name: The name of the participant in the conversation.
+    :type name: Optional[str]
+    :param message: The message exchanged in the conversation. Defaults to an empty string.
+    :type message: str
+    :param full_response: The full response.
+    :type full_response: Optional[Any]
+    :param request: The request.
+    :type request: Optional[Any]
+    """
     role: "ConversationRole"
     name: Optional[str] = None
     message: str = ""
     full_response: Optional[Any] = None
     request: Optional[Any] = None
 
-    def to_openai_chat_format(self, reverse: bool = False) -> dict:
+    def to_openai_chat_format(self, reverse: bool = False) -> Dict[str, str]:
+        """Convert the conversation turn to the OpenAI chat format.
+
+        OpenAI chat format is a dictionary with two keys: "role" and "content".
+
+        :param reverse: Whether to reverse the conversation turn. Defaults to False.
+        :type reverse: bool
+        :return: The conversation turn in the OpenAI chat format.
+        :rtype: Dict[str, str]
+        """
         if reverse is False:
             return {"role": self.role.value, "content": self.message}
         if self.role == ConversationRole.ASSISTANT:
             return {"role": ConversationRole.USER.value, "content": self.message}
         return {"role": ConversationRole.ASSISTANT.value, "content": self.message}
 
-    def to_annotation_format(self, turn_number: int) -> dict:
+    def to_annotation_format(self, turn_number: int) -> Dict[str, Any]:
+        """Convert the conversation turn to an annotation format.
+
+        Annotation format is a dictionary with the following keys:
+        - "turn_number": The turn number.
+        - "response": The response.
+        - "actor": The actor.
+        - "request": The request.
+        - "full_json_response": The full JSON response.
+
+        :param turn_number: The turn number.
+        :type turn_number: int
+        :return: The conversation turn in the annotation format.
+        :rtype: Dict[str, Any]
+        """
         return {
             "turn_number": turn_number,
             "response": self.message,
@@ -44,6 +83,22 @@ class ConversationTurn:
 
 
 class ConversationBot:
+    """
+    A conversation chat bot with a specific name, persona and a sentence that can be used as a conversation starter.
+
+    :param role: The role of the bot in the conversation, either "user" or "assistant".
+    :type role: ~promptflow.evals.synthetic._conversation.constants.ConversationRole
+    :param model: The LLM model to use for generating responses.
+    :type model: Union[
+        ~promptflow.evals.synthetic._model_tools.LLMBase,
+        ~promptflow.evals.synthetic._model_tools.OpenAIChatCompletionsModel
+    ]
+    :param conversation_template: A Jinja2 template describing the conversation to generate the prompt for the LLM
+    :type conversation_template: str
+    :param instantiation_parameters: A dictionary of parameters used to instantiate the conversation template
+    :type instantiation_parameters: Dict[str, str]
+    """
+
     def __init__(
         self,
         *,
@@ -51,20 +106,7 @@ class ConversationBot:
         model: Union[LLMBase, OpenAIChatCompletionsModel],
         conversation_template: str,
         instantiation_parameters: Dict[str, str],
-    ):
-        """
-        Create a ConversationBot with specific name, persona and a sentence that can be used as a conversation starter.
-
-        :param role: The role of the bot in the conversation, either USER or ASSISTANT.
-        :type role: ConversationRole
-        :param model: The LLM model to use for generating responses.
-        :type model: OpenAIChatCompletionsModel
-        :param conversation_template: A Jinja2 template describing the conversation to generate the prompt for the LLM
-        :type conversation_template: str
-        :param instantiation_parameters: A dictionary of parameters used to instantiate the conversation template
-        :type instantiation_parameters: dict
-        """
-
+    ) -> None:
         self.role = role
         self.conversation_template_orig = conversation_template
         self.conversation_template: jinja2.Template = jinja2.Template(
@@ -89,7 +131,7 @@ class ConversationBot:
                         self.conversation_starter = jinja2.Template(
                             conversation_starter_content, undefined=jinja2.StrictUndefined
                         )
-                    except jinja2.exceptions.TemplateSyntaxError as e:  # noqa: F841
+                    except jinja2.exceptions.TemplateSyntaxError:  # noqa: F841
                         self.conversation_starter = conversation_starter_content
             else:
                 self.logger.info(
@@ -174,7 +216,27 @@ class ConversationBot:
 
 
 class CallbackConversationBot(ConversationBot):
-    def __init__(self, callback, user_template, user_template_parameters, *args, **kwargs):
+    """Conversation bot that uses a user provided callback to generate responses.
+
+    :param callback: The callback function to use to generate responses.
+    :type callback: Callable
+    :param user_template: The template to use for the request.
+    :type user_template: str
+    :param user_template_parameters: The template parameters to use for the request.
+    :type user_template_parameters: Dict
+    :param args: Optional arguments to pass to the parent class.
+    :type args: Any
+    :param kwargs: Optional keyword arguments to pass to the parent class.
+    :type kwargs: Any
+    """
+    def __init__(
+        self,
+        callback: Callable,
+        user_template: str,
+        user_template_parameters: Dict,
+        *args,
+        **kwargs,
+    ) -> None:
         self.callback = callback
         self.user_template = user_template
         self.user_template_parameters = user_template_parameters
@@ -219,7 +281,8 @@ class CallbackConversationBot(ConversationBot):
 
         return response, {}, time_taken, result
 
-    def _to_chat_protocol(self, template, conversation_history, template_parameters):
+    # Bug 3354264: template is unused in the method - is this intentional?
+    def _to_chat_protocol(self, template, conversation_history, template_parameters):  # pylint: disable=unused-argument
         messages = []
 
         for _, m in enumerate(conversation_history):

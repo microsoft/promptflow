@@ -1,15 +1,29 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from promptflow._utils.async_utils import async_run_allowing_running_loop
+
 try:
+    from .common import ContentSafetyEvaluatorBase
     from .common.constants import EvaluationMetrics
-    from ._content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
 except ImportError:
+    from common import ContentSafetyEvaluatorBase
     from common.constants import EvaluationMetrics
-    from _content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
 
 
-class ViolenceEvaluator(ContentSafetySubEvaluatorBase):
+class _AsyncViolenceEvaluator(ContentSafetyEvaluatorBase):
+    def __init__(self, project_scope: dict, credential=None):
+        super().__init__(
+            metric=EvaluationMetrics.VIOLENCE,
+            project_scope=project_scope,
+            credential=credential,
+        )
+
+    async def __call__(self, *, question: str, answer: str, **kwargs):
+        return await super().__call__(question=question, answer=answer, **kwargs)
+
+
+class ViolenceEvaluator:
     """
     Initialize a violence evaluator for violence score.
 
@@ -43,21 +57,20 @@ class ViolenceEvaluator(ContentSafetySubEvaluatorBase):
     """
 
     def __init__(self, project_scope: dict, credential=None):
-        super().__init__(
-            metric=EvaluationMetrics.VIOLENCE,
-            project_scope=project_scope,
-            credential=credential,
-        )
+        self._async_evaluator = _AsyncViolenceEvaluator(project_scope, credential)
 
     def __call__(self, *, question: str, answer: str, **kwargs):
         """
         Evaluates violence content.
 
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
+        :keyword question: The question to be evaluated.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
         :return: The violence score.
         :rtype: dict
         """
-        return super().__call__(question=question, answer=answer, **kwargs)
+        return async_run_allowing_running_loop(self._async_evaluator, question=question, answer=answer, **kwargs)
+
+    def _to_async(self):
+        return self._async_evaluator

@@ -47,6 +47,7 @@ jsonpath_ng = ">=1.5.0"
 urllib3 = ">1.26.17"
 numpy = ">=1.22"
 promptflow-azure = { version = "<2.0.0,>=1.13.0", optional = true} # Needed for remote tracking
+isort = "^5.13.2"
 pyjwt = ">=2.8.0"
 azure-identity = ">=1.17.1"
 azure-core = ">=1.30.2"
@@ -60,6 +61,8 @@ azure = [
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
 import-linter = "*"
+pylint = "3.0.3"
+azure-pylint-guidelines-checker = {version = "0.3.1", source = "azure-sdk"}
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -69,6 +72,12 @@ pytest-mock = "*"
 pytest-xdist = "*"
 
 # test: pytest and coverage
+
+[[tool.poetry.source]]
+name = "azure-sdk"
+url = "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/"
+priority = "supplemental"
+
 [tool.pytest.ini_options]
 markers = [
   "unittest",
@@ -111,3 +120,23 @@ name = "Contract forbidden modules"
 type = "forbidden"
 source_modules = ["promptflow.evals"]
 forbidden_modules = []
+
+[tool.isort]
+# we use check for make fmt*
+profile = "black"
+# no need to fmt ignored
+skip_gitignore = true
+# needs to be the same as in black
+line_length = 120
+use_parentheses = true
+include_trailing_comma = true
+honor_noqa = true
+ensure_newline_before_comments = true
+skip_glob = [
+  "docs/**",
+  "pipelines/**",
+  "pytest/**",
+  "samples/**",
+]
+known_third_party = ["azure", "mock", "numpy", "pandas", "pydash", "pytest", "pytest_mock", "requests", "setuptools", "six", "sklearn", "tqdm", "urllib3", "utilities", "utils", "yaml", "jsonschema", "strictyaml", "jwt", "pathspec", "isodate", "docker"]
+known_first_party = ["promptflow"]
