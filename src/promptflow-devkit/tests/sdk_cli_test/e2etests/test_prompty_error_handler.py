@@ -1,3 +1,5 @@
+from unittest.mock import AsyncMock
+
 import httpx
 import pytest
 from _constants import PROMPTFLOW_ROOT
@@ -20,7 +22,7 @@ from promptflow.core._errors import (
     WrappedOpenAIError,
     to_openai_error_message,
 )
-from promptflow.core._prompty_utils import handle_openai_error
+from promptflow.core._prompty_utils import handle_openai_error, handle_openai_error_async
 from promptflow.exceptions import UserErrorException
 
 PROMPTY_FOLDER = PROMPTFLOW_ROOT / "tests" / "test_configs" / "prompty"
@@ -183,6 +185,59 @@ class TestHandlePromptyError:
             ]
             mock_sleep.assert_has_calls(expected_calls)
 
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "dummyExceptionList",
+        [
+            (
+                [
+                    RateLimitError(
+                        "Something went wrong",
+                        response=httpx.Response(429, request=httpx.Request("GET", "https://www.example.com")),
+                        body=None,
+                    ),
+                    APITimeoutError(request=httpx.Request("GET", "https://www.example.com")),
+                    APIConnectionError(
+                        message="('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))",
+                        request=httpx.Request("GET", "https://www.example.com"),
+                    ),
+                    create_api_connection_error_with_cause(),
+                    InternalServerError(
+                        "Something went wrong",
+                        response=httpx.Response(503, request=httpx.Request("GET", "https://www.example.com")),
+                        body=None,
+                    ),
+                ]
+            ),
+        ],
+    )
+    async def test_retriable_openai_error_handle_async(self, mocker: MockerFixture, dummyExceptionList):
+        for dummyEx in dummyExceptionList:
+            # Patch the test_method to throw the desired exception
+            patched_test_method = mocker.patch(
+                "openai.resources.Completions.create", new_callable=AsyncMock, side_effect=dummyEx
+            )
+
+            # Apply the retry decorator to the patched test_method
+            max_retry = 2
+            decorated_test_method = handle_openai_error_async(tries=max_retry)(patched_test_method)
+            mock_sleep = mocker.patch(
+                "asyncio.sleep", new_callable=AsyncMock
+            )  # Create a separate mock for asyncio.sleep
+
+            with pytest.raises(UserErrorException) as exc_info:
+                await decorated_test_method()
+
+            assert patched_test_method.call_count == max_retry + 1
+            assert "Exceed max retry times. " + to_openai_error_message(dummyEx) == exc_info.value.message
+            error_codes = "UserError/OpenAIError/" + type(dummyEx).__name__
+            assert exc_info.value.error_codes == error_codes.split("/")
+            expected_calls = [
+                mocker.call(3),
+                mocker.call(4),
+            ]
+            mock_sleep.assert_has_calls(expected_calls)
+
     @pytest.mark.parametrize(
         "dummyExceptionList",
         [
@@ -230,6 +285,58 @@ class TestHandlePromptyError:
             ]
             mock_sleep.assert_has_calls(expected_calls)
 
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "dummyExceptionList",
+        [
+            (
+                [
+                    RateLimitError(
+                        "Something went wrong",
+                        response=httpx.Response(
+                            429, request=httpx.Request("GET", "https://www.example.com"), headers={"retry-after": "0.3"}
+                        ),
+                        body=None,
+                    ),
+                    InternalServerError(
+                        "Something went wrong",
+                        response=httpx.Response(
+                            503, request=httpx.Request("GET", "https://www.example.com"), headers={"retry-after": "0.3"}
+                        ),
+                        body=None,
+                    ),
+                ]
+            ),
+        ],
+    )
+    async def test_retriable_openai_error_handle_with_header_async(self, mocker, dummyExceptionList):
+        for dummyEx in dummyExceptionList:
+            # Patch the test_method to throw the desired exception
+            patched_test_method = mocker.patch(
+                "promptflow.tools.aoai.completion", new_callable=AsyncMock, side_effect=dummyEx
+            )
+
+            # Apply the retry decorator to the patched test_method
+            max_retry = 2
+            header_delay = 0.3
+            decorated_test_method = handle_openai_error_async(tries=max_retry)(patched_test_method)
+            mock_sleep = mocker.patch(
+                "asyncio.sleep", new_callable=AsyncMock
+            )  # Create a separate mock for asyncio.sleep
+
+            with pytest.raises(UserErrorException) as exc_info:
+                await decorated_test_method()
+
+            assert patched_test_method.call_count == max_retry + 1
+            assert "Exceed max retry times. " + to_openai_error_message(dummyEx) == exc_info.value.message
+            error_codes = "UserError/OpenAIError/" + type(dummyEx).__name__
+            assert exc_info.value.error_codes == error_codes.split("/")
+            expected_calls = [
+                mocker.call(header_delay),
+                mocker.call(header_delay),
+            ]
+            mock_sleep.assert_has_calls(expected_calls)
+
     def test_unprocessable_entity_error(self, mocker: MockerFixture):
         unprocessable_entity_error = UnprocessableEntityError(
             "Something went wrong",
@@ -255,6 +362,38 @@ class TestHandlePromptyError:
         decorated_test_method = handle_openai_error(unprocessable_entity_error_tries=2)(patched_test_method)
         with pytest.raises(ExceedMaxRetryTimes):
             decorated_test_method()
+        assert patched_test_method.call_count == 4
+
+    @pytest.mark.asyncio
+    async def test_unprocessable_entity_error_async(self, mocker):
+        unprocessable_entity_error = UnprocessableEntityError(
+            "Something went wrong",
+            response=httpx.Response(422, request=httpx.Request("GET", "https://www.example.com")),
+            body=None,
+        )
+        rate_limit_error = RateLimitError(
+            "Something went wrong",
+            response=httpx.Response(
+                429, request=httpx.Request("GET", "https://www.example.com"), headers={"retry-after": "0.3"}
+            ),
+            body=None,
+        )
+        # for below exception sequence, "consecutive_422_error_count" changes: 0 -> 1 -> 0 -> 1 -> 2.
+        exception_sequence = [
+            unprocessable_entity_error,
+            rate_limit_error,
+            unprocessable_entity_error,
+            unprocessable_entity_error,
+        ]
+        patched_test_method = mocker.patch(
+            "promptflow.tools.aoai.AzureOpenAI.chat", new_callable=AsyncMock, side_effect=exception_sequence
+        )
+        # limit api connection error retry threshold to 2.
+        decorated_test_method = handle_openai_error_async(unprocessable_entity_error_tries=2)(patched_test_method)
+
+        with pytest.raises(ExceedMaxRetryTimes):
+            await decorated_test_method()
+
         assert patched_test_method.call_count == 4
 
     @pytest.mark.parametrize(
