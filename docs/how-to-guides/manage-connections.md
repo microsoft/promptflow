@@ -69,7 +69,7 @@ pf = PFClient()
 connection = AzureOpenAIConnection(
     name="my_azure_open_ai_connection", 
     api_key="<your-api-key>", 
-    api_base="<your-endpoint>"
+    api_base="<your-endpoint>",
     api_version="2023-03-15-preview"
 )
 
@@ -194,7 +194,7 @@ from promptflow.client import PFClient
 # Get a pf client to manage connections
 pf = PFClient()
 # Delete the connection with specific name
-client.connections.delete(name="my_custom_connection")
+pf.connections.delete(name="my_custom_connection")
 ```
 :::
 

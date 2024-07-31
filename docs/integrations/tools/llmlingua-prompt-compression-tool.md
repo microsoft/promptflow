@@ -14,7 +14,7 @@ PyPI package: [`llmlingua-promptflow`](https://pypi.org/project/llmlingua-prompt
     You may also want to install the [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
 ## Prerequisite
-Create a MaaS deployment for large language model in Azure model catalog. Take the Llama model as an example, you can learn how to deploy and consume Meta Llama models with model as a service by  [the guidance for Azure AI Studio](https://learn.microsoft.com/azure/ai-studio/how-to/deploy-models-llama?tabs=llama-three#deploy-meta-llama-models-as-a-serverless-api).
+Create a MaaS deployment for large language model in Azure model catalog. Take the Llama model as an example, you can learn how to deploy and consume Meta Llama models with model as a service by  [the guidance for Azure AI Studio](https://learn.microsoft.com/azure/ai-studio/how-to/deploy-models-llama?tabs=llama-three).
 
 ## Inputs
 
