@@ -29,6 +29,24 @@ except importlib.metadata.PackageNotFoundError:
 USER_AGENT = "{}/{}".format("promptflow-evals", version)
 
 
+def get_common_headers(token: str) -> Dict:
+    """Get common headers for the HTTP request
+
+    :param token: The Azure authentication token.
+    :type token: str
+    :return: The common headers.
+    :rtype: Dict
+    """
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "User-Agent": USER_AGENT,
+        # Handle "RuntimeError: Event loop is closed" from httpx AsyncClient
+        # https://github.com/encode/httpx/discussions/2959
+        "Connection": "close",
+    }
+
+
 async def ensure_service_availability(rai_svc_url: str, token: str, capability: str = None) -> None:
     """Check if the Responsible AI service is available in the region and has the required capability, if relevant.
 
@@ -40,15 +58,11 @@ async def ensure_service_availability(rai_svc_url: str, token: str, capability: 
     :type capability: str
     :raises Exception: If the service is not available in the region or the capability is not available.
     """
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-        "User-Agent": USER_AGENT,
-    }
-
+    headers = get_common_headers(token)
     svc_liveness_url = rai_svc_url + "/checkannotation"
+
     async with httpx.AsyncClient() as client:
-        response = await client.get(svc_liveness_url, headers=headers)
+        response = await client.get(svc_liveness_url, headers=headers, timeout=60)
 
     if response.status_code != 200:
         raise Exception(  # pylint: disable=broad-exception-raised
@@ -84,14 +98,10 @@ async def submit_request(question: str, answer: str, metric: str, rai_svc_url: s
     payload = {"UserTextList": [normalized_user_text], "AnnotationTask": Tasks.CONTENT_HARM, "MetricList": [metric]}
 
     url = rai_svc_url + "/submitannotation"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-        "User-Agent": USER_AGENT,
-    }
+    headers = get_common_headers(token)
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(url, json=payload, headers=headers)
+        response = await client.post(url, json=payload, headers=headers, timeout=60)
 
     if response.status_code != 202:
         print("Fail evaluating '%s' with error message: %s" % (payload["UserTextList"], response.text))
@@ -122,19 +132,19 @@ async def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCre
     url = rai_svc_url + "/operations/" + operation_id
     while True:
         token = await fetch_or_reuse_token(credential, token)
-        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        headers = get_common_headers(token)
 
         async with httpx.AsyncClient() as client:
-            response = await client.get(url, headers=headers)
+            response = await client.get(url, headers=headers, timeout=60)
 
         if response.status_code == 200:
             return response.json()
 
+        request_count += 1
         time_elapsed = time.time() - start
         if time_elapsed > RAIService.TIMEOUT:
-            raise TimeoutError(f"Fetching annotation result times out after {time_elapsed:.2f} seconds")
+            raise TimeoutError(f"Fetching annotation result {request_count} times out after {time_elapsed:.2f} seconds")
 
-        request_count += 1
         sleep_time = RAIService.SLEEP_TIME**request_count
         await asyncio.sleep(sleep_time)
 
@@ -165,15 +175,6 @@ def parse_response(  # pylint: disable=too-many-branches,too-many-statements
 
     try:
         harm_response = literal_eval(response[metric_name])
-    except NameError as e:
-        # fix the eval error if there's "true" in the response
-        m = re.findall(r"name '(\w+)' is not defined", str(e))
-        if m:
-            for word in m:
-                response[metric_name] = response[metric_name].replace(word, word.title())
-            harm_response = literal_eval(response[metric_name])
-        else:
-            harm_response = ""
     except Exception:  # pylint: disable=broad-exception-caught
         harm_response = response[metric_name]
 
@@ -214,7 +215,11 @@ def parse_response(  # pylint: disable=too-many-branches,too-many-statements
         metric_value = np.nan
         reason = ""
 
-    harm_score = int(metric_value)
+    harm_score = metric_value
+    if not np.isnan(metric_value):
+        # int(np.nan) causes a value error, and np.nan is already handled
+        # by get_harm_severity_level
+        harm_score = int(metric_value)
     result[key] = get_harm_severity_level(harm_score)
     result[key + "_score"] = harm_score
     result[key + "_reason"] = reason
@@ -232,7 +237,7 @@ async def _get_service_discovery_url(azure_ai_project: dict, token: str) -> str:
     :return: The discovery service URL.
     :rtype: str
     """
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    headers = get_common_headers(token)
     async with httpx.AsyncClient() as client:
         response = await client.get(
             f"https://management.azure.com/subscriptions/{azure_ai_project['subscription_id']}/"
@@ -240,7 +245,7 @@ async def _get_service_discovery_url(azure_ai_project: dict, token: str) -> str:
             f"providers/Microsoft.MachineLearningServices/workspaces/{azure_ai_project['project_name']}?"
             f"api-version=2023-08-01-preview",
             headers=headers,
-            timeout=5,
+            timeout=60,
         )
     if response.status_code != 200:
         raise Exception("Failed to retrieve the discovery service URL")  # pylint: disable=broad-exception-raised

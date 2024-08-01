@@ -625,10 +625,9 @@ class TestFlowRun:
                 )
                 with pytest.raises(ServiceResponseError):
                     remote_client.runs.create_or_update(run=mock_run)
-                # won't retry connection error since POST without response code is not retryable according to
-                # retry policy
+                # will retry POST without response code
                 submit_count = collect_submit_call_count(mock_request.call_args_list)
-                assert submit_count == 1
+                assert submit_count == 4
 
         with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
             RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
