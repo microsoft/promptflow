@@ -6,6 +6,9 @@ import asyncio
 import logging
 from typing import Callable, Dict, List, Tuple, Union
 
+from promptflow.evals.synthetic._constants import SupportedLanguages
+from promptflow.evals.synthetic._helpers._language_suffix_mapping import SUPPORTED_LANGUAGES_MAPPING
+
 from .._model_tools import RetryClient
 from . import ConversationBot, ConversationTurn
 
@@ -60,8 +63,10 @@ def is_closing_message_helper(response: str) -> bool:
 
 
 async def simulate_conversation(
+    *,
     bots: List[ConversationBot],
     session: RetryClient,
+    language: SupportedLanguages,
     stopping_criteria: Callable[[str], bool] = is_closing_message,
     turn_limit: int = 10,
     history_limit: int = 5,
@@ -73,6 +78,8 @@ async def simulate_conversation(
 
     :param bots: List of ConversationBot instances participating in the conversation.
     :type bots: List[ConversationBot]
+    :param language: The language in which the conversation should be generated.
+    :type language: promptflow.evals.synthetic._constants.SupportedLanguages
     :param session: The session to use for making API calls.
     :type session: RetryClient
     :param stopping_criteria: A callable that determines when the conversation should stop.
@@ -101,6 +108,8 @@ async def simulate_conversation(
     else:
         conversation_id = None
     first_prompt = first_response["samples"][0]
+    if language != SupportedLanguages.English:
+        first_prompt += f" {SUPPORTED_LANGUAGES_MAPPING[language]}"
     # Add all generated turns into array to pass for each bot while generating
     # new responses. We add generated response and the person generating it.
     # in the case of the first turn, it is supposed to be the user search query
