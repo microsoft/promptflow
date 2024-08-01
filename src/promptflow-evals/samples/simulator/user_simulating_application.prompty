@@ -1,0 +1,33 @@
+---
+name: UserSimulator
+description: Simulates a user to complete a conversation
+model:
+  api: chat
+  configuration:
+    type: azure_openai
+    azure_deployment: ${env:AZURE_DEPLOYMENT}
+    azure_endpoint: ${env:AZURE_OPENAI_ENDPOINT}
+  parameters:
+    temperature: 0.0
+    top_p: 1.0
+    presence_penalty: 0
+    frequency_penalty: 0
+    response_format:
+      type: text
+
+inputs:
+  conversation_history:
+    type: dict
+
+---
+system:
+Continue to interact with a system that responds to your queries.
+Make sure your conversation is engaging and interactive. Ask the system a follow-up question.
+Here's a sample output:
+{
+  "content": "Here is my follow-up question.",
+  "user": "user"
+}
+
+Output with a json object that continues the conversation, given the conversation history:
+{{ conversation_history }}

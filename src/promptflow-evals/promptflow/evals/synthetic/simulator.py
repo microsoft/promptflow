@@ -87,7 +87,9 @@ class Simulator:
         """
         if num_queries != len(tasks):
             num_queries = len(tasks)
-
+        if max_conversation_turns:
+            # need to double the max_conversation_turns to account for the user and assistant turns
+            max_conversation_turns = max_conversation_turns * 2
         prompty_model_config = {"configuration": self.azure_ai_project}
 
         if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration):
@@ -100,18 +102,40 @@ class Simulator:
                     # initialize a conversation and for every simulated_turn, call the target
                     simulators_turn = ConvTurn(role=ConversationRole.USER, content=simulated_turn)
                     current_simulation.add_to_history(simulators_turn)
-                    response = await target(
-                        messages={"messages": current_simulation.to_conv_history()},
-                        stream=False,
-                        session_state=None,
-                        context=None,
+                    response_from_target = await self._call_target_and_parse_response(
+                        target, api_call_delay_sec, current_simulation
                     )
-                    await asyncio.sleep(api_call_delay_sec)
-                    messages_list = response["messages"]
-                    latest_message = messages_list[-1]
-                    response_from_target = latest_message["content"]
                     turn = ConvTurn(role=ConversationRole.ASSISTANT, content=response_from_target)
                     current_simulation.add_to_history(turn)
+
+                if current_simulation.get_length() < max_conversation_turns:
+                    user_flow = None
+                    if not user_simulator_prompty:
+                        current_dir = os.path.dirname(__file__)
+                        prompty_path = os.path.join(current_dir, "_prompty", "task_simulate.prompty")
+                        user_flow = load_flow(source=prompty_path, model=prompty_model_config)
+                    else:
+                        user_flow = load_flow(
+                            source=user_simulator_prompty,
+                            model=prompty_model_config,
+                            **user_simulator_prompty_kwargs,
+                        )
+                    while current_simulation.get_length() < max_conversation_turns:
+                        response_from_user_simulating_prompty = user_flow(
+                            task="Continue the conversation", conversation_history=current_simulation.to_conv_history()
+                        )
+                        response_dict = ast.literal_eval(response_from_user_simulating_prompty)
+                        response = json.dumps(response_dict)
+                        user_simulator_prompty_response = json.loads(response)
+                        turn = ConvTurn(role=ConversationRole.USER, content=user_simulator_prompty_response["content"])
+                        current_simulation.add_to_history(turn)
+                        await asyncio.sleep(api_call_delay_sec)
+                        response_from_target = await self._call_target_and_parse_response(
+                            target, api_call_delay_sec, current_simulation
+                        )
+                        turn = ConvTurn(role=ConversationRole.ASSISTANT, content=response_from_target)
+                        current_simulation.add_to_history(turn)
+
                 simulated_conversation.append(current_simulation.to_conv_history())
             return simulated_conversation
         if not query_response_generating_prompty:
@@ -159,7 +183,7 @@ class Simulator:
             conversation = await self.complete_conversation(
                 conversation_starter=query,
                 max_conversation_turns=max_conversation_turns,
-                tasks=tasks_item,
+                task=tasks_item,
                 user_simulator_prompty=user_simulator_prompty,
                 user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
                 target=target,
@@ -179,12 +203,25 @@ class Simulator:
         progress_bar.close()
         return all_conversations
 
-    async def build_query(self, *, tasks, conversation_history, user_simulator_prompty, user_simulator_prompty_kwargs):
+    async def _call_target_and_parse_response(self, target, api_call_delay_sec, current_simulation):
+        response = await target(
+            messages={"messages": current_simulation.to_conv_history()},
+            stream=False,
+            session_state=None,
+            context=None,
+        )
+        await asyncio.sleep(api_call_delay_sec)
+        messages_list = response["messages"]
+        latest_message = messages_list[-1]
+        response_from_target = latest_message["content"]
+        return response_from_target
+
+    async def build_query(self, *, task, conversation_history, user_simulator_prompty, user_simulator_prompty_kwargs):
         """
         Build a query using the user simulator prompty.
 
         Args:
-            tasks (str): The persona of the user.
+            task (str): The task for user simulator.
             conversation_history (list): The history of the conversation.
             user_simulator_prompty (str): The path to the user simulator prompty file.
             user_simulator_prompty_kwargs (dict): Additional keyword arguments for the user simulator prompty.
@@ -203,7 +240,7 @@ class Simulator:
         try:
             if not user_simulator_prompty:
                 current_dir = os.path.dirname(__file__)
-                prompty_path = os.path.join(current_dir, "_prompty", "task_simulate_with_persona.prompty")
+                prompty_path = os.path.join(current_dir, "_prompty", "task_simulate.prompty")
                 _flow = load_flow(source=prompty_path, model=prompty_model_config)
             else:
                 _flow = load_flow(
@@ -211,7 +248,7 @@ class Simulator:
                     model=prompty_model_config,
                     **user_simulator_prompty_kwargs,
                 )
-            response = _flow(tasks=tasks, conversation_history=conversation_history)
+            response = _flow(task=task, conversation_history=conversation_history)
         except Exception as e:
             print("Something went wrong running the prompty")
             raise e
@@ -229,7 +266,7 @@ class Simulator:
         *,
         conversation_starter,
         max_conversation_turns,
-        tasks,
+        task,
         user_simulator_prompty,
         user_simulator_prompty_kwargs,
         target,
@@ -242,7 +279,7 @@ class Simulator:
         Args:
             conversation_starter (str): The initial message to start the conversation.
             max_conversation_turns (int): The maximum number of turns in the conversation.
-            tasks (str): The persona of the user.
+            task (str): The task of the user.
             user_simulator_prompty (str): The path to the user simulator prompty file.
             user_simulator_prompty_kwargs (dict): Additional keyword arguments for the user simulator prompty.
             target (callable): The target model to interact with.
@@ -280,7 +317,7 @@ class Simulator:
 
             # Get response from user simulator
             response_from_user_simulating_prompty = await self.build_query(
-                tasks=tasks,
+                task=task,
                 conversation_history=conversation_history.to_conv_history(),
                 user_simulator_prompty=user_simulator_prompty,
                 user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,

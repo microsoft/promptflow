@@ -49,12 +49,12 @@ async def callback(
     return {"messages": messages["messages"], "stream": stream, "session_state": session_state, "context": context}
 
 
-async def main(model_config, azure_ai_project):
+async def main(azure_ai_project):
     conversation_turns = [
         # simulation 1
         [
             "Hello, how are you?",  # simulator conversation starter (turn 1)
-            f"I want to learn more about Paris"  # conversation turn 2,
+            f"I want to learn more about Paris",  # conversation turn 2,
             f"Thanks for helping me. What else should I know about Paris for my project",  # conversation turn 3
         ],
         # simulation 2
@@ -65,7 +65,16 @@ async def main(model_config, azure_ai_project):
         ],
     ]
     simulator = Simulator(azure_ai_project=azure_ai_project, credential=DefaultAzureCredential())
-    outputs = await simulator(target=callback, conversation_turns=conversation_turns)
+    user_simulator_prompty_kwargs = {
+        "some_key": "some_value",
+    }
+    outputs = await simulator(
+        target=callback,
+        conversation_turns=conversation_turns,
+        max_conversation_turns=5,
+        user_simulator_prompty="user_simulating_application.prompty",
+        user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
+    )
     print(json.dumps(outputs, indent=2))
 
 
@@ -88,5 +97,5 @@ if __name__ == "__main__":
         "project_name": os.environ.get("PROJECT_NAME"),
     }
 
-    asyncio.run(main(model_config=model_config, azure_ai_project=azure_ai_project))
+    asyncio.run(main(azure_ai_project=azure_ai_project))
     print("done!")
