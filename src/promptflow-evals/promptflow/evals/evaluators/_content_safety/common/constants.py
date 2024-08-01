@@ -5,6 +5,8 @@ from enum import Enum
 
 
 class CommonConstants:
+    """Define common constants."""
+
     DEFAULT_HTTP_TIMEOUT = 60
 
 
