@@ -5,6 +5,7 @@
 
 class EvaluationMetrics:
     """Metrics for model evaluation."""
+
     GPT_GROUNDEDNESS = "gpt_groundedness"
     GPT_RELEVANCE = "gpt_relevance"
     GPT_COHERENCE = "gpt_coherence"
@@ -21,9 +22,22 @@ class EvaluationMetrics:
 
 class Prefixes:
     """Column prefixes for inputs and outputs."""
+
     INPUTS = "inputs."
     OUTPUTS = "outputs."
     TSG_OUTPUTS = "__outputs."
+
+
+class SupportedLanguages:
+    """Supported languages for evaluation, using ISO standard language codes."""
+
+    Spanish = "es"
+    Italian = "it"
+    French = "fr"
+    German = "de"
+    SimplifiedChinese = "zh-cn"
+    Portuguese = "pt"
+    Japanese = "ja"
 
 
 DEFAULT_EVALUATION_RESULTS_FILE_NAME = "evaluation_results.json"
