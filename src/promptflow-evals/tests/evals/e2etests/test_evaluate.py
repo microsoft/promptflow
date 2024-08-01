@@ -52,6 +52,7 @@ def question_evaluator(question):
 def _get_run_from_run_history(flow_run_id, ml_client, project_scope):
     """Get run info from run history"""
     from azure.identity import DefaultAzureCredential
+
     token = "Bearer " + DefaultAzureCredential().get_token("https://management.azure.com/.default").token
     headers = {
         "Authorization": token,
@@ -165,6 +166,7 @@ class TestEvaluate:
 
     @pytest.mark.performance_test
     def test_evaluate_with_async_enabled_evaluator(self, model_config, data_file):
+        os.environ["PF_EVALS_BATCH_USE_ASYNC"] = "true"
         fluency_eval = FluencyEvaluator(model_config)
 
         start_time = time.time()
@@ -188,6 +190,7 @@ class TestEvaluate:
         assert "outputs.fluency.gpt_fluency" in row_result_df.columns.to_list()
         assert "fluency.gpt_fluency" in metrics.keys()
         assert duration < 10, f"evaluate API call took too long: {duration} seconds"
+        os.environ.pop("PF_EVALS_BATCH_USE_ASYNC")
 
     @pytest.mark.parametrize(
         "use_pf_client,function,column",
