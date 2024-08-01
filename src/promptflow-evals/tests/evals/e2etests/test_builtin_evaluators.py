@@ -166,7 +166,7 @@ class TestBuiltInEvaluators:
         assert score["gpt_similarity"] > 0.0
         assert score["f1_score"] > 0.0
 
-    def test_qa_evaluator_for_nans(self, model_config):
+    def test_composite_evaluator_qa_for_nans(self, model_config):
         qa_eval = QAEvaluator(model_config)
         # Test Q/A below would cause NaNs in the evaluation metrics before the fix.
         score = qa_eval(question="This's the color?", answer="Black", ground_truth="gray", context="gray")
