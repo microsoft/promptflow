@@ -1,3 +1,4 @@
+import asyncio
 import copy
 import functools
 import json
@@ -192,11 +193,11 @@ def get_open_ai_client_by_connection(connection, is_async=False):
     return client
 
 
-def send_request_to_llm(client, api, parameters):
+def send_request_to_llm(client, api, parameters, timeout):
     if api == "completion":
-        result = client.completions.create(**parameters)
+        result = client.with_options(timeout=timeout).completions.create(**parameters)
     else:
-        result = client.chat.completions.create(**parameters)
+        result = client.with_options(timeout=timeout).chat.completions.create(**parameters)
     return result
 
 
@@ -1146,6 +1147,114 @@ def handle_openai_error(tries: int = 10, unprocessable_entity_error_tries: int =
                         )
                         logger.warning(msg)
                     time.sleep(retry_after_seconds)
+                except OpenAIError as e:
+                    # For other non-retriable errors from OpenAIError,
+                    # For example, AuthenticationError, APIConnectionError, BadRequestError, NotFoundError
+                    # Mark UserError for all the non-retriable OpenAIError
+                    logger.error(f"Exception occurs: {type(e).__name__}: {str(e)}")
+                    raise WrappedOpenAIError(e)
+                except Exception as e:
+                    logger.error(f"Exception occurs: {type(e).__name__}: {str(e)}")
+                    error_message = f"OpenAI API hits exception: {type(e).__name__}: {str(e)}"
+                    raise LLMError(message=error_message)
+
+        return wrapper
+
+    return decorator
+
+
+def handle_openai_error_async(tries: int = 10, unprocessable_entity_error_tries: int = 3):
+    """
+    A decorator function for handling OpenAI errors asynchronously.
+
+    OpenAI errors are categorized into retryable and non-retryable.
+    For retryable errors, the default is to retry 10 times. The waiting time for each round of retry
+    increases exponentially, with a maximum waiting time of 60 seconds.
+    The total waiting time for retrying 10 times is about 400s
+
+    For retryable errors, the decorator uses the following parameters to control its retry behavior:
+    `tries`: max times for the function invocation, type is int
+    `unprocessable_entity_error_tries`: max times for the function invocation when consecutive
+        422 error occurs, type is int
+
+    Note:
+    - The retry policy for UnprocessableEntityError is different because retrying may not be beneficial,
+      so small threshold and requiring consecutive errors.
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            consecutive_422_error_count = 0
+            for i in range(tries + 1):
+                try:
+                    return await func(*args, **kwargs)
+                except (SystemErrorException, UserErrorException) as e:
+                    # Throw inner wrapped exception directly
+                    raise e
+                except (APIStatusError, APIConnectionError) as e:
+                    #  Handle retriable exception, please refer to
+                    #  https://platform.openai.com/docs/guides/error-codes/api-errors
+                    logger.error(f"Exception occurs: {type(e).__name__}: {str(e)}")
+                    # Firstly, exclude some non-retriable errors.
+                    # Vision model does not support all chat api parameters, e.g. response_format and function_call.
+                    # Related issue https://github.com/microsoft/promptflow/issues/1683
+                    if isinstance(e, BadRequestError):
+                        raise WrappedOpenAIError(e)
+
+                    if (
+                        isinstance(e, APIConnectionError)
+                        and not isinstance(e, APITimeoutError)
+                        and not is_retriable_api_connection_error(e)
+                    ):
+                        raise WrappedOpenAIError(e)
+
+                    # Retry InternalServerError(>=500), RateLimitError(429), UnprocessableEntityError(422)
+                    # Solution references:
+                    # https://platform.openai.com/docs/guides/error-codes/api-errors
+                    # https://platform.openai.com/docs/guides/error-codes/python-library-error-types
+                    if isinstance(e, APIStatusError):
+                        status_code = e.response.status_code
+                        if status_code < 500 and status_code not in [429, 422]:
+                            raise WrappedOpenAIError(e)
+                    if isinstance(e, RateLimitError) and getattr(e, "type", None) == "insufficient_quota":
+                        # Exit retry if this is quota insufficient error
+                        logger.error(f"{type(e).__name__} with insufficient quota. Throw user error.")
+                        raise WrappedOpenAIError(e)
+
+                    # Retriable errors.
+                    # To fix issue #2296, retry on api connection error, but with a separate retry policy.
+                    if isinstance(e, APIStatusError) and e.response.status_code == 422:
+                        consecutive_422_error_count += 1
+                    else:
+                        # If other retriable errors, reset consecutive_422_error_count.
+                        consecutive_422_error_count = 0
+
+                    if i == tries or consecutive_422_error_count == unprocessable_entity_error_tries:
+                        # Exit retry if max retry reached
+                        logger.error(f"{type(e).__name__} reached max retry. Exit retry with user error.")
+                        raise ExceedMaxRetryTimes(e)
+
+                    if hasattr(e, "response") and e.response is not None:
+                        retry_after_in_header = e.response.headers.get("retry-after", None)
+                    else:
+                        retry_after_in_header = None
+
+                    if not retry_after_in_header:
+                        retry_after_seconds = generate_retry_interval(i)
+                        msg = (
+                            f"{type(e).__name__} #{i}, but no Retry-After header, "
+                            + f"Back off {retry_after_seconds} seconds for retry."
+                        )
+                        logger.warning(msg)
+                    else:
+                        retry_after_seconds = float(retry_after_in_header)
+                        msg = (
+                            f"{type(e).__name__} #{i}, Retry-After={retry_after_in_header}, "
+                            f"Back off {retry_after_seconds} seconds for retry."
+                        )
+                        logger.warning(msg)
+                    await asyncio.sleep(retry_after_seconds)
                 except OpenAIError as e:
                     # For other non-retriable errors from OpenAIError,
                     # For example, AuthenticationError, APIConnectionError, BadRequestError, NotFoundError
