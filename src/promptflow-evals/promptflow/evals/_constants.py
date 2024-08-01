@@ -38,6 +38,7 @@ class SupportedLanguages:
     SimplifiedChinese = "zh-cn"
     Portuguese = "pt"
     Japanese = "ja"
+    English = "en"
 
 
 DEFAULT_EVALUATION_RESULTS_FILE_NAME = "evaluation_results.json"
