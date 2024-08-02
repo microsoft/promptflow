@@ -7,13 +7,13 @@ interactions:
       accept-encoding:
       - gzip, deflate
       connection:
-      - keep-alive
+      - close
       content-type:
       - application/json
       host:
       - management.azure.com
       user-agent:
-      - python-httpx/0.27.0
+      - promptflow-evals/0.1.0.dev0
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000?api-version=2023-08-01-preview
   response:
@@ -26,6 +26,8 @@ interactions:
     headers:
       cache-control:
       - no-cache
+      connection:
+      - close
       content-length:
       - '2853'
       content-type:
@@ -43,7 +45,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.023'
+      - '0.027'
     status:
       code: 200
       message: OK
@@ -55,7 +57,7 @@ interactions:
       accept-encoding:
       - gzip, deflate
       connection:
-      - keep-alive
+      - close
       content-type:
       - application/json
       host:
@@ -69,7 +71,7 @@ interactions:
       string: '["content harm", "groundedness"]'
     headers:
       connection:
-      - keep-alive
+      - close
       content-length:
       - '38'
       content-type:
@@ -79,7 +81,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.069'
+      - '0.115'
     status:
       code: 200
       message: OK
@@ -92,7 +94,7 @@ interactions:
       accept-encoding:
       - gzip, deflate
       connection:
-      - keep-alive
+      - close
       content-length:
       - '169'
       content-type:
@@ -105,23 +107,23 @@ interactions:
     uri: https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/submitannotation
   response:
     body:
-      string: '{"location": "https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/83eb6cce-b63b-4366-94b2-ddc4dd513e23",
+      string: '{"location": "https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/9206ff4e-7c53-42ad-b574-c83d038915b6",
         "operationResult": null}'
     headers:
       connection:
-      - keep-alive
+      - close
       content-length:
       - '290'
       content-type:
       - application/json; charset=utf-8
       location:
-      - https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/b17253fa-f327-42d6-9686-f3e553e24763/resourceGroups/promptflow-evals-ci/providers/Microsoft.MachineLearningServices/workspaces/pf-evals-ws/operations/83eb6cce-b63b-4366-94b2-ddc4dd513e23
+      - https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/b17253fa-f327-42d6-9686-f3e553e24763/resourceGroups/promptflow-evals-ci/providers/Microsoft.MachineLearningServices/workspaces/pf-evals-ws/operations/9206ff4e-7c53-42ad-b574-c83d038915b6
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.063'
+      - '0.193'
     status:
       code: 202
       message: Accepted
@@ -133,21 +135,21 @@ interactions:
       accept-encoding:
       - gzip, deflate
       connection:
-      - keep-alive
+      - close
       content-type:
       - application/json
       host:
       - eastus2.api.azureml.ms
       user-agent:
-      - python-httpx/0.27.0
+      - promptflow-evals/0.1.0.dev0
     method: GET
-    uri: https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/83eb6cce-b63b-4366-94b2-ddc4dd513e23
+    uri: https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/9206ff4e-7c53-42ad-b574-c83d038915b6
   response:
     body:
       string: ''
     headers:
       connection:
-      - keep-alive
+      - close
       content-length:
       - '0'
       strict-transport-security:
@@ -155,7 +157,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.024'
+      - '0.032'
     status:
       code: 202
       message: Accepted
@@ -167,15 +169,15 @@ interactions:
       accept-encoding:
       - gzip, deflate
       connection:
-      - keep-alive
+      - close
       content-type:
       - application/json
       host:
       - eastus2.api.azureml.ms
       user-agent:
-      - python-httpx/0.27.0
+      - promptflow-evals/0.1.0.dev0
     method: GET
-    uri: https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/83eb6cce-b63b-4366-94b2-ddc4dd513e23
+    uri: https://eastus2.api.azureml.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/9206ff4e-7c53-42ad-b574-c83d038915b6
   response:
     body:
       string: '[{"hate_fairness": "{\"label\":0,\"reasoning\":\"The system''s response
@@ -185,7 +187,7 @@ interactions:
         factors.\",\"version\":\"0.3\"}"}]'
     headers:
       connection:
-      - keep-alive
+      - close
       content-length:
       - '350'
       content-type:

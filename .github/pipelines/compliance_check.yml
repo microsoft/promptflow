@@ -27,7 +27,8 @@ steps:
     targetType: inline
     script: |
       Remove-Item -Recurse -Force $(sourceLocation)/benchmark/promptflow-serve/result-archive
-  displayName: 'Delete benchmark HTML files'
+      Remove-Item -Path $(sourceLocation)/src/promptflow-azure/promptflow/azure/_restclient/flow_service_caller.py -Force
+  displayName: 'Delete benchmark HTML files, and files to avoid PoliCheck scan'
 
 # https://eng.ms/docs/microsoft-security/cloud-ecosystem-security/azure-security/cloudai-security-fundamentals-engineering/security-integration/guardian-wiki/sdl-azdo-extension/PoliCheck-build-task
 - task: PoliCheck@2

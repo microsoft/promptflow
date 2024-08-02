@@ -21,9 +21,15 @@ class _AsyncCoherenceEvaluator:
         if model_config.api_version is None:
             model_config.api_version = "2024-02-15-preview"
 
-        prompty_model_config = {"configuration": model_config}
+        prompty_model_config = {"configuration": model_config, "parameters": {"extra_headers": {}}}
+
+        # Handle "RuntimeError: Event loop is closed" from httpx AsyncClient
+        # https://github.com/encode/httpx/discussions/2959
+        prompty_model_config["parameters"]["extra_headers"].update({"Connection": "close"})
+
         if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration):
-            prompty_model_config.update({"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}})
+            prompty_model_config["parameters"]["extra_headers"].update({"x-ms-useragent": USER_AGENT})
+
         current_dir = os.path.dirname(__file__)
         prompty_path = os.path.join(current_dir, "coherence.prompty")
         self._flow = AsyncPrompty.load(source=prompty_path, model=prompty_model_config)
@@ -37,7 +43,7 @@ class _AsyncCoherenceEvaluator:
             raise ValueError("Both 'question' and 'answer' must be non-empty strings.")
 
         # Run the evaluation flow
-        llm_output = await self._flow(question=question, answer=answer)
+        llm_output = await self._flow(question=question, answer=answer, timeout=600, **kwargs)
 
         score = np.nan
         if llm_output:

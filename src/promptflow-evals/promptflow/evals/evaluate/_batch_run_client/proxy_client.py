@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import inspect
 import logging
+import os
 
 import numpy as np
 
@@ -50,9 +51,13 @@ class ProxyClient:
 
     @staticmethod
     def _should_batch_use_async(flow):
-        if hasattr(flow, "__call__") and inspect.iscoroutinefunction(flow.__call__):
-            return True
-        elif inspect.iscoroutinefunction(flow):
-            return True
-        else:
-            return False
+        # TODO: Change default to true after promptflow-core releases fix for error handler for async prompty
+        # https://github.com/microsoft/promptflow/pull/3598
+        if os.getenv("PF_EVALS_BATCH_USE_ASYNC", "false").lower() == "true":
+            if hasattr(flow, "__call__") and inspect.iscoroutinefunction(flow.__call__):
+                return True
+            elif inspect.iscoroutinefunction(flow):
+                return True
+            else:
+                return False
+        return False
