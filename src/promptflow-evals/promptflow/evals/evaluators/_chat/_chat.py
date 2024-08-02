@@ -242,7 +242,7 @@ class ChatEvaluator:
     Initialize a chat evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: AzureOpenAIModelConfiguration
+    :type model_config: ~promptflow.core.AzureOpenAIModelConfiguration
     :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue,
         focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
     :type eval_last_turn: bool
@@ -250,7 +250,7 @@ class ChatEvaluator:
         Default is True.
     :type parallel: bool
     :return: A function that evaluates and generates metrics for "chat" scenario.
-    :rtype: function
+    :rtype: Callable
 
     **Usage**
 

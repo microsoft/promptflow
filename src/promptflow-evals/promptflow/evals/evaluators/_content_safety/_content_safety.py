@@ -55,9 +55,9 @@ class ContentSafetyEvaluator:
     :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
         Default is True.
     :param credential: The credential for connecting to Azure AI project.
-    :type credential: TokenCredential
+    :type credential: ~azure.core.credentials.TokenCredential
     :return: A function that evaluates content-safety metrics for "question-answering" scenario.
-    :rtype: function
+    :rtype: Callable
 
     **Usage**
 
