@@ -174,7 +174,7 @@ class Simulator:
         """
         simulated_conversations = []
         progress_bar = tqdm(
-            total=len(conversation_turns),
+            total=len(conversation_turns) * max_conversation_turns,
             desc="Simulating predefined conversations",
             ncols=100,
             unit="conversations",
@@ -190,7 +190,7 @@ class Simulator:
                 )
                 assistant_turn = ConvTurn(role=ConversationRole.ASSISTANT, content=assistant_response)
                 current_simulation.add_to_history(assistant_turn)
-                progress_bar.update(2)  # Update progress bar for both user and assistant turns
+                progress_bar.update(1)  # Update progress bar for both user and assistant turns
 
             if current_simulation.get_length() < max_conversation_turns:
                 await self._extend_conversation_with_simulator(
@@ -285,7 +285,8 @@ class Simulator:
         :raises ValueError: If the response cannot be parsed.
         """
         try:
-            # response_dict = response
+            if "'" in response:
+                response = response.replace("'", '"')
             if isinstance(response, str):
                 response = ast.literal_eval(response)
             response = json.dumps(response)
