@@ -1,8 +1,14 @@
 # Release History
 
-## v1.14.0 (Upcoming)
+## v1.15.0 (Upcoming)
+
+### Bugs fixed
+- [promptflow-azure] Fixed `Connection aborted` error for local to cloud run when registering the run to cloud.
+
+## v1.14.0 (2024.07.25)
 ### Improvements
 - [promptflow-devkit] Add `promptflow` to dockerfile when build flow with `python_requirements_txt` incase promptflow not exists in custom requirements.
+- [promptflow-core] Remove dependency on docutils package.
 
 ## v1.13.0 (2024.06.28)
 
@@ -12,12 +18,14 @@
 
 ### Improvements
 - [promptflow-devkit] Support setting config of local prompt flow service host
+- [promptflow-azure] Reduced time latency for local to cloud run by caching the arm token.
 
 ## v1.12.0 (2024.06.11)
 
 ### Bugs fixed
 - [promptflow-core] Fix ChatUI can't work in docker container when running image build with `pf flow build`.
 - [promptflow-core] Fix [#3355](https://github.com/microsoft/promptflow/issues/3355) that IndexError is raised when generator is used in a flow and the flow is called inside another flow.
+- [promptflow-azure] Fixed the timezone issue of creation time for local to cloud run.
 
 ### Improvements
 - [promptflow-devkit] Add retry logic when uploading run details to cloud.

@@ -2,10 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from concurrent.futures import as_completed
+import asyncio
 
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.core import AzureOpenAIModelConfiguration
-from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 from .._coherence import CoherenceEvaluator
 from .._f1_score import F1ScoreEvaluator
@@ -15,14 +15,53 @@ from .._relevance import RelevanceEvaluator
 from .._similarity import SimilarityEvaluator
 
 
+class _AsyncQAEvaluator:
+    def __init__(self, model_config: AzureOpenAIModelConfiguration, parallel: bool = True):
+        self._parallel = parallel
+
+        self._evaluators = [
+            GroundednessEvaluator(model_config)._to_async(),
+            RelevanceEvaluator(model_config)._to_async(),
+            CoherenceEvaluator(model_config)._to_async(),
+            FluencyEvaluator(model_config)._to_async(),
+            SimilarityEvaluator(model_config)._to_async(),
+            F1ScoreEvaluator()._to_async(),
+        ]
+
+    async def __call__(self, *, question: str, answer: str, context: str, ground_truth: str, **kwargs):
+        results = {}
+
+        if self._parallel:
+            tasks = []
+            for evaluator in self._evaluators:
+                tasks.append(
+                    asyncio.create_task(
+                        evaluator(
+                            question=question, answer=answer, context=context, ground_truth=ground_truth, **kwargs
+                        )
+                    )
+                )
+            completed_results = await asyncio.gather(*tasks)
+            for result in completed_results:
+                results.update(result)
+        else:
+            for evaluator in self._evaluators:
+                result = await evaluator(
+                    question=question, answer=answer, context=context, ground_truth=ground_truth, **kwargs
+                )
+                results.update(result)
+
+        return results
+
+
 class QAEvaluator:
     """
     Initialize a question-answer evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: AzureOpenAIModelConfiguration
+    :type model_config: ~promptflow.core.AzureOpenAIModelConfiguration
     :return: A function that evaluates and generates metrics for "question-answering" scenario.
-    :rtype: function
+    :rtype: Callable
 
     **Usage**
 
@@ -51,16 +90,7 @@ class QAEvaluator:
     """
 
     def __init__(self, model_config: AzureOpenAIModelConfiguration, parallel: bool = True):
-        self._parallel = parallel
-
-        self._evaluators = [
-            GroundednessEvaluator(model_config),
-            RelevanceEvaluator(model_config),
-            CoherenceEvaluator(model_config),
-            FluencyEvaluator(model_config),
-            SimilarityEvaluator(model_config),
-            F1ScoreEvaluator(),
-        ]
+        self._async_evaluator = _AsyncQAEvaluator(model_config, parallel)
 
     def __call__(self, *, question: str, answer: str, context: str, ground_truth: str, **kwargs):
         """
@@ -79,29 +109,14 @@ class QAEvaluator:
         :return: The scores for QA scenario.
         :rtype: dict
         """
-        results = {}
-        if self._parallel:
-            with ThreadPoolExecutor() as executor:
-                # Create a future for each evaluator
-                futures = {
-                    executor.submit(
-                        evaluator,
-                        question=question,
-                        answer=answer,
-                        context=context,
-                        ground_truth=ground_truth,
-                        **kwargs
-                    ): evaluator
-                    for evaluator in self._evaluators
-                }
+        return async_run_allowing_running_loop(
+            self._async_evaluator,
+            question=question,
+            answer=answer,
+            context=context,
+            ground_truth=ground_truth,
+            **kwargs
+        )
 
-                # Collect results as they complete
-                for future in as_completed(futures):
-                    results.update(future.result())
-        else:
-            for evaluator in self._evaluators:
-                results.update(
-                    evaluator(question=question, answer=answer, context=context, ground_truth=ground_truth, **kwargs)
-                )
-
-        return results
+    def _to_async(self):
+        return self._async_evaluator
