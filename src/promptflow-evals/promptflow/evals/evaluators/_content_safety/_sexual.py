@@ -31,7 +31,7 @@ class SexualEvaluator:
         It contains subscription id, resource group, and project name.
     :type project_scope: dict
     :param credential: The credential for connecting to Azure AI project.
-    :type credential: TokenCredential
+    :type credential: ~azure.core.credentials.TokenCredential
 
     **Usage**
 
