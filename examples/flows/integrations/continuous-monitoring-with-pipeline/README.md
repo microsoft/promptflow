@@ -10,7 +10,6 @@ The flows used in this pipeline are described below:
 - [Basic Chat](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-basic)
 - [Q&A Evaluation](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-qna-rag-metrics)
 - [Perceived Intelligence Evaluation](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-perceived-intelligence)
-- [Simple Summarization](./flows/standard/simple-summarization/)
 - [Summarization Evaluation](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-summarization)
 
 Connections used in this flow:
