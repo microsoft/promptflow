@@ -23,7 +23,7 @@ from ._utils import JsonLineChatProtocol
 
 class Simulator:
     """
-    Task simulator for generating synthetic conversations based on a user persona and a query.
+    Simulator for generating synthetic conversations.
     """
 
     def __init__(self, azure_ai_project: Dict[str, Any], credential: Optional[Any] = None):
@@ -80,8 +80,8 @@ class Simulator:
         :keyword max_conversation_turns: Maximum number of conversation turns for the simulation.
                                         Each turn consists of a user and an assistant message.
         :paramtype max_conversation_turns: int
-        :keyword tasks: A list of user personas, each represented as a dictionary.
-        :paramtype tasks: List[Dict]
+        :keyword tasks: A list of user tasks, each represented as a list of strings.
+        :paramtype tasks: List[str]
         :keyword text: The initial input text for generating query responses.
         :paramtype text: str
         :keyword num_queries: The number of queries to generate.
@@ -173,6 +173,13 @@ class Simulator:
         :rtype: List[JsonLineChatProtocol]
         """
         simulated_conversations = []
+        progress_bar = tqdm(
+            total=len(conversation_turns),
+            desc="Simulating predefined conversations",
+            ncols=100,
+            unit="conversations",
+        )
+
         for simulation in conversation_turns:
             current_simulation = ConvHistory()
             for simulated_turn in simulation:
@@ -183,6 +190,7 @@ class Simulator:
                 )
                 assistant_turn = ConvTurn(role=ConversationRole.ASSISTANT, content=assistant_response)
                 current_simulation.add_to_history(assistant_turn)
+                progress_bar.update(2)  # Update progress bar for both user and assistant turns
 
             if current_simulation.get_length() < max_conversation_turns:
                 await self._extend_conversation_with_simulator(
@@ -193,9 +201,12 @@ class Simulator:
                     api_call_delay_sec=api_call_delay_sec,
                     prompty_model_config=prompty_model_config,
                     target=target,
+                    progress_bar=progress_bar,
                 )
 
             simulated_conversations.append(current_simulation.to_conv_history())
+
+        progress_bar.close()
         return simulated_conversations
 
     async def _extend_conversation_with_simulator(
@@ -208,6 +219,7 @@ class Simulator:
         api_call_delay_sec: float,
         prompty_model_config: Dict[str, Any],
         target: callable,
+        progress_bar: tqdm,
     ):
         """
         Extends an ongoing conversation using a user simulator until the maximum number of turns is reached.
@@ -219,6 +231,7 @@ class Simulator:
         :param api_call_delay_sec: Delay in seconds between API calls.
         :param prompty_model_config: The configuration for the prompty model.
         :param target: The target function to call for responses.
+        :param progress_bar: Progress bar for tracking simulation progress.
         """
         user_flow = self._load_user_simulation_flow(
             user_simulator_prompty=user_simulator_prompty,
@@ -239,6 +252,7 @@ class Simulator:
             )
             assistant_turn = ConvTurn(role=ConversationRole.ASSISTANT, content=assistant_response)
             current_simulation.add_to_history(assistant_turn)
+            progress_bar.update(1)
 
     def _load_user_simulation_flow(
         self, *, user_simulator_prompty, prompty_model_config, user_simulator_prompty_kwargs
@@ -352,7 +366,7 @@ class Simulator:
 
         :param query_responses: A list of query-response pairs.
         :param max_conversation_turns: The maximum number of conversation turns.
-        :param tasks: A list of user personas.
+        :param tasks: A list of tasks for the simulation.
         :param user_simulator_prompty: Path to the user simulator prompty file.
         :param user_simulator_prompty_kwargs: Additional keyword arguments for the user simulator prompty.
         :param target: The target function to call for responses.
@@ -361,7 +375,7 @@ class Simulator:
         :rtype: List[JsonLineChatProtocol]
         """
         progress_bar = tqdm(
-            total=len(query_responses) * max_conversation_turns,
+            total=len(query_responses),
             desc="Generating simulations",
             ncols=100,
             unit="simulations",
@@ -388,7 +402,7 @@ class Simulator:
                     {
                         "messages": conversation,
                         "finish_reason": ["stop"],
-                        "context": f"User persona: {task} Expected response: {response}",
+                        "context": f"Task: {task} Expected response: {response}",
                         "$schema": "http://azureml/sdk-2-0/ChatConversation.json",
                     }
                 )
@@ -401,7 +415,7 @@ class Simulator:
         *,
         conversation_starter: str,
         max_conversation_turns: int,
-        task: Dict,
+        task: str,
         user_simulator_prompty: Optional[str],
         user_simulator_prompty_kwargs: Dict[str, Any],
         target: callable,
@@ -415,8 +429,8 @@ class Simulator:
         :paramtype conversation_starter: str
         :keyword max_conversation_turns: The maximum number of turns in the conversation.
         :paramtype max_conversation_turns: int
-        :keyword task: A dictionary representing the user persona and task details.
-        :paramtype task: Dict
+        :keyword task: A string representing the task details.
+        :paramtype task: str
         :keyword user_simulator_prompty: Path to the user simulator prompty file.
         :paramtype user_simulator_prompty: Optional[str]
         :keyword user_simulator_prompty_kwargs: Additional keyword arguments for the user simulator prompty.
@@ -460,7 +474,7 @@ class Simulator:
 
     async def _build_user_simulation_response(
         self,
-        task: Dict,
+        task: str,
         conversation_history: List[Dict[str, Any]],
         user_simulator_prompty: Optional[str],
         user_simulator_prompty_kwargs: Dict[str, Any],
@@ -468,7 +482,7 @@ class Simulator:
         """
         Builds a response from the user simulator based on the current conversation history.
 
-        :param task: A dictionary representing the user persona and task details.
+        :param task: A string representing the task details.
         :param conversation_history: The current conversation history as a list of dictionaries.
         :param user_simulator_prompty: Path to the user simulator prompty file.
         :param user_simulator_prompty_kwargs: Additional keyword arguments for the user simulator prompty.
