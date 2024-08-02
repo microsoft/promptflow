@@ -5,7 +5,19 @@
 ### Features Added
 - Introduced `JailbreakAdversarialSimulator` for customers who need to do run jailbreak and non jailbreak adversarial simulations at the same time. More info in the README.md in `/promptflow/evals/synthetic/README.md#jailbreak-simulator`
 - Exposed batch evaluation run timeout via `PF_BATCH_TIMEOUT_SEC` environment variable. This variable can be used to set the timeout for the batch evaluation for each evaluator and target separately only, not the entire API call.
+- Support for Tier 1 languages in the simulator.
 
+Here's how you can use it:
+```python
+from promptflow.evals.synthetic import AdversarialScenario, AdversarialSimulator, SupportedLanguages
+outputs = await simulator(
+    target=callback,
+    scenario=AdversarialScenario.ADVERSARIAL_CONVERSATION,
+    max_simulation_results=5,
+    max_conversation_turns=3,
+    language=SupportedLanguages.French,
+)
+```
 ### Bugs Fixed
 - Large simulation was causing a jinja exception, this has been fixed.
 
