@@ -1,17 +1,17 @@
 # Continuous Monitoring Pipeline
 
-This tutorial describes an advanced use case of [running flows in Azure ML Pipelines](../run-flow-with-pipeline/pipeline.ipynb).  
+This tutorial describes an advanced use case of [running flows in Azure ML Pipelines](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/run-flow-with-pipeline/pipeline.ipynb).  
 The detailed explanations of the prerequisites and principles can be found in the aforementioned article.  
 Continuous monitoring is necessary to maintain the quality, performance and efficiency of Generative AI applications.  
 These factors directly impact the user experience and operational costs.  
 
 We will run evaluations on a basic chatbot flow, then aggregate the results to export and visualize the metrics.  
 The flows used in this pipeline are described below:
-- [Basic Chat](../../../flows/chat/chat-basic/)
-- [Q&A Evaluation](../../../flows/evaluation/eval-qna-rag-metrics/)
-- [Perceived Intelligence Evaluation](../../../flows/evaluation/eval-perceived-intelligence/)
-- [Simple Summarization](../flows/standard/simple-summarization/)
-- [Summarization Evaluation](../../../flows/evaluation/eval-summarization/)
+- [Basic Chat](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-basic)
+- [Q&A Evaluation](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-qna-rag-metrics)
+- [Perceived Intelligence Evaluation](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-perceived-intelligence)
+- [Simple Summarization](./flows/standard/simple-summarization/)
+- [Summarization Evaluation](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-summarization)
 
 Connections used in this flow:
 - `azure_open_ai_connection` connection (Azure OpenAI).
