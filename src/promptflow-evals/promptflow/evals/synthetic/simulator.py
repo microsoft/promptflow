@@ -7,7 +7,7 @@ import ast
 import asyncio
 import json
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from tqdm import tqdm
 
@@ -26,26 +26,34 @@ class Simulator:
     Task simulator for generating synthetic conversations based on a user persona and a query.
     """
 
-    def __init__(self, azure_ai_project: Dict[str, Any], credential=None):
+    def __init__(self, azure_ai_project: Dict[str, Any], credential: Optional[Any] = None):
         """
         Initializes the task simulator with a project scope.
 
-        :param azure_ai_project: Dictionary defining the scope of the project. It must include the following keys:
-            - "subscription_id": Azure subscription ID.
-            - "resource_group_name": Name of the Azure resource group.
-            - "project_name": Name of the Azure Machine Learning workspace.
-        :type azure_ai_project: Dict[str, Any]
+        :param azure_ai_project: A dictionary defining the scope of the project, including keys such as
+                                "subscription_id", "resource_group_name", and "project_name".
         :param credential: Azure credentials to authenticate the user. If None, the default credentials are used.
-        :type credential: Any
+        :paramtype credential: Optional[Any]
+        :raises ValueError: If the azure_ai_project does not contain the required keys or any value is None.
         """
-        if not all(key in azure_ai_project for key in ["subscription_id", "resource_group_name", "project_name"]):
-            raise ValueError("azure_ai_project must contain keys: subscription_id, resource_group_name, project_name")
-        # check the value of the keys in azure_ai_project is not none
-        if not all(azure_ai_project[key] for key in ["subscription_id", "resource_group_name", "project_name"]):
-            raise ValueError("subscription_id, resource_group_name and project_name must not be None")
+        self._validate_project_config(azure_ai_project)
         self.azure_ai_project = azure_ai_project
         self.azure_ai_project["api_version"] = "2024-02-15-preview"
         self.credential = credential
+
+    @staticmethod
+    def _validate_project_config(azure_ai_project: Dict[str, Any]):
+        """
+        Validates the azure_ai_project configuration to ensure all required keys are present and have non-None values.
+
+        :param azure_ai_project: The Azure AI project configuration dictionary.
+        :raises ValueError: If required keys are missing or any of the values are None.
+        """
+        required_keys = ["subscription_id", "resource_group_name", "project_name"]
+        if not all(key in azure_ai_project for key in required_keys):
+            raise ValueError(f"azure_ai_project must contain keys: {', '.join(required_keys)}")
+        if not all(azure_ai_project[key] for key in required_keys):
+            raise ValueError("subscription_id, resource_group_name, and project_name must not be None")
 
     @monitor_task_simulator
     async def __call__(
@@ -56,8 +64,8 @@ class Simulator:
         tasks: List[Dict] = [],
         text: str = "",
         num_queries: int = 5,
-        query_response_generating_prompty: str = None,
-        user_simulator_prompty: str = None,
+        query_response_generating_prompty: Optional[str] = None,
+        user_simulator_prompty: Optional[str] = None,
         api_call_delay_sec: float = 1,
         query_response_generating_prompty_kwargs: Dict[str, Any] = {},
         user_simulator_prompty_kwargs: Dict[str, Any] = {},
@@ -65,125 +73,310 @@ class Simulator:
         **kwargs,
     ) -> List[JsonLineChatProtocol]:
         """
-        Generate simulations based on the provided parameters.
+        Generates synthetic conversations based on provided parameters.
 
-        Parameters:
-        - target (callable): The target function to be called during the simulation.
-        - max_conversation_turns (int): The maximum number of conversation turns.
-        - tasks (List[Dict]): A list of user personas, each represented as a dictionary.
-        - text (str): The input text for the simulation.
-        - num_queries (int): The number of queries to be generated.
-        - query_response_generating_prompty (str): The path to the query response generating prompty file.
-        - user_simulator_prompty (str): The path to the user simulator prompty file.
-        - api_call_delay_sec (float): The delay in seconds between API calls.
-        - query_response_generating_prompty_kwargs (Dict[str, Any]): Additional keyword arguments for
-        the query response generating prompty.
-        - user_simulator_prompty_kwargs (Dict[str, Any]): Additional keyword arguments for the user simulator prompty.
-        - conversation_turns (List[List[str]]): A list of predefined conversation turns.
-        - **kwargs: Additional keyword arguments.
-
-        Returns:
-        - List[JsonLineChatProtocol]: A list of simulated conversations represented as JsonLineChatProtocol objects.
+        :keyword target: The target function to call during the simulation.
+        :paramtype target: callable
+        :keyword max_conversation_turns: Maximum number of conversation turns for the simulation.
+                                        Each turn consists of a user and an assistant message.
+        :paramtype max_conversation_turns: int
+        :keyword tasks: A list of user personas, each represented as a dictionary.
+        :paramtype tasks: List[Dict]
+        :keyword text: The initial input text for generating query responses.
+        :paramtype text: str
+        :keyword num_queries: The number of queries to generate.
+        :paramtype num_queries: int
+        :keyword query_response_generating_prompty: Path to the query response generating prompty file.
+        :paramtype query_response_generating_prompty: Optional[str]
+        :keyword user_simulator_prompty: Path to the user simulator prompty file.
+        :paramtype user_simulator_prompty: Optional[str]
+        :keyword api_call_delay_sec: Delay in seconds between API calls.
+        :paramtype api_call_delay_sec: float
+        :keyword query_response_generating_prompty_kwargs: Additional keyword arguments for the query response generating prompty.
+        :paramtype query_response_generating_prompty_kwargs: Dict[str, Any]
+        :keyword user_simulator_prompty_kwargs: Additional keyword arguments for the user simulator prompty.
+        :paramtype user_simulator_prompty_kwargs: Dict[str, Any]
+        :keyword conversation_turns: Predefined conversation turns to simulate.
+        :paramtype conversation_turns: List[List[str]]
+        :return: A list of simulated conversations represented as JsonLineChatProtocol objects.
+        :rtype: List[JsonLineChatProtocol]
         """
-        if num_queries != len(tasks):
-            num_queries = len(tasks)
-        if max_conversation_turns:
-            # need to double the max_conversation_turns to account for the user and assistant turns
-            max_conversation_turns = max_conversation_turns * 2
-        prompty_model_config = {"configuration": self.azure_ai_project}
+        num_queries = min(num_queries, len(tasks))
+        max_conversation_turns *= 2  # account for both user and assistant turns
 
-        if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration):
-            prompty_model_config.update({"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}})
+        prompty_model_config = self._build_prompty_model_config()
+
         if conversation_turns:
-            simulated_conversation = []
-            for simulation in conversation_turns:
-                current_simulation = ConvHistory()
-                for simulated_turn in simulation:
-                    # initialize a conversation and for every simulated_turn, call the target
-                    simulators_turn = ConvTurn(role=ConversationRole.USER, content=simulated_turn)
-                    current_simulation.add_to_history(simulators_turn)
-                    response_from_target = await self._call_target_and_parse_response(
-                        target, api_call_delay_sec, current_simulation
-                    )
-                    turn = ConvTurn(role=ConversationRole.ASSISTANT, content=response_from_target)
-                    current_simulation.add_to_history(turn)
+            return await self._simulate_with_predefined_turns(
+                target=target,
+                max_conversation_turns=max_conversation_turns,
+                conversation_turns=conversation_turns,
+                user_simulator_prompty=user_simulator_prompty,
+                user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
+                api_call_delay_sec=api_call_delay_sec,
+                prompty_model_config=prompty_model_config,
+            )
 
-                if current_simulation.get_length() < max_conversation_turns:
-                    user_flow = None
-                    if not user_simulator_prompty:
-                        current_dir = os.path.dirname(__file__)
-                        prompty_path = os.path.join(current_dir, "_prompty", "task_simulate.prompty")
-                        user_flow = load_flow(source=prompty_path, model=prompty_model_config)
-                    else:
-                        user_flow = load_flow(
-                            source=user_simulator_prompty,
-                            model=prompty_model_config,
-                            **user_simulator_prompty_kwargs,
-                        )
-                    while current_simulation.get_length() < max_conversation_turns:
-                        response_from_user_simulating_prompty = user_flow(
-                            task="Continue the conversation", conversation_history=current_simulation.to_conv_history()
-                        )
-                        response_dict = ast.literal_eval(response_from_user_simulating_prompty)
-                        response = json.dumps(response_dict)
-                        user_simulator_prompty_response = json.loads(response)
-                        turn = ConvTurn(role=ConversationRole.USER, content=user_simulator_prompty_response["content"])
-                        current_simulation.add_to_history(turn)
-                        await asyncio.sleep(api_call_delay_sec)
-                        response_from_target = await self._call_target_and_parse_response(
-                            target, api_call_delay_sec, current_simulation
-                        )
-                        turn = ConvTurn(role=ConversationRole.ASSISTANT, content=response_from_target)
-                        current_simulation.add_to_history(turn)
+        query_responses = await self._generate_query_responses(
+            text=text,
+            num_queries=num_queries,
+            query_response_generating_prompty=query_response_generating_prompty,
+            query_response_generating_prompty_kwargs=query_response_generating_prompty_kwargs,
+            prompty_model_config=prompty_model_config,
+            **kwargs,
+        )
 
-                simulated_conversation.append(current_simulation.to_conv_history())
-            return simulated_conversation
+        return await self._create_conversations_from_query_responses(
+            query_responses=query_responses,
+            max_conversation_turns=max_conversation_turns,
+            tasks=tasks,
+            user_simulator_prompty=user_simulator_prompty,
+            user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
+            target=target,
+            api_call_delay_sec=api_call_delay_sec,
+        )
+
+    def _build_prompty_model_config(self) -> Dict[str, Any]:
+        """
+        Constructs the configuration for the prompty model.
+
+        :return: A dictionary containing the prompty model configuration, including API version and user agent headers if applicable.
+        :rtype: Dict[str, Any]
+        """
+        config = {"configuration": self.azure_ai_project}
+        if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration):
+            config.update({"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}})
+        return config
+
+    async def _simulate_with_predefined_turns(
+        self,
+        *,
+        target: callable,
+        max_conversation_turns: int,
+        conversation_turns: List[List[str]],
+        user_simulator_prompty: Optional[str],
+        user_simulator_prompty_kwargs: Dict[str, Any],
+        api_call_delay_sec: float,
+        prompty_model_config: Dict[str, Any],
+    ) -> List[JsonLineChatProtocol]:
+        """
+        Simulates conversations using predefined conversation turns.
+
+        :param target: The target function to call during each turn of the simulation.
+        :param max_conversation_turns: Maximum number of turns for the simulation.
+        :param conversation_turns: A list of predefined conversation turns.
+        :param user_simulator_prompty: Path to the user simulator prompty file.
+        :param user_simulator_prompty_kwargs: Additional keyword arguments for the user simulator prompty.
+        :param api_call_delay_sec: Delay in seconds between API calls.
+        :param prompty_model_config: The configuration for the prompty model.
+        :return: A list of simulated conversations represented as JsonLineChatProtocol objects.
+        :rtype: List[JsonLineChatProtocol]
+        """
+        simulated_conversations = []
+        for simulation in conversation_turns:
+            current_simulation = ConvHistory()
+            for simulated_turn in simulation:
+                user_turn = ConvTurn(role=ConversationRole.USER, content=simulated_turn)
+                current_simulation.add_to_history(user_turn)
+                assistant_response = await self._get_target_response(
+                    target=target, api_call_delay_sec=api_call_delay_sec, conversation_history=current_simulation
+                )
+                assistant_turn = ConvTurn(role=ConversationRole.ASSISTANT, content=assistant_response)
+                current_simulation.add_to_history(assistant_turn)
+
+            if current_simulation.get_length() < max_conversation_turns:
+                await self._extend_conversation_with_simulator(
+                    current_simulation=current_simulation,
+                    max_conversation_turns=max_conversation_turns,
+                    user_simulator_prompty=user_simulator_prompty,
+                    user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
+                    api_call_delay_sec=api_call_delay_sec,
+                    prompty_model_config=prompty_model_config,
+                    target=target,
+                )
+
+            simulated_conversations.append(current_simulation.to_conv_history())
+        return simulated_conversations
+
+    async def _extend_conversation_with_simulator(
+        self,
+        *,
+        current_simulation: ConvHistory,
+        max_conversation_turns: int,
+        user_simulator_prompty: Optional[str],
+        user_simulator_prompty_kwargs: Dict[str, Any],
+        api_call_delay_sec: float,
+        prompty_model_config: Dict[str, Any],
+        target: callable,
+    ):
+        """
+        Extends an ongoing conversation using a user simulator until the maximum number of turns is reached.
+
+        :param current_simulation: The current state of the conversation history.
+        :param max_conversation_turns: The maximum number of conversation turns.
+        :param user_simulator_prompty: Path to the user simulator prompty file.
+        :param user_simulator_prompty_kwargs: Additional keyword arguments for the user simulator prompty.
+        :param api_call_delay_sec: Delay in seconds between API calls.
+        :param prompty_model_config: The configuration for the prompty model.
+        :param target: The target function to call for responses.
+        """
+        user_flow = self._load_user_simulation_flow(
+            user_simulator_prompty=user_simulator_prompty,
+            prompty_model_config=prompty_model_config,
+            user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
+        )
+
+        while current_simulation.get_length() < max_conversation_turns:
+            user_response_content = user_flow(
+                task="Continue the conversation", conversation_history=current_simulation.to_conv_history()
+            )
+            user_response = self._parse_prompty_response(response=user_response_content)
+            user_turn = ConvTurn(role=ConversationRole.USER, content=user_response["content"])
+            current_simulation.add_to_history(user_turn)
+            await asyncio.sleep(api_call_delay_sec)
+            assistant_response = await self._get_target_response(
+                target=target, api_call_delay_sec=api_call_delay_sec, conversation_history=current_simulation
+            )
+            assistant_turn = ConvTurn(role=ConversationRole.ASSISTANT, content=assistant_response)
+            current_simulation.add_to_history(assistant_turn)
+
+    def _load_user_simulation_flow(
+        self, *, user_simulator_prompty, prompty_model_config, user_simulator_prompty_kwargs
+    ):
+        """
+        Loads the flow for simulating user interactions.
+
+        :param user_simulator_prompty: Path to the user simulator prompty file.
+        :param prompty_model_config: The configuration for the prompty model.
+        :param user_simulator_prompty_kwargs: Additional keyword arguments for the user simulator prompty.
+        :return: The loaded flow for simulating user interactions.
+        """
+        if not user_simulator_prompty:
+            current_dir = os.path.dirname(__file__)
+            prompty_path = os.path.join(current_dir, "_prompty", "task_simulate.prompty")
+            return load_flow(source=prompty_path, model=prompty_model_config)
+        else:
+            return load_flow(
+                source=user_simulator_prompty,
+                model=prompty_model_config,
+                **user_simulator_prompty_kwargs,
+            )
+
+    def _parse_prompty_response(self, *, response: str) -> Dict[str, Any]:
+        """
+        Parses the response from the prompty execution.
+
+        :param response: The raw response from the prompty.
+        :return: A dictionary representing the parsed response content.
+        :rtype: Dict[str, Any]
+        :raises ValueError: If the response cannot be parsed.
+        """
+        try:
+            # response_dict = response
+            if isinstance(response, str):
+                response = ast.literal_eval(response)
+            response = json.dumps(response)
+            return json.loads(response)
+        except Exception as e:
+            raise ValueError("Failed to parse the prompty response") from e
+
+    async def _generate_query_responses(
+        self,
+        *,
+        text: str,
+        num_queries: int,
+        query_response_generating_prompty: Optional[str],
+        query_response_generating_prompty_kwargs: Dict[str, Any],
+        prompty_model_config: Dict[str, Any],
+        **kwargs,
+    ) -> List[Dict[str, str]]:
+        """
+        Generates query responses using the specified prompty configuration.
+
+        :param text: The input text for generating queries.
+        :param num_queries: The number of queries to generate.
+        :param query_response_generating_prompty: Path to the query response generating prompty file.
+        :param query_response_generating_prompty_kwargs: Additional keyword arguments for the query response generating prompty.
+        :param prompty_model_config: The configuration for the prompty model.
+        :return: A list of query-response dictionaries.
+        :rtype: List[Dict[str, str]]
+        :raises RuntimeError: If an error occurs during query generation.
+        """
+        query_flow = self._load_query_generation_flow(
+            query_response_generating_prompty=query_response_generating_prompty,
+            prompty_model_config=prompty_model_config,
+            query_response_generating_prompty_kwargs=query_response_generating_prompty_kwargs,
+        )
+
+        try:
+            query_responses = query_flow(text=text, num_queries=num_queries)
+            return json.loads(query_responses)
+        except Exception as e:
+            raise RuntimeError("Error generating query responses") from e
+
+    def _load_query_generation_flow(
+        self, *, query_response_generating_prompty, prompty_model_config, query_response_generating_prompty_kwargs
+    ):
+        """
+        Loads the flow for generating query responses.
+
+        :param query_response_generating_prompty: Path to the query response generating prompty file.
+        :param prompty_model_config: The configuration for the prompty model.
+        :param query_response_generating_prompty_kwargs: Additional keyword arguments for the flow.
+        :return: The loaded flow for generating query responses.
+        """
         if not query_response_generating_prompty:
             current_dir = os.path.dirname(__file__)
             prompty_path = os.path.join(current_dir, "_prompty", "task_query_response.prompty")
-            _flow = load_flow(source=prompty_path, model=prompty_model_config)
+            return load_flow(source=prompty_path, model=prompty_model_config)
         else:
-            if not query_response_generating_prompty_kwargs:
-                query_response_generating_prompty_kwargs = {**kwargs}
-            _flow = load_flow(
+            return load_flow(
                 source=query_response_generating_prompty,
                 model=prompty_model_config,
                 **query_response_generating_prompty_kwargs,
             )
 
-        try:
-            query_responses = _flow(
-                text=text,
-                num_queries=num_queries,
-            )
-        except Exception as e:
-            print("Something went wrong running the prompty")
-            raise e
+    async def _create_conversations_from_query_responses(
+        self,
+        *,
+        query_responses: List[Dict[str, str]],
+        max_conversation_turns: int,
+        tasks: List[Dict],
+        user_simulator_prompty: Optional[str],
+        user_simulator_prompty_kwargs: Dict[str, Any],
+        target: callable,
+        api_call_delay_sec: float,
+    ) -> List[JsonLineChatProtocol]:
+        """
+        Creates full conversations from query-response pairs.
 
-        try:
-            query_response_list = json.loads(query_responses)
-        except Exception as e:
-            print("Something went wrong parsing the prompty output")
-            raise e
-
-        i = 0
+        :param query_responses: A list of query-response pairs.
+        :param max_conversation_turns: The maximum number of conversation turns.
+        :param tasks: A list of user personas.
+        :param user_simulator_prompty: Path to the user simulator prompty file.
+        :param user_simulator_prompty_kwargs: Additional keyword arguments for the user simulator prompty.
+        :param target: The target function to call for responses.
+        :param api_call_delay_sec: Delay in seconds between API calls.
+        :return: A list of simulated conversations represented as JsonLineChatProtocol objects.
+        :rtype: List[JsonLineChatProtocol]
+        """
         progress_bar = tqdm(
-            total=len(query_response_list) * max_conversation_turns,
-            desc="generating simulations",
+            total=len(query_responses) * max_conversation_turns,
+            desc="Generating simulations",
             ncols=100,
             unit="simulations",
         )
         all_conversations = []
-        for query_response_pair in query_response_list:
+
+        for i, query_response_pair in enumerate(query_responses):
             query = query_response_pair["q"]
             response = query_response_pair["r"]
-            # TODO: handle index out of range
-            tasks_item = tasks[i]
-            i += 1
-            conversation = await self.complete_conversation(
+            task = tasks[i]
+
+            conversation = await self._complete_conversation(
                 conversation_starter=query,
                 max_conversation_turns=max_conversation_turns,
-                task=tasks_item,
+                task=task,
                 user_simulator_prompty=user_simulator_prompty,
                 user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
                 target=target,
@@ -195,7 +388,7 @@ class Simulator:
                     {
                         "messages": conversation,
                         "finish_reason": ["stop"],
-                        "context": f"User persona: {tasks_item} Expected response: {response}",
+                        "context": f"User persona: {task} Expected response: {response}",
                         "$schema": "http://azureml/sdk-2-0/ChatConversation.json",
                     }
                 )
@@ -203,129 +396,117 @@ class Simulator:
         progress_bar.close()
         return all_conversations
 
-    async def _call_target_and_parse_response(self, target, api_call_delay_sec, current_simulation):
-        response = await target(
-            messages={"messages": current_simulation.to_conv_history()},
-            stream=False,
-            session_state=None,
-            context=None,
-        )
-        await asyncio.sleep(api_call_delay_sec)
-        messages_list = response["messages"]
-        latest_message = messages_list[-1]
-        response_from_target = latest_message["content"]
-        return response_from_target
-
-    async def build_query(self, *, task, conversation_history, user_simulator_prompty, user_simulator_prompty_kwargs):
-        """
-        Build a query using the user simulator prompty.
-
-        Args:
-            task (str): The task for user simulator.
-            conversation_history (list): The history of the conversation.
-            user_simulator_prompty (str): The path to the user simulator prompty file.
-            user_simulator_prompty_kwargs (dict): Additional keyword arguments for the user simulator prompty.
-
-        Returns:
-            str: The content of the user simulator prompty response.
-
-        Raises:
-            Exception: If there is an error running the prompty or parsing the response.
-        """
-        # make a call to llm with tasks and query
-        prompty_model_config = {"configuration": self.azure_ai_project}
-
-        if USER_AGENT and isinstance(self.azure_ai_project, AzureOpenAIModelConfiguration):
-            prompty_model_config.update({"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}})
-        try:
-            if not user_simulator_prompty:
-                current_dir = os.path.dirname(__file__)
-                prompty_path = os.path.join(current_dir, "_prompty", "task_simulate.prompty")
-                _flow = load_flow(source=prompty_path, model=prompty_model_config)
-            else:
-                _flow = load_flow(
-                    source=user_simulator_prompty,
-                    model=prompty_model_config,
-                    **user_simulator_prompty_kwargs,
-                )
-            response = _flow(task=task, conversation_history=conversation_history)
-        except Exception as e:
-            print("Something went wrong running the prompty")
-            raise e
-        try:
-            response_dict = ast.literal_eval(response)
-            response = json.dumps(response_dict)
-            user_simulator_prompty_response = json.loads(response)
-        except Exception as e:
-            print("Something went wrong parsing the user_simulator_prompty_response output")
-            raise e
-        return user_simulator_prompty_response["content"]
-
-    async def complete_conversation(
+    async def _complete_conversation(
         self,
         *,
-        conversation_starter,
-        max_conversation_turns,
-        task,
-        user_simulator_prompty,
-        user_simulator_prompty_kwargs,
-        target,
-        api_call_delay_sec,
-        progress_bar,
-    ):
+        conversation_starter: str,
+        max_conversation_turns: int,
+        task: Dict,
+        user_simulator_prompty: Optional[str],
+        user_simulator_prompty_kwargs: Dict[str, Any],
+        target: callable,
+        api_call_delay_sec: float,
+        progress_bar: tqdm,
+    ) -> List[Dict[str, str]]:
         """
-        Complete a conversation with the target model.
+        Completes a conversation with the target model based on the conversation starter.
 
-        Args:
-            conversation_starter (str): The initial message to start the conversation.
-            max_conversation_turns (int): The maximum number of turns in the conversation.
-            task (str): The task of the user.
-            user_simulator_prompty (str): The path to the user simulator prompty file.
-            user_simulator_prompty_kwargs (dict): Additional keyword arguments for the user simulator prompty.
-            target (callable): The target model to interact with.
-            api_call_delay_sec (int): The delay in seconds between API calls.
-            progress_bar (object): The progress bar to update during the conversation.
-
-        Returns:
-            list: A list of dictionaries representing the conversation history.
-
-        Raises:
-            Exception: If there is an error during the conversation.
+        :keyword conversation_starter: The initial message to start the conversation.
+        :paramtype conversation_starter: str
+        :keyword max_conversation_turns: The maximum number of turns in the conversation.
+        :paramtype max_conversation_turns: int
+        :keyword task: A dictionary representing the user persona and task details.
+        :paramtype task: Dict
+        :keyword user_simulator_prompty: Path to the user simulator prompty file.
+        :paramtype user_simulator_prompty: Optional[str]
+        :keyword user_simulator_prompty_kwargs: Additional keyword arguments for the user simulator prompty.
+        :paramtype user_simulator_prompty_kwargs: Dict[str, Any]
+        :keyword target: The target function to call for responses.
+        :paramtype target: callable
+        :keyword api_call_delay_sec: Delay in seconds between API calls.
+        :paramtype api_call_delay_sec: float
+        :keyword progress_bar: Progress bar for tracking simulation progress.
+        :paramtype progress_bar: tqdm
+        :return: A list representing the conversation history with each turn's content.
+        :rtype: List[Dict[str, str]]
         """
         conversation_history = ConvHistory()
-        turn = ConvTurn(role=ConversationRole.USER, content=conversation_starter)
-        conversation_history.add_to_history(turn)
+        user_turn = ConvTurn(role=ConversationRole.USER, content=conversation_starter)
+        conversation_history.add_to_history(user_turn)
 
         while conversation_history.get_length() < max_conversation_turns:
-            response = await target(
-                messages={"messages": conversation_history.to_conv_history()},
-                stream=False,
-                session_state=None,
-                context=None,
+            assistant_response = await self._get_target_response(
+                target=target, api_call_delay_sec=api_call_delay_sec, conversation_history=conversation_history
             )
-            await asyncio.sleep(api_call_delay_sec)
-
-            messages_list = response["messages"]
-            latest_message = messages_list[-1]
-            response_from_target = latest_message["content"]
-            turn = ConvTurn(role=ConversationRole.ASSISTANT, content=response_from_target)
-            conversation_history.add_to_history(turn)
+            assistant_turn = ConvTurn(role=ConversationRole.ASSISTANT, content=assistant_response)
+            conversation_history.add_to_history(assistant_turn)
             progress_bar.update(1)
-            # Check if we have reached max_conversation_turns after appending assistant's response
+
             if conversation_history.get_length() >= max_conversation_turns:
                 break
 
-            # Get response from user simulator
-            response_from_user_simulating_prompty = await self.build_query(
+            user_response = await self._build_user_simulation_response(
                 task=task,
                 conversation_history=conversation_history.to_conv_history(),
                 user_simulator_prompty=user_simulator_prompty,
                 user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
             )
             await asyncio.sleep(api_call_delay_sec)
-            # Append user simulator's response
-            turn = ConvTurn(role=ConversationRole.USER, content=response_from_user_simulating_prompty)
-            conversation_history.add_to_history(turn)
+            user_turn = ConvTurn(role=ConversationRole.USER, content=user_response)
+            conversation_history.add_to_history(user_turn)
             progress_bar.update(1)
 
         return conversation_history.to_conv_history()
+
+    async def _build_user_simulation_response(
+        self,
+        task: Dict,
+        conversation_history: List[Dict[str, Any]],
+        user_simulator_prompty: Optional[str],
+        user_simulator_prompty_kwargs: Dict[str, Any],
+    ) -> str:
+        """
+        Builds a response from the user simulator based on the current conversation history.
+
+        :param task: A dictionary representing the user persona and task details.
+        :param conversation_history: The current conversation history as a list of dictionaries.
+        :param user_simulator_prompty: Path to the user simulator prompty file.
+        :param user_simulator_prompty_kwargs: Additional keyword arguments for the user simulator prompty.
+        :return: The generated response content from the user simulator.
+        :rtype: str
+        :raises RuntimeError: If an error occurs during response generation.
+        """
+        user_flow = self._load_user_simulation_flow(
+            user_simulator_prompty=user_simulator_prompty,
+            prompty_model_config=self._build_prompty_model_config(),
+            user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
+        )
+
+        try:
+            response_content = user_flow(task=task, conversation_history=conversation_history)
+            user_response = self._parse_prompty_response(response=response_content)
+            return user_response["content"]
+        except Exception as e:
+            raise RuntimeError("Error building user simulation response") from e
+
+    async def _get_target_response(
+        self, *, target: callable, api_call_delay_sec: float, conversation_history: ConvHistory
+    ) -> str:
+        """
+        Retrieves the response from the target callback based on the current conversation history.
+
+        :param target: The target function to call for a response.
+        :param api_call_delay_sec: Delay in seconds before retrieving the response.
+        :param conversation_history: The current conversation history.
+        :return: The content of the response from the target.
+        :rtype: str
+        """
+        response = await target(
+            messages={"messages": conversation_history.to_conv_history()},
+            stream=False,
+            session_state=None,
+            context=None,
+        )
+        await asyncio.sleep(api_call_delay_sec)
+        latest_message = response["messages"][-1]
+        return latest_message["content"]
