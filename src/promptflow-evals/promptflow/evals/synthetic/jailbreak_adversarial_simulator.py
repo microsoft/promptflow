@@ -26,7 +26,7 @@ class JailbreakAdversarialSimulator:
         * "resource_group_name": Name of the Azure resource group.
         * "project_name": Name of the Azure Machine Learning workspace.
     :param credential: The credential for connecting to Azure AI project.
-    :type credential: TokenCredential
+    :type credential: ~azure.core.credentials.TokenCredential
     :type azure_ai_project: Dict[str, Any]
     """
 
