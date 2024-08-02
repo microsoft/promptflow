@@ -68,7 +68,7 @@ class ConvHistory:
         """
         self.history.append(turn)
 
-    def to_conv_history(self):
+    def to_list(self):
         """
         Converts the conversation history to a list of dictionaries.
 

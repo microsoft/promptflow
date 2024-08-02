@@ -1,5 +1,5 @@
 # flake8: noqa
-# pylint: disable=W0102,R0914,C4741,C4742
+# pylint: disable=W0102,W0613,R0914,C4741,C4742,C4740,C4743,C0301
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
@@ -204,7 +204,7 @@ class Simulator:
                     progress_bar=progress_bar,
                 )
 
-            simulated_conversations.append(current_simulation.to_conv_history())
+            simulated_conversations.append(current_simulation.to_list())
 
         progress_bar.close()
         return simulated_conversations
@@ -241,7 +241,7 @@ class Simulator:
 
         while current_simulation.get_length() < max_conversation_turns:
             user_response_content = user_flow(
-                task="Continue the conversation", conversation_history=current_simulation.to_conv_history()
+                task="Continue the conversation", conversation_history=current_simulation.to_list()
             )
             user_response = self._parse_prompty_response(response=user_response_content)
             user_turn = ConvTurn(role=ConversationRole.USER, content=user_response["content"])
@@ -269,12 +269,11 @@ class Simulator:
             current_dir = os.path.dirname(__file__)
             prompty_path = os.path.join(current_dir, "_prompty", "task_simulate.prompty")
             return load_flow(source=prompty_path, model=prompty_model_config)
-        else:
-            return load_flow(
-                source=user_simulator_prompty,
-                model=prompty_model_config,
-                **user_simulator_prompty_kwargs,
-            )
+        return load_flow(
+            source=user_simulator_prompty,
+            model=prompty_model_config,
+            **user_simulator_prompty_kwargs,
+        )
 
     def _parse_prompty_response(self, *, response: str) -> Dict[str, Any]:
         """
@@ -343,12 +342,11 @@ class Simulator:
             current_dir = os.path.dirname(__file__)
             prompty_path = os.path.join(current_dir, "_prompty", "task_query_response.prompty")
             return load_flow(source=prompty_path, model=prompty_model_config)
-        else:
-            return load_flow(
-                source=query_response_generating_prompty,
-                model=prompty_model_config,
-                **query_response_generating_prompty_kwargs,
-            )
+        return load_flow(
+            source=query_response_generating_prompty,
+            model=prompty_model_config,
+            **query_response_generating_prompty_kwargs,
+        )
 
     async def _create_conversations_from_query_responses(
         self,
@@ -461,7 +459,7 @@ class Simulator:
 
             user_response = await self._build_user_simulation_response(
                 task=task,
-                conversation_history=conversation_history.to_conv_history(),
+                conversation_history=conversation_history.to_list(),
                 user_simulator_prompty=user_simulator_prompty,
                 user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
             )
@@ -470,7 +468,7 @@ class Simulator:
             conversation_history.add_to_history(user_turn)
             progress_bar.update(1)
 
-        return conversation_history.to_conv_history()
+        return conversation_history.to_list()
 
     async def _build_user_simulation_response(
         self,
@@ -516,7 +514,7 @@ class Simulator:
         :rtype: str
         """
         response = await target(
-            messages={"messages": conversation_history.to_conv_history()},
+            messages={"messages": conversation_history.to_list()},
             stream=False,
             session_state=None,
             context=None,
