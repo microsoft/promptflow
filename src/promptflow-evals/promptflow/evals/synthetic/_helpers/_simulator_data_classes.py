@@ -2,28 +2,19 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # pylint: disable=C4739,C4741,C4742
+from dataclasses import dataclass
 from promptflow.evals.synthetic._conversation.constants import ConversationRole
 
-
-class ConvTurn:
+@dataclass
+class Turn:
     """
     Represents a conversation turn,
     keeping track of the role, content,
     and context of a turn in a conversation.
     """
-
-    def __init__(self, role, content, context=None):
-        """
-        Initialize the conversation turn with the role, content, and context.
-
-        Args:
-            role (str or ConversationRole): The role of the participant in the conversation.
-            content (str): The content of the conversation turn.
-            context (optional): Additional context for the conversation turn. Defaults to None.
-        """
-        self.role = role
-        self.content = content
-        self.context = context
+    role: str or ConversationRole
+    content: str
+    context: str = None
 
     def to_dict(self):
         """
@@ -45,10 +36,10 @@ class ConvTurn:
         Returns:
             str: A string representation of the conversation turn.
         """
-        return f"ConvTurn(role={self.role}, content={self.content})"
+        return f"Turn(role={self.role}, content={self.content})"
 
 
-class ConvHistory:
+class ConversationHistory:
     """
     Conversation history class to keep track of the conversation turns in a conversation.
     """
@@ -59,12 +50,12 @@ class ConvHistory:
         """
         self.history = []
 
-    def add_to_history(self, turn):
+    def add_to_history(self, turn: Turn):
         """
         Adds a turn to the conversation history.
 
         Args:
-            turn (ConvTurn): The conversation turn to add.
+            turn (Turn): The conversation turn to add.
         """
         self.history.append(turn)
 
