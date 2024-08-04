@@ -181,7 +181,6 @@ class FlowExecutor:
         connections: Union[dict, ConnectionProvider],
         working_dir: Optional[Path] = None,
         *,
-        entry: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
