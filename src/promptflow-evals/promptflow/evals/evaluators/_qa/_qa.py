@@ -2,10 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import asyncio
+from concurrent.futures import as_completed
 
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.core import AzureOpenAIModelConfiguration
+from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 from .._coherence import CoherenceEvaluator
 from .._f1_score import F1ScoreEvaluator
@@ -20,33 +21,39 @@ class _AsyncQAEvaluator:
         self._parallel = parallel
 
         self._evaluators = [
-            GroundednessEvaluator(model_config)._to_async(),
-            RelevanceEvaluator(model_config)._to_async(),
-            CoherenceEvaluator(model_config)._to_async(),
-            FluencyEvaluator(model_config)._to_async(),
-            SimilarityEvaluator(model_config)._to_async(),
-            F1ScoreEvaluator()._to_async(),
+            GroundednessEvaluator(model_config),
+            RelevanceEvaluator(model_config),
+            CoherenceEvaluator(model_config),
+            FluencyEvaluator(model_config),
+            SimilarityEvaluator(model_config),
+            F1ScoreEvaluator(),
         ]
 
     async def __call__(self, *, question: str, answer: str, context: str, ground_truth: str, **kwargs):
         results = {}
-
         if self._parallel:
-            tasks = []
-            for evaluator in self._evaluators:
-                tasks.append(
-                    asyncio.create_task(
-                        evaluator(
-                            question=question, answer=answer, context=context, ground_truth=ground_truth, **kwargs
-                        )
-                    )
-                )
-            completed_results = await asyncio.gather(*tasks)
-            for result in completed_results:
-                results.update(result)
+            # Use a thread pool for parallel execution in the composite evaluator,
+            # as it's ~20% faster than asyncio tasks based on tests.
+            with ThreadPoolExecutor() as executor:
+                futures = {
+                    executor.submit(
+                        evaluator,
+                        question=question,
+                        answer=answer,
+                        context=context,
+                        ground_truth=ground_truth,
+                        **kwargs
+                    ): evaluator
+                    for evaluator in self._evaluators
+                }
+
+                # Collect results as they complete
+                for future in as_completed(futures):
+                    results.update(future.result())
         else:
             for evaluator in self._evaluators:
-                result = await evaluator(
+                async_evaluator = evaluator._to_async()
+                result = await async_evaluator(
                     question=question, answer=answer, context=context, ground_truth=ground_truth, **kwargs
                 )
                 results.update(result)
