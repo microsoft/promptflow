@@ -25,7 +25,9 @@ def load_prompt(jinja2_template: str, text: str) -> str:
 
 @trace
 def write_simple_program(
-    text: str = "Hello World!", model_name="gpt-4", provider_name="openai"
+    text: str = "Hello World!",
+    model_name="llama-3.1-8b-chat",
+    provider_name="together-ai",
 ) -> Result:
     """Ask LLM to write a simple program."""
     prompt = load_prompt("hello.jinja2", text)

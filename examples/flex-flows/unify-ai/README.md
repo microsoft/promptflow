@@ -81,7 +81,7 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 - Create run
 ```bash
 # run with environment variable reference connection in azureml workspace
-pfazure run create --flow . --data ./data.jsonl --column-mapping text='${data.text}' --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}' --stream
+pfazure run create --flow . --data ./data.jsonl --column-mapping text='${data.text}' --environment-variables UNIFY_AI_API_KEY='<unify_api_key>' UNIFY_AI_BASE_URL='https://api.unify.ai/v0/' --stream
 # run using yaml file
 pfazure run create --file run.yml --stream
 ```

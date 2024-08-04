@@ -15,14 +15,14 @@ def my_llm_tool(
     max_tokens: int = 120,
     temperature: float = 1.0,
 ) -> str:
-    if "UNIFY_API_KEY" not in os.environ:
+    if "UNIFY_AI_API_KEY" not in os.environ:
         # load environment variables from .env file
         load_dotenv()
 
-    if "UNIFY_API_KEY" not in os.environ:
-        raise Exception("Please specify environment variables: UNIFY_API_KEY")
+    if "UNIFY_AI_API_KEY" not in os.environ:
+        raise Exception("Please specify environment variables: UNIFY_AI_API_KEY")
     messages = [{"content": prompt, "role": "system"}]
-    api_key = os.environ.get("UNIFY_API_KEY", None)
+    api_key = os.environ.get("UNIFY_AI_API_KEY", None)
     unify_client = Unify(
         api_key=api_key,
         model=model_name,
@@ -42,6 +42,6 @@ if __name__ == "__main__":
     result = my_llm_tool(
         prompt="Write a simple Hello, world! program that displays the greeting message.",
         model_name="llama-3.1-8b-chat",
-        provider_name="octoai",
+        provider_name="together-ai",
     )
     print(result)
