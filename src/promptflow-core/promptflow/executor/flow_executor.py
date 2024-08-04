@@ -89,8 +89,6 @@ class FlowExecutor:
     :type cache_manager: ~promptflow._core.cache_manager.AbstractCacheManager
     :param loaded_tools: The loaded tools to be used for the flow.
     :type loaded_tools: Mapping[str, Callable]
-    :param worker_count: The number of workers to be used for the flow. Default is 16.
-    :type worker_count: Optional[int]
     :param raise_ex: Whether to raise exceptions or not. Default is False.
     :type raise_ex: Optional[bool]
     :param working_dir: The working directory to be used for the flow. Default is None.
