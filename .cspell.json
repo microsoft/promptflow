@@ -245,7 +245,8 @@
     "locustio",
     "euap",
     "rcfile",
-    "pylintrc"
+    "pylintrc",
+    "punkt"
   ],
   "flagWords": [
     "Prompt Flow"
