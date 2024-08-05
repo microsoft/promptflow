@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict
 from azure.identity import DefaultAzureCredential
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
+from promptflow.evals.synthetic._constants import SupportedLanguages
 from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario
 
 from ._model_tools import AdversarialTemplateHandler, ManagedIdentityAPITokenManager, RAIClient, TokenScope
@@ -102,6 +103,7 @@ class UPIAJailbreakAdversarialSimulator:
         api_call_retry_sleep_sec: int = 1,
         api_call_delay_sec: int = 0,
         concurrent_async_task: int = 3,
+        language: SupportedLanguages = SupportedLanguages.English,
     ):
         """
         Executes the adversarial simulation and UPIA jailbreak adversarial simulation
@@ -134,6 +136,11 @@ class UPIAJailbreakAdversarialSimulator:
         :keyword concurrent_async_task: The number of asynchronous tasks to run concurrently during the simulation.
             Defaults to 3.
         :paramtype concurrent_async_task: int
+        :keyword language: The language in which the conversation should be generated.
+         example:
+
+         - :py:const:`promptflow.evals.synthetic._constants.SupportedLanguages.English`
+        :paramtype language: promptflow.evals.synthetic._constants.SupportedLanguages
         :return: A list of dictionaries, each representing a simulated conversation. Each dictionary contains:
 
          - 'template_parameters': A dictionary with parameters used in the conversation template,
@@ -197,6 +204,7 @@ class UPIAJailbreakAdversarialSimulator:
             api_call_delay_sec=api_call_delay_sec,
             concurrent_async_task=concurrent_async_task,
             upia_jailbreak=False,
+            language=language,
         )
         jb_sim = AdversarialSimulator(azure_ai_project=self.azure_ai_project, credential=self.credential)
         jb_sim_results = await jb_sim(
@@ -209,5 +217,6 @@ class UPIAJailbreakAdversarialSimulator:
             api_call_delay_sec=api_call_delay_sec,
             concurrent_async_task=concurrent_async_task,
             upia_jailbreak=True,
+            language=language,
         )
         return {"upia_jailbreak": jb_sim_results, "regular": regular_sim_results}
