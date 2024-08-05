@@ -12,6 +12,7 @@ from azure.identity import DefaultAzureCredential
 from tqdm import tqdm
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
+from promptflow.evals.synthetic._constants import SupportedLanguages
 from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario
 
 from ._conversation import CallbackConversationBot, ConversationBot, ConversationRole
@@ -41,9 +42,10 @@ def monitor_adversarial_scenario(func) -> Callable:
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         scenario = str(kwargs.get("scenario", None))
-        max_conversation_turns = kwargs.get("max_conversation_turns", None)
-        max_simulation_results = kwargs.get("max_simulation_results", None)
+        max_conversation_turns = kwargs.get("max_conversation_turns", 1)
+        max_simulation_results = kwargs.get("max_simulation_results", 3)
         upia_jailbreak = kwargs.get("upia_jailbreak", None)
+        selected_language = kwargs.get("language", SupportedLanguages.English)
         decorated_func = monitor_operation(
             activity_name="adversarial.simulator.call",
             activity_type=ActivityType.PUBLICAPI,
@@ -52,6 +54,7 @@ def monitor_adversarial_scenario(func) -> Callable:
                 "max_conversation_turns": max_conversation_turns,
                 "max_simulation_results": max_simulation_results,
                 "upia_jailbreak": upia_jailbreak,
+                "language": selected_language,
             },
         )(func)
 
@@ -113,6 +116,7 @@ class AdversarialSimulator:
         api_call_delay_sec: int = 0,
         concurrent_async_task: int = 3,
         upia_jailbreak: bool = False,
+        language: SupportedLanguages = SupportedLanguages.English,
     ):
         """
         Executes the adversarial simulation against a specified target function asynchronously.
@@ -147,6 +151,11 @@ class AdversarialSimulator:
         :keyword upia_jailbreak: If set to True, allows breaking out of the conversation flow defined by the scenario.
             Defaults to False.
         :paramtype upia_jailbreak: bool
+        :keyword language: The language in which the conversation should be generated.
+         example:
+
+         - :py:const:`promptflow.evals.synthetic._constants.SupportedLanguages.English`
+        :paramtype language: promptflow.evals.synthetic._constants.SupportedLanguages
         :return: A list of dictionaries, each representing a simulated conversation. Each dictionary contains:
 
          - 'template_parameters': A dictionary with parameters used in the conversation template,
@@ -226,6 +235,7 @@ class AdversarialSimulator:
                             api_call_retry_limit=api_call_retry_limit,
                             api_call_retry_sleep_sec=api_call_retry_sleep_sec,
                             api_call_delay_sec=api_call_delay_sec,
+                            language=language,
                             semaphore=semaphore,
                         )
                     )
@@ -278,6 +288,7 @@ class AdversarialSimulator:
         api_call_retry_limit,
         api_call_retry_sleep_sec,
         api_call_delay_sec,
+        language,
         semaphore,
     ) -> List[Dict]:
         user_bot = self._setup_bot(role=ConversationRole.USER, template=template, parameters=parameters)
@@ -294,6 +305,7 @@ class AdversarialSimulator:
             async with asyncHttpClient.client as session:
                 _, conversation_history = await simulate_conversation(
                     bots=bots,
+                    language=language,
                     session=session,
                     turn_limit=max_conversation_turns,
                     api_call_delay_sec=api_call_delay_sec,
