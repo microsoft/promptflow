@@ -43,7 +43,7 @@ def monitor_adversarial_scenario(func) -> Callable:
         scenario = str(kwargs.get("scenario", None))
         max_conversation_turns = kwargs.get("max_conversation_turns", None)
         max_simulation_results = kwargs.get("max_simulation_results", None)
-        jailbreak = kwargs.get("jailbreak", None)
+        upia_jailbreak = kwargs.get("upia_jailbreak", None)
         decorated_func = monitor_operation(
             activity_name="adversarial.simulator.call",
             activity_type=ActivityType.PUBLICAPI,
@@ -51,7 +51,7 @@ def monitor_adversarial_scenario(func) -> Callable:
                 "scenario": scenario,
                 "max_conversation_turns": max_conversation_turns,
                 "max_simulation_results": max_simulation_results,
-                "jailbreak": jailbreak,
+                "upia_jailbreak": upia_jailbreak,
             },
         )(func)
 
@@ -112,7 +112,7 @@ class AdversarialSimulator:
         api_call_retry_sleep_sec: int = 1,
         api_call_delay_sec: int = 0,
         concurrent_async_task: int = 3,
-        jailbreak: bool = False,
+        upia_jailbreak: bool = False,
     ):
         """
         Executes the adversarial simulation against a specified target function asynchronously.
@@ -144,9 +144,9 @@ class AdversarialSimulator:
         :keyword concurrent_async_task: The number of asynchronous tasks to run concurrently during the simulation.
             Defaults to 3.
         :paramtype concurrent_async_task: int
-        :keyword jailbreak: If set to True, allows breaking out of the conversation flow defined by the scenario.
+        :keyword upia_jailbreak: If set to True, allows breaking out of the conversation flow defined by the scenario.
             Defaults to False.
-        :paramtype jailbreak: bool
+        :paramtype upia_jailbreak: bool
         :return: A list of dictionaries, each representing a simulated conversation. Each dictionary contains:
 
          - 'template_parameters': A dictionary with parameters used in the conversation template,
@@ -168,7 +168,7 @@ class AdversarialSimulator:
                     'template_parameters': {},
                     'messages': [
                         {
-                            'content': '<jailbreak prompt> <adversarial question>',
+                            'content': '<upia_jailbreak prompt> <adversarial question>',
                             'role': 'user'
                         },
                         {
@@ -204,17 +204,17 @@ class AdversarialSimulator:
                 total_tasks,
             )
         total_tasks = min(total_tasks, max_simulation_results)
-        if jailbreak:
+        if upia_jailbreak:
             jailbreak_dataset = await self.rai_client.get_jailbreaks_dataset()
         progress_bar = tqdm(
             total=total_tasks,
-            desc="generating jailbreak simulations" if jailbreak else "generating simulations",
+            desc="generating jailbreak simulations" if upia_jailbreak else "generating simulations",
             ncols=100,
             unit="simulations",
         )
         for template in templates:
             for parameter in template.template_parameters:
-                if jailbreak:
+                if upia_jailbreak:
                     parameter = self._join_conversation_starter(parameter, random.choice(jailbreak_dataset))
                 tasks.append(
                     asyncio.create_task(

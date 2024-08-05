@@ -112,7 +112,9 @@
     "attribited",
     "MistralAI",
     "llmlingua",
-    "myconn"
+    "myconn",
+    "upia",
+    "xpia"
   ],
   "ignoreWords": [
     "openmpi",

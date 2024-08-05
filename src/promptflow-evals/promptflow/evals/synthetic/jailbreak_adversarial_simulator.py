@@ -32,7 +32,7 @@ def monitor_adversarial_scenario(func) -> Callable:
         max_conversation_turns = kwargs.get("max_conversation_turns", None)
         max_simulation_results = kwargs.get("max_simulation_results", None)
         decorated_func = monitor_operation(
-            activity_name="jailbreak.adversarial.simulator.call",
+            activity_name="upia_jailbreak.adversarial.simulator.call",
             activity_type=ActivityType.PUBLICAPI,
             custom_dimensions={
                 "scenario": scenario,
@@ -46,9 +46,9 @@ def monitor_adversarial_scenario(func) -> Callable:
     return wrapper
 
 
-class JailbreakAdversarialSimulator:
+class UPIAJailbreakAdversarialSimulator:
     """
-    Initializes the jailbreak adversarial simulator with a project scope.
+    Initializes the UPIA jailbreak adversarial simulator with a project scope.
 
     :param azure_ai_project: Dictionary defining the scope of the project. It must include the following keys:
 
@@ -104,7 +104,7 @@ class JailbreakAdversarialSimulator:
         concurrent_async_task: int = 3,
     ):
         """
-        Executes the adversarial simulation and jailbreak adversarial simulation
+        Executes the adversarial simulation and UPIA jailbreak adversarial simulation
         against a specified target function asynchronously.
 
         :keyword scenario: Enum value specifying the adversarial scenario used for generating inputs.
@@ -151,12 +151,12 @@ class JailbreakAdversarialSimulator:
         .. code-block:: python
 
             return_value = {
-                "jailbreak": [
+                "upia_jailbreak": [
                 {
                     'template_parameters': {},
                     'messages': [
                         {
-                            'content': '<jailbreak prompt> <adversarial question>',
+                            'content': '<upia_jailbreak prompt> <adversarial question>',
                             'role': 'user'
                         },
                         {
@@ -196,7 +196,7 @@ class JailbreakAdversarialSimulator:
             api_call_retry_sleep_sec=api_call_retry_sleep_sec,
             api_call_delay_sec=api_call_delay_sec,
             concurrent_async_task=concurrent_async_task,
-            jailbreak=False,
+            upia_jailbreak=False,
         )
         jb_sim = AdversarialSimulator(azure_ai_project=self.azure_ai_project, credential=self.credential)
         jb_sim_results = await jb_sim(
@@ -208,6 +208,6 @@ class JailbreakAdversarialSimulator:
             api_call_retry_sleep_sec=api_call_retry_sleep_sec,
             api_call_delay_sec=api_call_delay_sec,
             concurrent_async_task=concurrent_async_task,
-            jailbreak=True,
+            upia_jailbreak=True,
         )
-        return {"jailbreak": jb_sim_results, "regular": regular_sim_results}
+        return {"upia_jailbreak": jb_sim_results, "regular": regular_sim_results}
