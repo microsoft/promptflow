@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import inspect
+import os
 import re
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
@@ -442,7 +443,15 @@ def _evaluate(  # pylint: disable=too-many-locals
     # Batch Run
     evaluators_info = {}
     use_pf_client = kwargs.get("_use_pf_client", True)
-    batch_run_client = ProxyClient(pf_client) if use_pf_client else CodeClient()
+    if use_pf_client:
+        batch_run_client = ProxyClient(pf_client)
+
+        # Ensure the absolute path is passed to pf.run, as relative path doesn't work with
+        # multiple evaluators. If the path is already absolute, abspath will return the original path.
+        data = os.path.abspath(data)
+    else:
+        batch_run_client = CodeClient()
+        data = input_data_df
 
     with BatchRunContext(batch_run_client):
         for evaluator_name, evaluator in evaluators.items():
@@ -452,7 +461,7 @@ def _evaluate(  # pylint: disable=too-many-locals
                 run=target_run,
                 evaluator_name=evaluator_name,
                 column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-                data=input_data_df if isinstance(batch_run_client, CodeClient) else data,
+                data=data,
                 stream=True,
                 name=kwargs.get("_run_name"),
             )
