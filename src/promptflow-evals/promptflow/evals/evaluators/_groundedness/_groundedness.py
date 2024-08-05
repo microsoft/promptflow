@@ -17,6 +17,9 @@ except ImportError:
 
 
 class _AsyncGroundednessEvaluator:
+    PROMPTY_FILE = "groundedness.prompty"
+    LLM_CALL_TIMEOUT = 600
+
     def __init__(self, model_config: AzureOpenAIModelConfiguration):
         if model_config.api_version is None:
             model_config.api_version = "2024-02-15-preview"
@@ -43,7 +46,7 @@ class _AsyncGroundednessEvaluator:
             raise ValueError("Both 'answer' and 'context' must be non-empty strings.")
 
         # Run the evaluation flow
-        llm_output = await self._flow(answer=answer, context=context, timeout=600, **kwargs)
+        llm_output = await self._flow(answer=answer, context=context, timeout=self.LLM_CALL_TIMEOUT, **kwargs)
 
         score = np.nan
         if llm_output:
@@ -59,7 +62,7 @@ class GroundednessEvaluator:
     Initialize a groundedness evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: AzureOpenAIModelConfiguration
+    :type model_config: ~promptflow.core.AzureOpenAIModelConfiguration
 
     **Usage**
 
