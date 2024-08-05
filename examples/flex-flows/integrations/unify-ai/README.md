@@ -1,5 +1,9 @@
-# Basic standard flow with Unify
-A basic standard flow define using function entry that calls Unify AI.
+# Basic standard flow with Unify AI
+A basic standard flow define using function entry that calls Unify AI. 
+
+Unify AI helps you use a LLM from a wide variety of models and providers using a single Unify API key. You can make an optimal choice by comparing trade-offs between quality, cost and latency. 
+
+Refer [Unify AI documentation](https://unify.ai/docs).
 
 ## Prerequisites
 
@@ -69,8 +73,6 @@ pf run visualize --name $name
 ```
 
 ## Run flow in cloud with connection
-
-- Assume we already have a connection named `open_ai_connection` in workspace.
 
 ```bash
 # set default workspace
