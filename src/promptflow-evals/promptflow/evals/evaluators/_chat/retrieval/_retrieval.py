@@ -21,6 +21,9 @@ except ImportError:
 
 
 class _AsyncRetrievalChatEvaluator:
+    PROMPTY_FILE = "retrieval.prompty"
+    LLM_CALL_TIMEOUT = 600
+
     def __init__(self, model_config: AzureOpenAIModelConfiguration):
         if model_config.api_version is None:
             model_config.api_version = "2024-02-15-preview"
@@ -35,7 +38,7 @@ class _AsyncRetrievalChatEvaluator:
             prompty_model_config["parameters"]["extra_headers"].update({"x-ms-useragent": USER_AGENT})
 
         current_dir = os.path.dirname(__file__)
-        prompty_path = os.path.join(current_dir, "retrieval.prompty")
+        prompty_path = os.path.join(current_dir, self.PROMPTY_FILE)
         self._flow = AsyncPrompty.load(source=prompty_path, model=prompty_model_config)
 
     async def __call__(self, *, conversation, **kwargs):
@@ -65,7 +68,9 @@ class _AsyncRetrievalChatEvaluator:
 
                 history.append({"user": question, "assistant": answer})
 
-                llm_output = await self._flow(query=question, history=history, documents=context, timeout=600, **kwargs)
+                llm_output = await self._flow(
+                    query=question, history=history, documents=context, timeout=self.LLM_CALL_TIMEOUT, **kwargs
+                )
                 score = np.nan
                 if llm_output:
                     parsed_score_response = re.findall(r"\d+", llm_output.split("# Result")[-1].strip())
@@ -96,9 +101,9 @@ class RetrievalChatEvaluator:
     Initialize an evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: AzureOpenAIModelConfiguration
+    :type model_config: ~promptflow.core.AzureOpenAIModelConfiguration
     :return: A function that evaluates and generates metrics for "chat" scenario.
-    :rtype: function
+    :rtype: Callable
     **Usage**
 
     .. code-block:: python

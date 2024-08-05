@@ -59,9 +59,9 @@ class QAEvaluator:
     Initialize a question-answer evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: AzureOpenAIModelConfiguration
+    :type model_config: ~promptflow.core.AzureOpenAIModelConfiguration
     :return: A function that evaluates and generates metrics for "question-answering" scenario.
-    :rtype: function
+    :rtype: Callable
 
     **Usage**
 

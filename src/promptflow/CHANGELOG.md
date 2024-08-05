@@ -4,6 +4,7 @@
 
 ### Bugs fixed
 - [promptflow-azure] Fixed `Connection aborted` error for local to cloud run when registering the run to cloud.
+- [promptflow-core] Fixed openai error handler not functioning for `AsyncPrompty`.
 
 ## v1.14.0 (2024.07.25)
 ### Improvements

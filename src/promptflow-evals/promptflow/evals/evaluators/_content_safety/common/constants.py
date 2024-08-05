@@ -4,6 +4,12 @@
 from enum import Enum
 
 
+class CommonConstants:
+    """Define common constants."""
+
+    DEFAULT_HTTP_TIMEOUT = 60
+
+
 class RAIService:
     """Define constants related to RAI service"""
 

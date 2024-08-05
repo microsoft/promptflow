@@ -44,3 +44,9 @@ repos:
           # Use black profile for isort to avoid conflicts
           # see https://github.com/PyCQA/isort/issues/1518
           args: ["--profile", "black", --line-length=120]
+    - repo: https://github.com/pylint-dev/pylint
+      rev: v3.0.3
+      hooks:
+        - id: pylint
+          name: pylint
+          args: [ --rcfile=pylintrc, --output-format=parseable ]
