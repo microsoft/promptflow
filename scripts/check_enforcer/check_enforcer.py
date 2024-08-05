@@ -169,7 +169,7 @@ def trigger_prepare(input_paths):
     global special_care
 
     for input_path in input_paths:
-        if "samples_connections_connection" in checks:
+        if "samples_connections_connection" in input_path:
             continue
         # Check if the input path contains "examples" or "samples".
         if "examples" in input_path or "samples" in input_path:
