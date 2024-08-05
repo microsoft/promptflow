@@ -256,3 +256,111 @@ class TestSimulator(unittest.TestCase):
                 api_call_delay_sec=0,
                 conversation_history=conversation_history,
             )
+
+    async def test_call_with_default_parameters(self):
+        # Mock the target callable to be used in the test
+        mock_target = AsyncMock(return_value={"result": "mocked_result"})
+
+        # Call the Simulator with default parameters
+        result = await self.simulator(target=mock_target, text="Hello, world!")
+
+        # Assert the target callable was called with the expected arguments
+        mock_target.assert_called_once_with(
+            conversation_history=[],
+            tasks=[],
+            turn={"user": {"text": "Hello, world!"}},
+            num_queries=5,
+            query_response_generating_prompty=None,
+            user_simulator_prompty=None,
+            api_call_delay_sec=1,
+            query_response_generating_prompty_kwargs={},
+            user_simulator_prompty_kwargs={},
+        )
+
+        # Check the result to verify correct processing
+        self.assertEqual(result["result"], "mocked_result")
+
+    async def test_call_with_custom_parameters(self):
+        # Mock the target callable
+        mock_target = AsyncMock(return_value={"result": "custom_result"})
+
+        # Call the Simulator with custom parameters
+        result = await self.simulator(
+            target=mock_target,
+            max_conversation_turns=10,
+            tasks=[{"task": "test"}],
+            text="Custom text",
+            num_queries=3,
+            query_response_generating_prompty="Generate a response",
+            user_simulator_prompty="Simulate a user",
+            api_call_delay_sec=2,
+            query_response_generating_prompty_kwargs={"key1": "value1"},
+            user_simulator_prompty_kwargs={"key2": "value2"},
+        )
+
+        # Assert the target callable was called with the expected arguments
+        mock_target.assert_called_once_with(
+            conversation_history=[],
+            tasks=[{"task": "test"}],
+            turn={"user": {"text": "Custom text"}},
+            num_queries=3,
+            query_response_generating_prompty="Generate a response",
+            user_simulator_prompty="Simulate a user",
+            api_call_delay_sec=2,
+            query_response_generating_prompty_kwargs={"key1": "value1"},
+            user_simulator_prompty_kwargs={"key2": "value2"},
+        )
+
+        # Check the result to verify correct processing
+        self.assertEqual(result["result"], "custom_result")
+
+    async def test_call_with_long_conversation_history(self):
+        # Mock the target callable
+        mock_target = AsyncMock(return_value={"result": "long_history_result"})
+
+        # Prepare a long conversation history
+        conversation_history = [{"user": {"text": f"Message {i}"}} for i in range(15)]
+
+        # Use patch to mock the _get_conversation_history method
+        with patch.object(Simulator, "_get_conversation_history", return_value=conversation_history):
+            result = await self.simulator(target=mock_target, max_conversation_turns=5, text="New message")
+
+        # Assert the target callable was called
+        mock_target.assert_called_once()
+
+        # Verify the conversation history size respects max_conversation_turns
+        self.assertTrue(len(mock_target.call_args[1]["conversation_history"]) <= 5)
+
+        # Check the result to verify correct processing
+        self.assertEqual(result["result"], "long_history_result")
+
+    async def test_call_with_empty_text(self):
+        # Mock the target callable
+        mock_target = AsyncMock(return_value={"result": "empty_text_result"})
+
+        # Call the Simulator with an empty text
+        result = await self.simulator(target=mock_target, text="")
+
+        # Assert the target callable was called
+        mock_target.assert_called_once()
+
+        # Check the result to verify correct processing
+        self.assertEqual(result["result"], "empty_text_result")
+
+    async def test_call_with_empty_tasks_list(self):
+        # Mock the target callable
+        mock_target = AsyncMock(return_value={"result": "empty_tasks_result"})
+
+        # Call the Simulator with an empty tasks list
+        result = await self.simulator(
+            target=mock_target,
+            tasks=[],
+            num_queries=10,  # Intentionally high to test against empty task list
+            text="Task test",
+        )
+
+        # Assert that the target callable was called once
+        mock_target.assert_called_once()
+
+        # Check the result to verify correct processing
+        self.assertEqual(result["result"], "empty_tasks_result")
