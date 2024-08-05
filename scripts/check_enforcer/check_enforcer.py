@@ -270,6 +270,8 @@ def run_checks():
             .rstrip()
             .split("\n")
         )
+        for single_diff in git_diff:
+            print(single_diff)
     except subprocess.CalledProcessError as e:
         print("Exception on process, rc=", e.returncode, "output=", e.output)
         raise e
