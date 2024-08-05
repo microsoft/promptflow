@@ -1,3 +1,3 @@
-from ._simulator_data_classes import Conversation as ConvHistory, Turn as ConvTurn
+from ._simulator_data_classes import ConversationHistory, Turn
 
-__all__ = ["ConvHistory", "ConvTurn"]
+__all__ = ["ConversationHistory", "Turn"]

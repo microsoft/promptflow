@@ -3,7 +3,10 @@
 # ---------------------------------------------------------
 # pylint: disable=C4739,C4741,C4742
 from dataclasses import dataclass
+from typing import Union
+
 from promptflow.evals.synthetic._conversation.constants import ConversationRole
+
 
 @dataclass
 class Turn:
@@ -12,7 +15,8 @@ class Turn:
     keeping track of the role, content,
     and context of a turn in a conversation.
     """
-    role: str or ConversationRole
+
+    role: Union[str, ConversationRole]
     content: str
     context: str = None
 

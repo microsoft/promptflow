@@ -16,7 +16,7 @@ from promptflow.core import AzureOpenAIModelConfiguration
 
 from .._user_agent import USER_AGENT
 from ._conversation.constants import ConversationRole
-from ._helpers import ConvHistory, ConvTurn
+from ._helpers import ConversationHistory, Turn
 from ._tracing import monitor_task_simulator
 from ._utils import JsonLineChatProtocol
 
@@ -181,14 +181,14 @@ class Simulator:
         )
 
         for simulation in conversation_turns:
-            current_simulation = ConvHistory()
+            current_simulation = ConversationHistory()
             for simulated_turn in simulation:
-                user_turn = ConvTurn(role=ConversationRole.USER, content=simulated_turn)
+                user_turn = Turn(role=ConversationRole.USER, content=simulated_turn)
                 current_simulation.add_to_history(user_turn)
                 assistant_response = await self._get_target_response(
                     target=target, api_call_delay_sec=api_call_delay_sec, conversation_history=current_simulation
                 )
-                assistant_turn = ConvTurn(role=ConversationRole.ASSISTANT, content=assistant_response)
+                assistant_turn = Turn(role=ConversationRole.ASSISTANT, content=assistant_response)
                 current_simulation.add_to_history(assistant_turn)
                 progress_bar.update(1)  # Update progress bar for both user and assistant turns
 
@@ -212,7 +212,7 @@ class Simulator:
     async def _extend_conversation_with_simulator(
         self,
         *,
-        current_simulation: ConvHistory,
+        current_simulation: ConversationHistory,
         max_conversation_turns: int,
         user_simulator_prompty: Optional[str],
         user_simulator_prompty_kwargs: Dict[str, Any],
@@ -244,13 +244,13 @@ class Simulator:
                 task="Continue the conversation", conversation_history=current_simulation.to_list()
             )
             user_response = self._parse_prompty_response(response=user_response_content)
-            user_turn = ConvTurn(role=ConversationRole.USER, content=user_response["content"])
+            user_turn = Turn(role=ConversationRole.USER, content=user_response["content"])
             current_simulation.add_to_history(user_turn)
             await asyncio.sleep(api_call_delay_sec)
             assistant_response = await self._get_target_response(
                 target=target, api_call_delay_sec=api_call_delay_sec, conversation_history=current_simulation
             )
-            assistant_turn = ConvTurn(role=ConversationRole.ASSISTANT, content=assistant_response)
+            assistant_turn = Turn(role=ConversationRole.ASSISTANT, content=assistant_response)
             current_simulation.add_to_history(assistant_turn)
             progress_bar.update(1)
 
@@ -443,15 +443,15 @@ class Simulator:
         :return: A list representing the conversation history with each turn's content.
         :rtype: List[Dict[str, str]]
         """
-        conversation_history = ConvHistory()
-        user_turn = ConvTurn(role=ConversationRole.USER, content=conversation_starter)
+        conversation_history = ConversationHistory()
+        user_turn = Turn(role=ConversationRole.USER, content=conversation_starter)
         conversation_history.add_to_history(user_turn)
 
         while conversation_history.get_length() < max_conversation_turns:
             assistant_response = await self._get_target_response(
                 target=target, api_call_delay_sec=api_call_delay_sec, conversation_history=conversation_history
             )
-            assistant_turn = ConvTurn(role=ConversationRole.ASSISTANT, content=assistant_response)
+            assistant_turn = Turn(role=ConversationRole.ASSISTANT, content=assistant_response)
             conversation_history.add_to_history(assistant_turn)
             progress_bar.update(1)
 
@@ -465,7 +465,7 @@ class Simulator:
                 user_simulator_prompty_kwargs=user_simulator_prompty_kwargs,
             )
             await asyncio.sleep(api_call_delay_sec)
-            user_turn = ConvTurn(role=ConversationRole.USER, content=user_response)
+            user_turn = Turn(role=ConversationRole.USER, content=user_response)
             conversation_history.add_to_history(user_turn)
             progress_bar.update(1)
 
@@ -503,7 +503,7 @@ class Simulator:
             raise RuntimeError("Error building user simulation response") from e
 
     async def _get_target_response(
-        self, *, target: callable, api_call_delay_sec: float, conversation_history: ConvHistory
+        self, *, target: callable, api_call_delay_sec: float, conversation_history: ConversationHistory
     ) -> str:
         """
         Retrieves the response from the target callback based on the current conversation history.
