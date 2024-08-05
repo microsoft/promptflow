@@ -4,7 +4,7 @@ import sys
 from promptflow.core import OpenAIModelConfiguration
 
 # Add the path to the evaluation code quality module.
-eval_code_quality_path = str(pathlib.Path(__file__).parent / "../eval-code-quality")
+eval_code_quality_path = str(pathlib.Path(__file__).parent / "../../eval-code-quality")
 sys.path.append(eval_code_quality_path)
 
 import code_quality as code_quality_aoi
