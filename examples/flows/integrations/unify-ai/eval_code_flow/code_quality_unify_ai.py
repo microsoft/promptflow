@@ -10,7 +10,7 @@ from promptflow.tracing import trace
 
 BASE_DIR = Path(__file__).absolute().parent
 
-# Dervied from https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/eval-code-quality/
+# Derived from https://github.com/microsoft/promptflow/blob/main/examples/flex-flows/eval-code-quality/
 
 
 @trace
