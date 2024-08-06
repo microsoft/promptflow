@@ -12,7 +12,7 @@ def my_llm_tool(
     # for Unify AI, Model and Provider are to be specified by user.
     model_name: str,
     provider_name: str,
-    max_tokens: int = 120,
+    max_tokens: int = 1200,
     temperature: float = 1.0,
 ) -> str:
     if "UNIFY_AI_API_KEY" not in os.environ:
