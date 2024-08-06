@@ -129,7 +129,14 @@ def trigger_checks(valid_status_array):
 
     for key in pipelines.keys():
         if pipelines_count[key] < pipelines[key]:
+            print(
+                f"[Failure]Pipeline {key} is triggered {pipelines_count[key]} times, less than {pipelines[key]} times."
+            )
             failed_reason = "Not all pipelines are triggered."
+        else:
+            print(
+                f"Pipeline {key} is triggered {pipelines_count[key]} times, more or equal to {pipelines[key]} times."
+            )
 
 
 def status_checks(valid_status_array):
@@ -166,7 +173,7 @@ def trigger_prepare(input_paths):
     global special_care
 
     for input_path in input_paths:
-        if "samples_connections_connection" in checks:
+        if "samples_connections_connection" in input_path:
             continue
         # Check if the input path contains "examples" or "samples".
         if "examples" in input_path or "samples" in input_path:
