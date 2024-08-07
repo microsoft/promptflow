@@ -244,6 +244,7 @@
     "usecwd",
     "locustio",
     "euap",
+    "otelcol",
     "rcfile",
     "pylintrc"
   ],

@@ -74,8 +74,10 @@ docker build dist -t web-classification-serve
 Run the docker image will start a service to serve the flow inside the container. 
 
 #### Connections
+
 If the service involves connections, all related connections will be exported as yaml files and recreated in containers.
 Secrets in connections won't be exported directly. Instead, we will export them as a reference to environment variables:
+
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
 type: open_ai
@@ -83,7 +85,54 @@ name: open_ai_connection
 module: promptflow.connections
 api_key: ${env:OPEN_AI_CONNECTION_API_KEY} # env reference
 ```
+
 You'll need to set up the environment variables in the container to make the connections work.
+
+For example, if you are deploying your PromptFlow to multiple environments you may have different instances of OpenAI you need to connect to. In your environment variables you can override values found within the `connection.yaml`. To do this, the format of the environment variable name follows the following schema `<CONNECTION_NAME>_<FIELD_NAME>` (in all uppercase).
+
+Using the example yaml above, where `CONNECTION_NAME` is `open_ai_connection` and the field to override is `api_key`, the environment varible name would be `OPEN_AI_CONNECTION_API_KEY`. If you need to override the `api_base` field, the environment variable would be `OPEN_AI_CONNECTION_API_BASE`.
+
+PromptFlow will attempt to retrieve `api_key` and `api_base` from the environment variable `OPEN_AI_CONNECTION_API_KEY` and `OPEN_AI_CONNECTION_API_BASE` by default. If these environment variables are not set, PromptFlow will fallback to the original values found in your `connection.yaml`.
+
+You can set these values when running the container using the `--env` flag:
+
+```bash
+docker run -d \
+  --env OPEN_AI_CONNECTION_API_BASE=<OVERRIDE_API_BASE> \
+  --env OPEN_AI_CONNECTION_API_KEY=<OVERRIDE_API_KEY> \
+  web-classification-serve
+```
+
+#### Configuring the run and finish script
+
+Depending on your use case you made need to make changes to how your application runs. Out of the box, running `pf flow build...` will generate two scripts located under `runit/promptflow-serve/`, a `run` script used to initialise the flow, and a `finish` script used to gracefully shutdown the flow. These two scripts are where you can initialise and shutdown additional applications that run alongside your flow.
+
+For the purpose of this example, we will install and run [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) within the same container. Please note that this is just an example for scenarios where additional containers cannot run alongside your flow's container.
+
+1. After running `pf flow build --format docker...` navigate to the output folder.
+
+2. Edit the `Dockerfile` to install your additional dependencies. In our case, add the following lines to your `Dockerfile`
+   ```Dockerfile
+   RUN apt-get update && apt-get install -y wget systemctl
+   RUN wget https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.104.0/otelcol_0.104.0_linux_amd64.deb && dpkg -i otelcol_0.104.0_linux_amd64.deb
+   ```
+
+3. Under `runit/promptflow-server/run` add the following command to start the OpenTelemetry Collector
+   ```bash
+   systemctl start otelcol
+   ```
+
+4. Finally, update `runit/promptflow-server/finish` to stop the collector when the container when a `SIGTERM` or `SIGINT` is issued
+   ```bash
+   # stop otelcol
+   echo "$(date -uIns) - Stopping otelcol processes"
+
+   systemctl stop otelcol
+
+   echo "$(date -uIns) - Stopped otelcol processes"
+   ```
+
+Now in order to use the OpenTelemetry Collector, set `OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4318` environment variable when running your container.
 
 ### Run with `docker run`
 
