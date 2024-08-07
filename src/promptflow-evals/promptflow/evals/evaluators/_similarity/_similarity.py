@@ -17,16 +17,24 @@ except ImportError:
 
 
 class _AsyncSimilarityEvaluator:
+    PROMPTY_FILE = "similarity.prompty"
+    LLM_CALL_TIMEOUT = 600
+
     def __init__(self, model_config: AzureOpenAIModelConfiguration):
         if model_config.api_version is None:
             model_config.api_version = "2024-02-15-preview"
 
-        prompty_model_config = {"configuration": model_config}
-        prompty_model_config.update(
-            {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
-        ) if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration) else None
+        prompty_model_config = {"configuration": model_config, "parameters": {"extra_headers": {}}}
+
+        # Handle "RuntimeError: Event loop is closed" from httpx AsyncClient
+        # https://github.com/encode/httpx/discussions/2959
+        prompty_model_config["parameters"]["extra_headers"].update({"Connection": "close"})
+
+        if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration):
+            prompty_model_config["parameters"]["extra_headers"].update({"x-ms-useragent": USER_AGENT})
+
         current_dir = os.path.dirname(__file__)
-        prompty_path = os.path.join(current_dir, "similarity.prompty")
+        prompty_path = os.path.join(current_dir, self.PROMPTY_FILE)
         self._flow = AsyncPrompty.load(source=prompty_path, model=prompty_model_config)
 
     async def __call__(self, *, question: str, answer: str, ground_truth: str, **kwargs):
@@ -39,7 +47,9 @@ class _AsyncSimilarityEvaluator:
             raise ValueError("'question', 'answer' and 'ground_truth' must be non-empty strings.")
 
         # Run the evaluation flow
-        llm_output = await self._flow(question=question, answer=answer, ground_truth=ground_truth)
+        llm_output = await self._flow(
+            question=question, answer=answer, ground_truth=ground_truth, timeout=self.LLM_CALL_TIMEOUT, **kwargs
+        )
 
         score = np.nan
         if llm_output:
@@ -55,7 +65,7 @@ class SimilarityEvaluator:
     Initialize a similarity evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: AzureOpenAIModelConfiguration
+    :type model_config: ~promptflow.core.AzureOpenAIModelConfiguration
 
     **Usage**
 
@@ -83,12 +93,12 @@ class SimilarityEvaluator:
         """
         Evaluate similarity.
 
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :param ground_truth: The ground truth to be evaluated.
-        :type ground_truth: str
+        :keyword question: The question to be evaluated.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
+        :keyword ground_truth: The ground truth to be evaluated.
+        :paramtype ground_truth: str
         :return: The similarity score.
         :rtype: dict
         """

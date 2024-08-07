@@ -17,16 +17,24 @@ except ImportError:
 
 
 class _AsyncCoherenceEvaluator:
+    PROMPTY_FILE = "coherence.prompty"
+    LLM_CALL_TIMEOUT = 600
+
     def __init__(self, model_config: AzureOpenAIModelConfiguration):
         if model_config.api_version is None:
             model_config.api_version = "2024-02-15-preview"
 
-        prompty_model_config = {"configuration": model_config}
-        prompty_model_config.update(
-            {"parameters": {"extra_headers": {"x-ms-useragent": USER_AGENT}}}
-        ) if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration) else None
+        prompty_model_config = {"configuration": model_config, "parameters": {"extra_headers": {}}}
+
+        # Handle "RuntimeError: Event loop is closed" from httpx AsyncClient
+        # https://github.com/encode/httpx/discussions/2959
+        prompty_model_config["parameters"]["extra_headers"].update({"Connection": "close"})
+
+        if USER_AGENT and isinstance(model_config, AzureOpenAIModelConfiguration):
+            prompty_model_config["parameters"]["extra_headers"].update({"x-ms-useragent": USER_AGENT})
+
         current_dir = os.path.dirname(__file__)
-        prompty_path = os.path.join(current_dir, "coherence.prompty")
+        prompty_path = os.path.join(current_dir, self.PROMPTY_FILE)
         self._flow = AsyncPrompty.load(source=prompty_path, model=prompty_model_config)
 
     async def __call__(self, *, question: str, answer: str, **kwargs):
@@ -38,7 +46,7 @@ class _AsyncCoherenceEvaluator:
             raise ValueError("Both 'question' and 'answer' must be non-empty strings.")
 
         # Run the evaluation flow
-        llm_output = await self._flow(question=question, answer=answer)
+        llm_output = await self._flow(question=question, answer=answer, timeout=self.LLM_CALL_TIMEOUT, **kwargs)
 
         score = np.nan
         if llm_output:
@@ -54,7 +62,7 @@ class CoherenceEvaluator:
     Initialize a coherence evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: AzureOpenAIModelConfiguration
+    :type model_config: ~promptflow.core.AzureOpenAIModelConfiguration
 
     **Usage**
 
@@ -81,12 +89,12 @@ class CoherenceEvaluator:
         """
         Evaluate coherence.
 
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
+        :keyword question: The question to be evaluated.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
         :return: The coherence score.
-        :rtype: dict
+        :rtype: Dict[str, float]
         """
         return async_run_allowing_running_loop(self._async_evaluator, question=question, answer=answer, **kwargs)
 

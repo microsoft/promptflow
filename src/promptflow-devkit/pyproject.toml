@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-devkit"
-version = "1.14.0.dev0"
+version = "1.15.0.dev0"
 description = "Prompt flow devkit"
 include = [
   "promptflow/_sdk/_service/static/*",
@@ -113,6 +113,7 @@ ipykernel = ">=6.27.1"
 papermill = ">=2.5.0"
 keyrings-alt = "*"
 bs4 = "*"
+uvicorn = ">=0.27.0"
 
 [build-system]
 requires = ["poetry-core>=1.5.0"]

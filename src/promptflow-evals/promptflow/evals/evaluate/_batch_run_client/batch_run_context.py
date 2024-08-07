@@ -15,7 +15,15 @@ from .proxy_client import ProxyClient
 
 
 class BatchRunContext:
-    def __init__(self, client):
+    """Context manager for batch run clients.
+
+    :param client: The client to run in the context.
+    :type client: Union[
+        ~promptflow.evals.evaluate.code_client.CodeClient,
+        ~promptflow.evals.evaluate.proxy_client.ProxyClient
+    ]
+    """
+    def __init__(self, client) -> None:
         self.client = client
         self._is_timeout_set_by_system = False
 

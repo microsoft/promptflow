@@ -1,5 +1,6 @@
 import json
 import multiprocessing
+import time
 from pathlib import Path
 from typing import Dict
 from unittest.mock import patch
@@ -364,6 +365,18 @@ def vcr_recording(request: pytest.FixtureRequest, user_object_id: str, tenant_id
         yield recording
     else:
         yield None
+
+
+@pytest.fixture()
+def mock_token(scope=package_scope_in_live_mode()):
+    expiration_time = time.time() + 3600  # 1 hour in the future
+    return jwt.encode({"exp": expiration_time}, "secret", algorithm="HS256")
+
+
+@pytest.fixture()
+def mock_expired_token(scope=package_scope_in_live_mode()):
+    expiration_time = time.time() - 3600  # 1 hour in the past
+    return jwt.encode({"exp": expiration_time}, "secret", algorithm="HS256")
 
 
 def pytest_collection_modifyitems(items):

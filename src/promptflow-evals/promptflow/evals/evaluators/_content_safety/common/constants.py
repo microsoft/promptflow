@@ -4,6 +4,12 @@
 from enum import Enum
 
 
+class CommonConstants:
+    """Define common constants."""
+
+    DEFAULT_HTTP_TIMEOUT = 60
+
+
 class RAIService:
     """Define constants related to RAI service"""
 
@@ -13,6 +19,8 @@ class RAIService:
 
 
 class HarmSeverityLevel(Enum):
+    """Harm severity levels."""
+
     VeryLow = "Very low"
     Low = "Low"
     Medium = "Medium"
@@ -26,6 +34,8 @@ class Tasks:
 
 
 class EvaluationMetrics:
+    """Evaluation metrics for content safety evaluation."""
+
     HATE_FAIRNESS = "hate_fairness"
     HATE_UNFAIRNESS = "hate_unfairness"
     VIOLENCE = "violence"

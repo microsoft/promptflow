@@ -1,16 +1,15 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import asyncio
 import json
 import logging
-from concurrent.futures import as_completed
 from typing import Dict, List
 
 import numpy as np
 
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.core import AzureOpenAIModelConfiguration
-from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 from .._coherence import CoherenceEvaluator
 from .._fluency import FluencyEvaluator
@@ -21,57 +20,7 @@ from .retrieval import RetrievalChatEvaluator
 logger = logging.getLogger(__name__)
 
 
-class ChatEvaluator:
-    """
-    Initialize a chat evaluator configured for a specific Azure OpenAI model.
-
-    :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: AzureOpenAIModelConfiguration
-    :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue,
-        focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
-    :type eval_last_turn: bool
-    :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
-        Default is True.
-    :type parallel: bool
-    :return: A function that evaluates and generates metrics for "chat" scenario.
-    :rtype: function
-
-    **Usage**
-
-    .. code-block:: python
-
-        chat_eval = ChatEvaluator(model_config)
-        conversation = [
-            {"role": "user", "content": "What is the value of 2 + 2?"},
-            {"role": "assistant", "content": "2 + 2 = 4", "context": {
-                "citations": [
-                        {"id": "math_doc.md", "content": "Information about additions: 1 + 2 = 3, 2 + 2 = 4"}
-                        ]
-                }
-            }
-        ]
-        result = chat_eval(conversation=conversation)
-
-    **Output format**
-
-    .. code-block:: python
-
-        {
-            "evaluation_per_turn": {
-                "gpt_retrieval": [1.0, 2.0],
-                "gpt_groundedness": [5.0, 2.0],
-                "gpt_relevance": [3.0, 5.0],
-                "gpt_coherence": [1.0, 2.0],
-                "gpt_fluency": [3.0, 5.0]
-            }
-            "gpt_retrieval": 1.5,
-            "gpt_groundedness": 3.5,
-            "gpt_relevance": 4.0,
-            "gpt_coherence": 1.5,
-            "gpt_fluency": 4.0
-        }
-    """
-
+class _AsyncChatEvaluator:
     def __init__(
         self, model_config: AzureOpenAIModelConfiguration, eval_last_turn: bool = False, parallel: bool = True
     ):
@@ -80,25 +29,25 @@ class ChatEvaluator:
 
         # TODO: Need a built-in evaluator for retrieval. It needs to be added to `self._rag_evaluators` collection
         self._rag_evaluators = [
-            GroundednessEvaluator(model_config),
-            RelevanceEvaluator(model_config),
+            GroundednessEvaluator(model_config)._to_async(),
+            RelevanceEvaluator(model_config)._to_async(),
         ]
         self._non_rag_evaluators = [
-            CoherenceEvaluator(model_config),
-            FluencyEvaluator(model_config),
+            CoherenceEvaluator(model_config)._to_async(),
+            FluencyEvaluator(model_config)._to_async(),
         ]
         # TODO: Temporary workaround to close the gap of missing retrieval score
         # https://msdata.visualstudio.com/Vienna/_workitems/edit/3186644
         # For long term, we need to add a built-in evaluator for retrieval after prompt is generalized for QA and Chat
-        self._retrieval_chat_evaluator = RetrievalChatEvaluator(model_config)
+        self._retrieval_chat_evaluator = RetrievalChatEvaluator(model_config)._to_async()
 
-    def __call__(self, *, conversation, **kwargs):
+    async def __call__(self, *, conversation, **kwargs):
         """
         Evaluates chat scenario.
 
-        :param conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
+        :keyword conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
             "context" key is optional for assistant's turn and should have "citations" key with list of citations.
-        :type conversation: List[Dict]
+        :paramtype conversation: List[Dict]
         :return: The scores for Chat scenario.
         :rtype: dict
         """
@@ -148,21 +97,20 @@ class ChatEvaluator:
 
             if self._parallel:
                 # Parallel execution
-                with ThreadPoolExecutor() as executor:
-                    future_to_evaluator = {
-                        executor.submit(
-                            self._evaluate_turn, turn_num, questions, answers, contexts, evaluator
-                        ): evaluator
-                        for evaluator in selected_evaluators
-                    }
-
-                    for future in as_completed(future_to_evaluator):
-                        result = future.result()
+                tasks = [
+                    self._evaluate_turn(turn_num, questions, answers, contexts, evaluator)
+                    for evaluator in selected_evaluators
+                ]
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                for result in results:
+                    if isinstance(result, Exception):
+                        logger.warning(f"Exception occurred during evaluation: {result}")
+                    else:
                         current_turn_result.update(result)
             else:
                 # Sequential execution
                 for evaluator in selected_evaluators:
-                    result = self._evaluate_turn(turn_num, questions, answers, contexts, evaluator)
+                    result = await self._evaluate_turn(turn_num, questions, answers, contexts, evaluator)
                     current_turn_result.update(result)
 
             per_turn_results.append(current_turn_result)
@@ -181,23 +129,23 @@ class ChatEvaluator:
 
         # Run RetrievalChatEvaluator and merge the results
         if compute_rag_based_metrics:
-            retrieval_score = self._retrieval_chat_evaluator(conversation=conversation_slice)
+            retrieval_score = await self._retrieval_chat_evaluator(conversation=conversation_slice)
             aggregated["gpt_retrieval"] = retrieval_score["gpt_retrieval"]
             aggregated["evaluation_per_turn"]["gpt_retrieval"] = retrieval_score["evaluation_per_turn"]["gpt_retrieval"]
             aggregated = dict(sorted(aggregated.items()))
 
         return aggregated
 
-    def _evaluate_turn(self, turn_num, questions, answers, contexts, evaluator):
+    async def _evaluate_turn(self, turn_num, questions, answers, contexts, evaluator):
         try:
             question = questions[turn_num] if turn_num < len(questions) else ""
             answer = answers[turn_num] if turn_num < len(answers) else ""
             context = contexts[turn_num] if turn_num < len(contexts) else ""
 
-            score = evaluator(question=question, answer=answer, context=context)
+            score = await evaluator(question=question, answer=answer, context=context)
 
             return score
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(
                 f"Evaluator {evaluator.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}"
             )
@@ -243,8 +191,7 @@ class ChatEvaluator:
             one_based_turn_num = turn_num + 1
 
             if not isinstance(turn, dict):
-                raise ValueError(
-                    f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
+                raise ValueError(f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
 
             if "role" not in turn or "content" not in turn:
                 raise ValueError(
@@ -288,3 +235,75 @@ class ChatEvaluator:
         # Ensure the conversation ends with an assistant's turn
         if expected_role != "user":
             raise ValueError("The conversation must end with an assistant's turn.")
+
+
+class ChatEvaluator:
+    """
+    Initialize a chat evaluator configured for a specific Azure OpenAI model.
+
+    :param model_config: Configuration for the Azure OpenAI model.
+    :type model_config: ~promptflow.core.AzureOpenAIModelConfiguration
+    :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue,
+        focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
+    :type eval_last_turn: bool
+    :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
+        Default is True.
+    :type parallel: bool
+    :return: A function that evaluates and generates metrics for "chat" scenario.
+    :rtype: Callable
+
+    **Usage**
+
+    .. code-block:: python
+
+        chat_eval = ChatEvaluator(model_config)
+        conversation = [
+            {"role": "user", "content": "What is the value of 2 + 2?"},
+            {"role": "assistant", "content": "2 + 2 = 4", "context": {
+                "citations": [
+                        {"id": "math_doc.md", "content": "Information about additions: 1 + 2 = 3, 2 + 2 = 4"}
+                        ]
+                }
+            }
+        ]
+        result = chat_eval(conversation=conversation)
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "evaluation_per_turn": {
+                "gpt_retrieval": [1.0, 2.0],
+                "gpt_groundedness": [5.0, 2.0],
+                "gpt_relevance": [3.0, 5.0],
+                "gpt_coherence": [1.0, 2.0],
+                "gpt_fluency": [3.0, 5.0]
+            }
+            "gpt_retrieval": 1.5,
+            "gpt_groundedness": 3.5,
+            "gpt_relevance": 4.0,
+            "gpt_coherence": 1.5,
+            "gpt_fluency": 4.0
+        }
+    """
+
+    def __init__(
+        self, model_config: AzureOpenAIModelConfiguration, eval_last_turn: bool = False, parallel: bool = True
+    ):
+        self._async_evaluator = _AsyncChatEvaluator(model_config, eval_last_turn, parallel)
+
+    def __call__(self, *, conversation, **kwargs):
+        """
+        Evaluates chat scenario.
+
+        :keyword conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
+            "context" key is optional for assistant's turn and should have "citations" key with list of citations.
+        :paramtype conversation: List[Dict]
+        :return: The scores for Chat scenario.
+        :rtype: dict
+        """
+        return async_run_allowing_running_loop(self._async_evaluator, conversation=conversation, **kwargs)
+
+    def _to_async(self):
+        return self._async_evaluator

@@ -130,6 +130,10 @@ class FlowServiceCaller(RequestTelemetryMixin):
         retry_policy = RetryPolicy()
         # stop retry 500 since it will cause 409 for run creation scenario
         retry_policy._retry_on_status_codes.remove(500)
+        # Issue: https://github.com/microsoft/promptflow/issues/3582
+        # POST request for "create_existing_bulk_run" could fail for the first call, we need to add POST method
+        # to the whitelist to retry the request.
+        retry_policy._method_whitelist = frozenset(["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE", "POST"])
         self.caller = AzureMachineLearningDesignerServiceClient(base_url=base_url, retry_policy=retry_policy, **kwargs)
 
     def _get_headers(self):

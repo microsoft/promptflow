@@ -23,6 +23,7 @@ from promptflow.core._prompty_utils import (
     format_llm_response,
     get_open_ai_client_by_connection,
     handle_openai_error,
+    handle_openai_error_async,
     num_tokens_from_messages,
     prepare_open_ai_request_params,
     resolve_references,
@@ -457,7 +458,8 @@ class Prompty(FlowBase):
         # 4. send request to OpenAI
         api_client = get_open_ai_client_by_connection(connection=connection)
 
-        response = send_request_to_llm(api_client, self._model.api, params)
+        timeout = kwargs.get("timeout", None)
+        response = send_request_to_llm(api_client, self._model.api, params, timeout)
         return format_llm_response(
             response=response,
             api=self._model.api,
@@ -527,7 +529,7 @@ class AsyncPrompty(Prompty):
     """
 
     @trace
-    @handle_openai_error()
+    @handle_openai_error_async()
     async def __call__(self, *args, **kwargs) -> Mapping[str, Any]:
         """Calling prompty as a function in async, the inputs should be provided with key word arguments.
         Returns the output of the prompty.
@@ -556,7 +558,8 @@ class AsyncPrompty(Prompty):
         # 4. send request to OpenAI
         api_client = get_open_ai_client_by_connection(connection=connection, is_async=True)
 
-        response = await send_request_to_llm(api_client, self._model.api, params)
+        timeout = kwargs.get("timeout", None)
+        response = await send_request_to_llm(api_client, self._model.api, params, timeout)
         return format_llm_response(
             response=response,
             api=self._model.api,
