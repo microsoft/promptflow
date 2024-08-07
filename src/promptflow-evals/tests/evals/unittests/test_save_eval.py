@@ -54,8 +54,12 @@ class TestSaveEval:
 
         Debugging context. An loaded and executed evaluator acts like a main module in that it's __package__
         value is not set, which causes relative imports to fail. Attempts to set __package__ can potentially work,
-        but that requires that the loaded directory be added to sys.modules as a functional module, which is non-trivial
-        enough that I gave up on it.
+        but that requires that the loaded directory be added to sys.modules as a functional module.
+        That is a non-trivial task  due to the lack of guarantees about the
+        module structure of any potential user-written eval. Between that and the fact that this
+        is likely a rare edge case, I settled upon adding a more detailed error message, rather than
+        trying to write a precarious fix.
+
 
         More context on __package__: https://peps.python.org/pep-0366/
         """
