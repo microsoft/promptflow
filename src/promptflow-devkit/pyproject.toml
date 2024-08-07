@@ -113,6 +113,7 @@ ipykernel = ">=6.27.1"
 papermill = ">=2.5.0"
 keyrings-alt = "*"
 bs4 = "*"
+uvicorn = ">=0.27.0"
 
 [build-system]
 requires = ["poetry-core>=1.5.0"]
