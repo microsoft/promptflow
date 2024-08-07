@@ -51,6 +51,7 @@
     ".github/pipelines/**",
     ".github/CODEOWNERS",
     "src/promptflow-evals/tests/**",
+    "src/promptflow-evals/samples/**",
     "benchmark/promptflow-serve/result-archive/**"
   ],
   "words": [
