@@ -19,12 +19,12 @@ from ._qa import QAEvaluator
 from ._relevance import RelevanceEvaluator
 from ._similarity import SimilarityEvaluator
 from .aoai._graders import (
-    BleuScoreConfig,
     BleuScoreEvaluator,
-    SetMembershipConfig,
+    BleuScoreEvaluatorConfig,
     SetMembershipEvaluator,
-    StringCountConfig,
+    SetMembershipEvaluatorConfig,
     StringCountEvaluator,
+    StringCountEvaluatorConfig,
 )
 
 __all__ = [
@@ -43,9 +43,9 @@ __all__ = [
     "ContentSafetyEvaluator",
     "ContentSafetyChatEvaluator",
     "BleuScoreEvaluator",
-    "BleuScoreConfig",
+    "BleuScoreEvaluatorConfig",
     "SetMembershipEvaluator",
-    "SetMembershipConfig",
+    "SetMembershipEvaluatorConfig",
     "StringCountEvaluator",
-    "StringCountConfig",
+    "StringCountEvaluatorConfig",
 ]

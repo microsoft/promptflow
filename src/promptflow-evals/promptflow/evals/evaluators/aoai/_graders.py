@@ -29,12 +29,12 @@ class EvaluatorBase(ABC):
 
 # --- Bleu ---
 @dataclass
-class BleuScoreConfig(EvaluatorConfigBase):
+class BleuScoreEvaluatorConfig(EvaluatorConfigBase):
     pass
 
 
 class BleuScoreEvaluator(EvaluatorBase):
-    def __init__(self, config=BleuScoreConfig()):
+    def __init__(self, config=BleuScoreEvaluatorConfig()):
         super().__init__(config)
 
     @property
@@ -57,12 +57,12 @@ class BleuScoreEvaluator(EvaluatorBase):
 
 # --- String Count ---
 @dataclass
-class StringCountConfig(EvaluatorConfigBase):
+class StringCountEvaluatorConfig(EvaluatorConfigBase):
     case_sensitive: bool = False
 
 
 class StringCountEvaluator(EvaluatorBase):
-    def __init__(self, config=StringCountConfig()):
+    def __init__(self, config=StringCountEvaluatorConfig()):
         super().__init__(config)
         self.case_sensitive = config.case_sensitive
 
@@ -82,14 +82,14 @@ class StringCountEvaluator(EvaluatorBase):
 
 # --- Set Membership ---
 @dataclass
-class SetMembershipConfig(EvaluatorConfigBase):
+class SetMembershipEvaluatorConfig(EvaluatorConfigBase):
     present_grade: float = 1.0
     absent_grade: float = 0.0
     case_sensitive: bool = False
 
 
 class SetMembershipEvaluator(EvaluatorBase):
-    def __init__(self, config=SetMembershipConfig()):
+    def __init__(self, config=SetMembershipEvaluatorConfig()):
         super().__init__(config)
         self.present_grade = config.present_grade
         self.absent_grade = config.absent_grade
