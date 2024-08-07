@@ -1,0 +1,22 @@
+---
+name: Model Sampler
+description: Model Sampler
+model:
+    api: chat
+    configuration:
+        type: azure_openai
+        azure_deployment: ${env:AZURE_DEPLOYMENT}
+        azure_endpoint: ${env:AZURE_OPENAI_ENDPOINT}
+    parameters:
+        response_format:
+            type: text
+
+inputs:
+    trajectory:
+        type: list
+
+---
+{% for item in trajectory %}
+{{item.role}}:
+{{item.content}}
+{% endfor %}

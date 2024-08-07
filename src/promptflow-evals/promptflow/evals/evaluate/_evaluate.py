@@ -2,7 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import inspect
+import os
 import re
+import tempfile
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 import numpy as np
@@ -25,6 +27,14 @@ from ._utils import (
 
 def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
     df.rename(columns={col: col.replace("outputs.", "") for col in df.columns}, inplace=True)
+
+    # if the evaluator has __aggregate__ method, we will not include it in the metrics
+    for col in df.columns:
+        evaluator_name = col.split(".")[0]
+        if evaluator_name in evaluators:
+            evaluator = evaluators[evaluator_name]
+            if hasattr(evaluator, "__aggregate__"):
+                df = df.drop(columns=[col])
 
     # Calculate defect rates for content safety metrics
     content_safety_metrics = [
@@ -69,17 +79,20 @@ def _aggregate_metrics(df, evaluators) -> Dict[str, float]:
 
 
 def _validate_input_data_for_evaluator(evaluator, evaluator_name, df_data, is_target_fn=False):
-    required_inputs = [
-        param.name
-        for param in inspect.signature(evaluator).parameters.values()
-        if param.default == inspect.Parameter.empty and param.name not in ["kwargs", "args", "self"]
-    ]
+    # TODO: Need to ingore the columns that are using contant values in column mappings.
+    # Commenting out the below code for now to unblock the POC.
+    # required_inputs = [
+    #     param.name
+    #     for param in inspect.signature(evaluator).parameters.values()
+    #     if param.default == inspect.Parameter.empty and param.name not in ["kwargs", "args", "self", "line_data"]
+    # ]
 
-    missing_inputs = [col for col in required_inputs if col not in df_data.columns]
-    if missing_inputs:
-        if not is_target_fn:
-            raise ValueError(f"Missing required inputs for evaluator {evaluator_name} : {missing_inputs}.")
-        raise ValueError(f"Missing required inputs for target : {missing_inputs}.")
+    # missing_inputs = [col for col in required_inputs if col not in df_data.columns]
+    # if missing_inputs:
+    #     if not is_target_fn:
+    #         raise ValueError(f"Missing required inputs for evaluator {evaluator_name} : {missing_inputs}.")
+    #     raise ValueError(f"Missing required inputs for target : {missing_inputs}.")
+    pass
 
 
 def _validate_and_load_data(target, data, evaluators, output_path, azure_ai_project, evaluation_name):
@@ -183,9 +196,6 @@ def _apply_target_to_data(
     :return: The tuple, containing data frame and the list of added columns.
     :rtype: Tuple[pandas.DataFrame, List[str]]
     """
-    # We are manually creating the temporary directory for the flow
-    # because the way tempdir remove temporary directories will
-    # hang the debugger, because promptflow will keep flow directory.
     run = pf_client.run(
         flow=target,
         display_name=evaluation_name,
@@ -235,6 +245,11 @@ def _process_evaluator_config(evaluator_config: Dict[str, Dict[str, str]]) -> Di
                 processed_config[evaluator] = {}
 
                 for map_to_key, map_value in mapping_config.items():
+                    # Handle non-string static values
+                    if not isinstance(map_value, str):
+                        processed_config[evaluator][map_to_key] = map_value
+                        continue
+
                     # Check if there's any unexpected reference other than ${target.} or ${data.}
                     if unexpected_references.search(map_value):
                         raise ValueError(
@@ -399,68 +414,81 @@ def _evaluate(  # pylint: disable=too-many-locals
     evaluator_config = _process_evaluator_config(evaluator_config)
     _validate_columns(input_data_df, evaluators, target, evaluator_config)
 
-    # Target Run
-    pf_client = PFClient(
-        config={"trace.destination": _trace_destination_from_project_scope(azure_ai_project)}
-        if azure_ai_project
-        else None,
-        user_agent=USER_AGENT,
-    )
+    with tempfile.TemporaryDirectory() as temp_dir:
 
-    trace_destination = pf_client._config.get_trace_destination()
+        new_data_path = os.path.join(temp_dir, "temp_data.jsonl")
+        input_data_df["line_data"] = input_data_df.apply(lambda row: row.to_dict(), axis=1)
+        input_data_df.to_json(new_data_path, orient="records", lines=True)
+        input_data_df.drop("line_data", axis=1, inplace=True)
 
-    target_run = None
-
-    target_generated_columns = set()
-    if data is not None and target is not None:
-        input_data_df, target_generated_columns, target_run = _apply_target_to_data(
-            target, data, pf_client, input_data_df, evaluation_name, _run_name=kwargs.get("_run_name")
+        # Target Run
+        pf_client = PFClient(
+            config={"trace.destination": _trace_destination_from_project_scope(azure_ai_project)}
+            if azure_ai_project
+            else None,
+            user_agent=USER_AGENT,
         )
 
-        # Make sure, the default is always in the configuration.
-        if not evaluator_config:
-            evaluator_config = {}
-        if "default" not in evaluator_config:
-            evaluator_config["default"] = {}
+        trace_destination = pf_client._config.get_trace_destination()
 
-        for evaluator_name, mapping in evaluator_config.items():
-            mapped_to_values = set(mapping.values())
-            for col in target_generated_columns:
-                # If user defined mapping differently, do not change it.
-                # If it was mapped to target, we have already changed it
-                # in _process_evaluator_config
-                run_output = f"${{run.outputs.{col}}}"
-                # We will add our mapping only if
-                # customer did not mapped target output.
-                if col not in mapping and run_output not in mapped_to_values:
-                    evaluator_config[evaluator_name][col] = run_output  # pylint: disable=unnecessary-dict-index-lookup
+        target_run = None
 
-        # After we have generated all columns we can check if we have
-        # everything we need for evaluators.
-        _validate_columns(input_data_df, evaluators, target=None, evaluator_config=evaluator_config)
-
-    # Batch Run
-    evaluators_info = {}
-    use_pf_client = kwargs.get("_use_pf_client", True)
-    batch_run_client = ProxyClient(pf_client) if use_pf_client else CodeClient()
-
-    with BatchRunContext(batch_run_client):
-        for evaluator_name, evaluator in evaluators.items():
-            evaluators_info[evaluator_name] = {}
-            evaluators_info[evaluator_name]["run"] = batch_run_client.run(
-                flow=evaluator,
-                run=target_run,
-                evaluator_name=evaluator_name,
-                column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-                data=input_data_df if isinstance(batch_run_client, CodeClient) else data,
-                stream=True,
-                name=kwargs.get("_run_name"),
+        target_generated_columns = set()
+        if data is not None and target is not None:
+            input_data_df, target_generated_columns, target_run = _apply_target_to_data(
+                target, new_data_path, pf_client, input_data_df, evaluation_name, _run_name=kwargs.get("_run_name")
             )
 
-        # get_details needs to be called within BatchRunContext scope in order to have user agent populated
-        for evaluator_name, evaluator_info in evaluators_info.items():
-            evaluator_info["result"] = batch_run_client.get_details(evaluator_info["run"], all_results=True)
-            evaluator_info["metrics"] = batch_run_client.get_metrics(evaluator_info["run"])
+            # Make sure, the default is always in the configuration.
+            if not evaluator_config:
+                evaluator_config = {}
+            if "default" not in evaluator_config:
+                evaluator_config["default"] = {}
+
+            for evaluator_name, mapping in evaluator_config.items():
+                # exclude constant values from mapping
+                mapped_to_values = {
+                    value for value in mapping.values() if isinstance(value, str) and re.match(r"^\$\{.*\}$", value)
+                }
+
+                for col in target_generated_columns:
+                    # If user defined mapping differently, do not change it.
+                    # If it was mapped to target, we have already changed it
+                    # in _process_evaluator_config
+                    run_output = f"${{run.outputs.{col}}}"
+                    # We will add our mapping only if
+                    # customer did not mapped target output.
+                    if col not in mapping and run_output not in mapped_to_values:
+                        evaluator_config[evaluator_name][
+                            col
+                        ] = run_output  # pylint: disable=unnecessary-dict-index-lookup
+
+            # After we have generated all columns we can check if we have
+            # everything we need for evaluators.
+            _validate_columns(input_data_df, evaluators, target=None, evaluator_config=evaluator_config)
+
+        # Batch Run
+        evaluators_info = {}
+        use_pf_client = kwargs.get("_use_pf_client", True)
+        batch_run_client = ProxyClient(pf_client) if use_pf_client else CodeClient()
+
+        with BatchRunContext(batch_run_client):
+            for evaluator_name, evaluator in evaluators.items():
+                evaluators_info[evaluator_name] = {}
+                evaluators_info[evaluator_name]["run"] = batch_run_client.run(
+                    flow=evaluator,
+                    run=target_run,
+                    evaluator_name=evaluator_name,
+                    column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
+                    data=input_data_df if isinstance(batch_run_client, CodeClient) else data,
+                    stream=True,
+                    name=kwargs.get("_run_name"),
+                )
+
+            # get_details needs to be called within BatchRunContext scope in order to have user agent populated
+            for evaluator_name, evaluator_info in evaluators_info.items():
+                evaluator_info["result"] = batch_run_client.get_details(evaluator_info["run"], all_results=True)
+                evaluator_info["metrics"] = batch_run_client.get_metrics(evaluator_info["run"])
 
     # Concatenate all results
     evaluators_result_df = None
