@@ -16,6 +16,7 @@
   - English (`en`)
 ### Bugs Fixed
 - Large simulation was causing a jinja exception, this has been fixed.
+- Fixed the issue where the relative data path was not working with the evaluate API when using multiple evaluators.
 
 ### Improvements
 - Converted built-in evaluators to async-based implementation, leveraging async batch run for performance improvement. Introduced `PF_EVALS_BATCH_USE_ASYNC` environment variable to enable/disable async batch run, with the default set to False.
