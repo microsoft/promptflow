@@ -470,7 +470,15 @@ def _evaluate(  # pylint: disable=too-many-locals
         # Batch Run
         evaluators_info = {}
         use_pf_client = kwargs.get("_use_pf_client", True)
-        batch_run_client = ProxyClient(pf_client) if use_pf_client else CodeClient()
+        if use_pf_client:
+            batch_run_client = ProxyClient(pf_client)
+
+            # Ensure the absolute path is passed to pf.run, as relative path doesn't work with
+            # multiple evaluators. If the path is already absolute, abspath will return the original path.
+            data = os.path.abspath(new_data_path)
+        else:
+            batch_run_client = CodeClient()
+            data = input_data_df
 
         with BatchRunContext(batch_run_client):
             for evaluator_name, evaluator in evaluators.items():
@@ -480,15 +488,15 @@ def _evaluate(  # pylint: disable=too-many-locals
                     run=target_run,
                     evaluator_name=evaluator_name,
                     column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
-                    data=input_data_df if isinstance(batch_run_client, CodeClient) else data,
+                    data=data,
                     stream=True,
                     name=kwargs.get("_run_name"),
                 )
 
-            # get_details needs to be called within BatchRunContext scope in order to have user agent populated
-            for evaluator_name, evaluator_info in evaluators_info.items():
-                evaluator_info["result"] = batch_run_client.get_details(evaluator_info["run"], all_results=True)
-                evaluator_info["metrics"] = batch_run_client.get_metrics(evaluator_info["run"])
+                # get_details needs to be called within BatchRunContext scope in order to have user agent populated
+                for evaluator_name, evaluator_info in evaluators_info.items():
+                    evaluator_info["result"] = batch_run_client.get_details(evaluator_info["run"], all_results=True)
+                    evaluator_info["metrics"] = batch_run_client.get_metrics(evaluator_info["run"])
 
     # Concatenate all results
     evaluators_result_df = None

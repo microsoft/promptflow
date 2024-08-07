@@ -37,6 +37,7 @@ def monitor_adversarial_scenario(func) -> Callable:
     :return: The decorated function
     :rtype: Callable
     """
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         scenario = str(kwargs.get("scenario", None))
@@ -68,7 +69,7 @@ class AdversarialSimulator:
         - "resource_group_name": Name of the Azure resource group.
         - "project_name": Name of the Azure Machine Learning workspace.
     :param credential: The credential for connecting to Azure AI project.
-    :type credential: TokenCredential
+    :type credential: ~azure.core.credentials.TokenCredential
     :type azure_ai_project: Dict[str, Any]
     """
 

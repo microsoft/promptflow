@@ -24,7 +24,7 @@ class ContentSafetyEvaluatorBase(ABC):
         It contains subscription id, resource group, and project name.
     :type project_scope: Dict
     :param credential: The credential for connecting to Azure AI project.
-    :type credential: TokenCredential
+    :type credential: ~azure.core.credentials.TokenCredential
     """
 
     def __init__(self, metric: EvaluationMetrics, project_scope: dict, credential=None):
