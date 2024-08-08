@@ -1,6 +1,6 @@
 # Release History
 
-## v0.3.2 (Upcoming)
+## v0.3.2 (2024-08-13)
 
 ### Features Added
 - Introduced `JailbreakAdversarialSimulator` for customers who need to do run jailbreak and non jailbreak adversarial simulations at the same time. More info in the README.md in `/promptflow/evals/synthetic/README.md#jailbreak-simulator`
