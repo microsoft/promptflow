@@ -14,6 +14,10 @@ env:
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-evals
   PROMPT_FLOW_TEST_MODE: "live"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   test:
     strategy:
