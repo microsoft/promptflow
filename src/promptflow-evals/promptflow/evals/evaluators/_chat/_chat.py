@@ -1,15 +1,16 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import asyncio
 import json
 import logging
+from concurrent.futures import as_completed
 from typing import Dict, List
 
 import numpy as np
 
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.core import AzureOpenAIModelConfiguration
+from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 from .._coherence import CoherenceEvaluator
 from .._fluency import FluencyEvaluator
@@ -29,17 +30,17 @@ class _AsyncChatEvaluator:
 
         # TODO: Need a built-in evaluator for retrieval. It needs to be added to `self._rag_evaluators` collection
         self._rag_evaluators = [
-            GroundednessEvaluator(model_config)._to_async(),
-            RelevanceEvaluator(model_config)._to_async(),
+            GroundednessEvaluator(model_config),
+            RelevanceEvaluator(model_config),
         ]
         self._non_rag_evaluators = [
-            CoherenceEvaluator(model_config)._to_async(),
-            FluencyEvaluator(model_config)._to_async(),
+            CoherenceEvaluator(model_config),
+            FluencyEvaluator(model_config),
         ]
         # TODO: Temporary workaround to close the gap of missing retrieval score
         # https://msdata.visualstudio.com/Vienna/_workitems/edit/3186644
         # For long term, we need to add a built-in evaluator for retrieval after prompt is generalized for QA and Chat
-        self._retrieval_chat_evaluator = RetrievalChatEvaluator(model_config)._to_async()
+        self._retrieval_chat_evaluator = RetrievalChatEvaluator(model_config)
 
     async def __call__(self, *, conversation, **kwargs):
         """
@@ -97,20 +98,24 @@ class _AsyncChatEvaluator:
 
             if self._parallel:
                 # Parallel execution
-                tasks = [
-                    self._evaluate_turn(turn_num, questions, answers, contexts, evaluator)
-                    for evaluator in selected_evaluators
-                ]
-                results = await asyncio.gather(*tasks, return_exceptions=True)
-                for result in results:
-                    if isinstance(result, Exception):
-                        logger.warning(f"Exception occurred during evaluation: {result}")
-                    else:
+                # Use a thread pool for parallel execution in the composite evaluator,
+                # as it's ~20% faster than asyncio tasks based on tests.
+                with ThreadPoolExecutor() as executor:
+                    future_to_evaluator = {
+                        executor.submit(
+                            self._evaluate_turn, turn_num, questions, answers, contexts, evaluator
+                        ): evaluator
+                        for evaluator in selected_evaluators
+                    }
+
+                    for future in as_completed(future_to_evaluator):
+                        result = future.result()
                         current_turn_result.update(result)
             else:
                 # Sequential execution
                 for evaluator in selected_evaluators:
-                    result = await self._evaluate_turn(turn_num, questions, answers, contexts, evaluator)
+                    async_evaluator = evaluator._to_async()
+                    result = await self._evaluate_turn_async(turn_num, questions, answers, contexts, async_evaluator)
                     current_turn_result.update(result)
 
             per_turn_results.append(current_turn_result)
@@ -129,14 +134,30 @@ class _AsyncChatEvaluator:
 
         # Run RetrievalChatEvaluator and merge the results
         if compute_rag_based_metrics:
-            retrieval_score = await self._retrieval_chat_evaluator(conversation=conversation_slice)
+            retrieval_async = self._retrieval_chat_evaluator._to_async()
+            retrieval_score = await retrieval_async(conversation=conversation_slice)
             aggregated["gpt_retrieval"] = retrieval_score["gpt_retrieval"]
             aggregated["evaluation_per_turn"]["gpt_retrieval"] = retrieval_score["evaluation_per_turn"]["gpt_retrieval"]
             aggregated = dict(sorted(aggregated.items()))
 
         return aggregated
 
-    async def _evaluate_turn(self, turn_num, questions, answers, contexts, evaluator):
+    def _evaluate_turn(self, turn_num, questions, answers, contexts, evaluator):
+        try:
+            question = questions[turn_num] if turn_num < len(questions) else ""
+            answer = answers[turn_num] if turn_num < len(answers) else ""
+            context = contexts[turn_num] if turn_num < len(contexts) else ""
+
+            score = evaluator(question=question, answer=answer, context=context)
+
+            return score
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.warning(
+                f"Evaluator {evaluator.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}"
+            )
+            return {}
+
+    async def _evaluate_turn_async(self, turn_num, questions, answers, contexts, evaluator):
         try:
             question = questions[turn_num] if turn_num < len(questions) else ""
             answer = answers[turn_num] if turn_num < len(answers) else ""

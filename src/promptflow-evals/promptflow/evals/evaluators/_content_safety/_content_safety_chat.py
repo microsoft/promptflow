@@ -1,13 +1,14 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import asyncio
 import logging
+from concurrent.futures import as_completed
 from typing import Dict, List
 
 import numpy as np
 
 from promptflow._utils.async_utils import async_run_allowing_running_loop
+from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 try:
     from ._hate_unfairness import HateUnfairnessEvaluator
@@ -28,10 +29,10 @@ class _AsyncContentSafetyChatEvaluator:
         self._eval_last_turn = eval_last_turn
         self._parallel = parallel
         self._evaluators = [
-            ViolenceEvaluator(project_scope, credential)._to_async(),
-            SexualEvaluator(project_scope, credential)._to_async(),
-            SelfHarmEvaluator(project_scope, credential)._to_async(),
-            HateUnfairnessEvaluator(project_scope, credential)._to_async(),
+            ViolenceEvaluator(project_scope, credential),
+            SexualEvaluator(project_scope, credential),
+            SelfHarmEvaluator(project_scope, credential),
+            HateUnfairnessEvaluator(project_scope, credential),
         ]
 
     async def __call__(self, *, conversation, **kwargs):
@@ -61,17 +62,22 @@ class _AsyncContentSafetyChatEvaluator:
 
             if self._parallel:
                 # Parallel execution
-                tasks = [self._evaluate_turn(turn_num, questions, answers, evaluator) for evaluator in self._evaluators]
-                results = await asyncio.gather(*tasks, return_exceptions=True)
-                for result in results:
-                    if isinstance(result, Exception):
-                        logger.warning(f"Exception occurred during evaluation: {result}")
-                    else:
+                # Use a thread pool for parallel execution in the composite evaluator,
+                # as it's ~20% faster than asyncio tasks based on tests.
+                with ThreadPoolExecutor() as executor:
+                    future_to_evaluator = {
+                        executor.submit(self._evaluate_turn, turn_num, questions, answers, evaluator): evaluator
+                        for evaluator in self._evaluators
+                    }
+
+                    for future in as_completed(future_to_evaluator):
+                        result = future.result()
                         current_turn_result.update(result)
             else:
                 # Sequential execution
                 for evaluator in self._evaluators:
-                    result = await self._evaluate_turn(turn_num, questions, answers, evaluator)
+                    async_evaluator = evaluator._to_async()
+                    result = await self._evaluate_turn_async(turn_num, questions, answers, async_evaluator)
                     current_turn_result.update(result)
 
             per_turn_results.append(current_turn_result)
@@ -79,7 +85,21 @@ class _AsyncContentSafetyChatEvaluator:
         aggregated = self._aggregate_results(per_turn_results)
         return aggregated
 
-    async def _evaluate_turn(self, turn_num, questions, answers, evaluator):
+    def _evaluate_turn(self, turn_num, questions, answers, evaluator):
+        try:
+            question = questions[turn_num] if turn_num < len(questions) else ""
+            answer = answers[turn_num] if turn_num < len(answers) else ""
+
+            score = evaluator(question=question, answer=answer)
+
+            return score
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.warning(
+                f"Evaluator {evaluator.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}"
+            )
+            return {}
+
+    async def _evaluate_turn_async(self, turn_num, questions, answers, evaluator):
         try:
             question = questions[turn_num] if turn_num < len(questions) else ""
             answer = answers[turn_num] if turn_num < len(answers) else ""
