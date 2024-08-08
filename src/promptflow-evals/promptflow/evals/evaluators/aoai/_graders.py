@@ -1,6 +1,10 @@
-from abc import ABC, abstractproperty
+import os
+import string
+from abc import ABC
 
 import nltk.translate.bleu_score
+
+from promptflow.core import Prompty
 
 from ._utils import nltk_tokenize
 
@@ -9,7 +13,6 @@ class EvaluatorBase(ABC):
     def __init__(self, aggregation_type: str = "mean"):
         self.aggregation_type = aggregation_type
 
-    @abstractproperty
     def metric_name(self):
         pass
 
@@ -88,3 +91,38 @@ class SetMembershipEvaluator(EvaluatorBase):
             set = [x.lower() for x in set]
 
         return {self.metric_name: self.present_grade if element in set else self.absent_grade}
+
+
+# --- Closed QA Model ---
+class ClosedQAModelEvaluator(EvaluatorBase):
+    def __init__(self, model_config, true_grade: float, false_grade: float, aggregation_type: str = "sum"):
+        super().__init__(aggregation_type)
+
+        if model_config.api_version is None:
+            model_config.api_version = "2024-02-15-preview"
+
+        self.true_grade = true_grade
+        self.false_grade = false_grade
+
+        prompty_model_config = {"configuration": model_config}
+        current_dir = os.path.dirname(__file__)
+        prompty_path = os.path.join(current_dir, "closed_qa.prompty")
+
+        self._flow = Prompty.load(source=prompty_path, model=prompty_model_config)
+
+    @property
+    def metric_name(self):
+        return "closed_qa"
+
+    def __call__(self, *, task: str, submission: str, criterion: str, **kwargs):
+        llm_output = self._flow(task=task, submission=submission, criterion=criterion, timeout=600)
+        grades = {
+            "y": self.true_grade,
+            "n": self.false_grade,
+        }
+
+        lines = llm_output.splitlines()
+        lines = [line for line in lines if line]
+        cleaned_last_line = "".join(c for c in lines[-1] if c not in string.punctuation).lower().strip()
+
+        return {self.metric_name: grades.get(cleaned_last_line, self.false_grade)}

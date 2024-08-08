@@ -18,7 +18,7 @@ from ._groundedness import GroundednessEvaluator
 from ._qa import QAEvaluator
 from ._relevance import RelevanceEvaluator
 from ._similarity import SimilarityEvaluator
-from .aoai._graders import BleuScoreEvaluator, SetMembershipEvaluator, StringCountEvaluator
+from .aoai._graders import BleuScoreEvaluator, ClosedQAModelEvaluator, SetMembershipEvaluator, StringCountEvaluator
 
 __all__ = [
     "CoherenceEvaluator",
@@ -38,4 +38,5 @@ __all__ = [
     "BleuScoreEvaluator",
     "SetMembershipEvaluator",
     "StringCountEvaluator",
+    "ClosedQAModelEvaluator",
 ]
