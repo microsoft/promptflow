@@ -265,11 +265,13 @@ def load_python_module_from_file(src_file: Path):
         if (
             isinstance(e, ImportError)
             and hasattr(e, "msg")
-            and e.msg == "attempted relative import with no known parent package"
+            and e.msg == "attempted relative import with no known parent package"  # pylint: disable=no-member
         ):
             message = (
                 "Failed to load python module from file '{src_file}' due to relative import."
-                + " Relative imports fail in evaluators that are saved and loaded. Please use absolute imports instead."
+                + " Relative imports fail in loaded code that is not a known python module."
+                + " Please use absolute imports instead (ex: 'import .utils' instead of 'import utils'),"
+                + " or use a try/except ImportError block to switch between the two import methods."
                 + " Original error: '{error_type_and_message}'"
             )
         # TODO: add stacktrace to additional info
