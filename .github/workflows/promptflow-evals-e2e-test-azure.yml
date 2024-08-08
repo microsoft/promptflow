@@ -54,12 +54,11 @@ jobs:
       - name: generate end-to-end test config from secret
         run: echo '${{ secrets.PF_EVALS_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}
-      - uses: azure/login@v2
+      - uses: azure/login@v1
         with:
           client-id: ${{ secrets.PF_EVALS_SP_CLIENT_ID }}
           tenant-id: ${{ secrets.PF_EVALS_SP_TENANT_ID }}
           subscription-id: ${{ secrets.PF_EVALS_SP_SUBSCRIPTION_ID }}
-          enable-AzPSSession: true
       - name: run e2e tests
         id: run_e2e_tests_azure
         run: |
