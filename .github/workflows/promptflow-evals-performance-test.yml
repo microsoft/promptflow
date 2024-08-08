@@ -55,8 +55,9 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - uses: azure/login@v2
         with:
-          creds: ${{ secrets.PF_EVALS_SP_CREDENTIALS }}
-          enable-AzPSSession: true
+          client-id: ${{ secrets.PF_EVALS_SP_CLIENT_ID }}
+          tenant-id: ${{ secrets.PF_EVALS_SP_TENANT_ID }}
+          subscription-id: ${{ secrets.PF_EVALS_SP_SUBSCRIPTION_ID }}
       - name: run performance tests
         id: performance_tests
         run: |
