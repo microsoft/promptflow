@@ -18,14 +18,7 @@ from ._groundedness import GroundednessEvaluator
 from ._qa import QAEvaluator
 from ._relevance import RelevanceEvaluator
 from ._similarity import SimilarityEvaluator
-from .aoai._graders import (
-    BleuScoreEvaluator,
-    BleuScoreEvaluatorConfig,
-    SetMembershipEvaluator,
-    SetMembershipEvaluatorConfig,
-    StringCountEvaluator,
-    StringCountEvaluatorConfig,
-)
+from .aoai._graders import BleuScoreEvaluator, SetMembershipEvaluator, StringCountEvaluator
 
 __all__ = [
     "CoherenceEvaluator",
@@ -43,9 +36,6 @@ __all__ = [
     "ContentSafetyEvaluator",
     "ContentSafetyChatEvaluator",
     "BleuScoreEvaluator",
-    "BleuScoreEvaluatorConfig",
     "SetMembershipEvaluator",
-    "SetMembershipEvaluatorConfig",
     "StringCountEvaluator",
-    "StringCountEvaluatorConfig",
 ]

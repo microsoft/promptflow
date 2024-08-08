@@ -1,19 +1,13 @@
 from abc import ABC, abstractproperty
-from dataclasses import dataclass
 
 import nltk.translate.bleu_score
 
 from ._utils import nltk_tokenize
 
 
-@dataclass
-class EvaluatorConfigBase:
-    aggregation_type: str = "mean"
-
-
 class EvaluatorBase(ABC):
-    def __init__(self, config: EvaluatorConfigBase):
-        self.config = config
+    def __init__(self, aggregation_type: str = "mean"):
+        self.aggregation_type = aggregation_type
 
     @abstractproperty
     def metric_name(self):
@@ -21,21 +15,16 @@ class EvaluatorBase(ABC):
 
     def __aggregate__(self, line_results) -> dict:
         scores = [line_result[self.metric_name] for line_result in line_results]
-        if self.config.aggregation_type == "mean":
+        if self.aggregation_type == "mean":
             return {f"{self.metric_name}_mean": sum(scores) / len(scores)}
-        elif self.config.aggregation_type == "sum":
+        elif self.aggregation_type == "sum":
             return {f"{self.metric_name}_sum": sum(scores)}
 
 
 # --- Bleu ---
-@dataclass
-class BleuScoreEvaluatorConfig(EvaluatorConfigBase):
-    pass
-
-
 class BleuScoreEvaluator(EvaluatorBase):
-    def __init__(self, config=BleuScoreEvaluatorConfig()):
-        super().__init__(config)
+    def __init__(self, aggregation_type: str = "mean"):
+        super().__init__(aggregation_type)
 
     @property
     def metric_name(self):
@@ -56,15 +45,10 @@ class BleuScoreEvaluator(EvaluatorBase):
 
 
 # --- String Count ---
-@dataclass
-class StringCountEvaluatorConfig(EvaluatorConfigBase):
-    case_sensitive: bool = False
-
-
 class StringCountEvaluator(EvaluatorBase):
-    def __init__(self, config=StringCountEvaluatorConfig()):
-        super().__init__(config)
-        self.case_sensitive = config.case_sensitive
+    def __init__(self, aggregation_type: str = "mean", case_sensitive: bool = False):
+        super().__init__(aggregation_type)
+        self.case_sensitive = case_sensitive
 
     @property
     def metric_name(self):
@@ -81,19 +65,18 @@ class StringCountEvaluator(EvaluatorBase):
 
 
 # --- Set Membership ---
-@dataclass
-class SetMembershipEvaluatorConfig(EvaluatorConfigBase):
-    present_grade: float = 1.0
-    absent_grade: float = 0.0
-    case_sensitive: bool = False
-
-
 class SetMembershipEvaluator(EvaluatorBase):
-    def __init__(self, config=SetMembershipEvaluatorConfig()):
-        super().__init__(config)
-        self.present_grade = config.present_grade
-        self.absent_grade = config.absent_grade
-        self.case_sensitive = config.case_sensitive
+    def __init__(
+        self,
+        aggregation_type: str = "mean",
+        present_grade: float = 1.0,
+        absent_grade: float = 0.0,
+        case_sensitive: bool = False,
+    ):
+        super().__init__(aggregation_type)
+        self.present_grade = present_grade
+        self.absent_grade = absent_grade
+        self.case_sensitive = case_sensitive
 
     @property
     def metric_name(self):
