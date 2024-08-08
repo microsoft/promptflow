@@ -1,0 +1,3 @@
+{"question": "What is the capital of France?", "option_a": "Paris", "option_b": "Rome", "option_c": "Madrid", "option_d": "Berlin", "ground_truth": "A"}
+{"question": "What is the tallest mountain in the world?", "option_a": "Mount Everest", "option_b": "K2", "option_c": "Mount Kilimanjaro", "option_d": "Mount Elbrus", "ground_truth": "A"}
+{"question": "What element has the chemical symbol 'O'?", "option_a": "Gold", "option_b": "Oxygen", "option_c": "Silver", "option_d": "Iron", "ground_truth": "B"}

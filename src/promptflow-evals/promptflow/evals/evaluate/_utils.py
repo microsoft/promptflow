@@ -174,6 +174,10 @@ def _apply_column_mapping(source_df: pd.DataFrame, mapping_config: dict, inplace
         run_outputs_prefix = "run.outputs."
 
         for map_to_key, map_value in mapping_config.items():
+            # Handle non-string static values
+            if not isinstance(map_value, str):
+                continue
+
             match = re.search(r"^\${([^{}]+)}$", map_value)
             if match is not None:
                 pattern = match.group(1)

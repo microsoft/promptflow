@@ -51,6 +51,7 @@
     ".github/pipelines/**",
     ".github/CODEOWNERS",
     "src/promptflow-evals/tests/**",
+    "src/promptflow-evals/samples/**",
     "benchmark/promptflow-serve/result-archive/**"
   ],
   "words": [
@@ -245,7 +246,8 @@
     "locustio",
     "euap",
     "rcfile",
-    "pylintrc"
+    "pylintrc",
+    "punkt"
   ],
   "flagWords": [
     "Prompt Flow"
