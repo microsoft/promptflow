@@ -41,9 +41,6 @@ except (ModuleNotFoundError, ImportError):
 
 @dataclasses.dataclass
 class RunInfo:
-    """
-    A holder for run info, needed for logging.
-    """
 
     run_id: str
     experiment_id: str
@@ -51,16 +48,6 @@ class RunInfo:
 
     @staticmethod
     def generate(run_name: Optional[str]) -> "RunInfo":
-        """
-        Generate the new RunInfo instance with the RunID and Experiment ID.
-
-        **Note:** This code is used when we are in failed state and cannot get a run.
-
-        :param run_name: The name of a run.
-        :type run_name: Optional[str]
-        :return: The RunInfo instance.
-        :rtype: promptflow.evals.evaluate.RunInfo
-        """
         return RunInfo(str(uuid.uuid4()), str(uuid.uuid4()), run_name or "")
 
 
