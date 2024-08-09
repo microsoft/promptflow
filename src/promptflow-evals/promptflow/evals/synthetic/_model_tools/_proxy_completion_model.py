@@ -9,8 +9,8 @@ import time
 import uuid
 from typing import Dict, List
 
-from aiohttp.web import HTTPException  # pylint: disable=networking-import-outside-azure-core-transport
-from aiohttp_retry import JitterRetry, RetryClient  # pylint: disable=networking-import-outside-azure-core-transport
+from aiohttp.web import HTTPException
+from aiohttp_retry import JitterRetry, RetryClient
 
 from promptflow.evals._user_agent import USER_AGENT
 
