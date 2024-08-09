@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict
 from azure.identity import DefaultAzureCredential
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
+from promptflow.evals.synthetic._constants import SupportedLanguages
 from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario
 
 from ._model_tools import AdversarialTemplateHandler, ManagedIdentityAPITokenManager, RAIClient, TokenScope
@@ -32,7 +33,7 @@ def monitor_adversarial_scenario(func) -> Callable:
         max_conversation_turns = kwargs.get("max_conversation_turns", None)
         max_simulation_results = kwargs.get("max_simulation_results", None)
         decorated_func = monitor_operation(
-            activity_name="jailbreak.adversarial.simulator.call",
+            activity_name="upia_jailbreak.adversarial.simulator.call",
             activity_type=ActivityType.PUBLICAPI,
             custom_dimensions={
                 "scenario": scenario,
@@ -46,9 +47,9 @@ def monitor_adversarial_scenario(func) -> Callable:
     return wrapper
 
 
-class JailbreakAdversarialSimulator:
+class UPIAJailbreakAdversarialSimulator:
     """
-    Initializes the jailbreak adversarial simulator with a project scope.
+    Initializes the UPIA jailbreak adversarial simulator with a project scope.
 
     :param azure_ai_project: Dictionary defining the scope of the project. It must include the following keys:
 
@@ -102,9 +103,10 @@ class JailbreakAdversarialSimulator:
         api_call_retry_sleep_sec: int = 1,
         api_call_delay_sec: int = 0,
         concurrent_async_task: int = 3,
+        language: SupportedLanguages = SupportedLanguages.English,
     ):
         """
-        Executes the adversarial simulation and jailbreak adversarial simulation
+        Executes the adversarial simulation and UPIA jailbreak adversarial simulation
         against a specified target function asynchronously.
 
         :keyword scenario: Enum value specifying the adversarial scenario used for generating inputs.
@@ -134,6 +136,11 @@ class JailbreakAdversarialSimulator:
         :keyword concurrent_async_task: The number of asynchronous tasks to run concurrently during the simulation.
             Defaults to 3.
         :paramtype concurrent_async_task: int
+        :keyword language: The language in which the conversation should be generated.
+         example:
+
+         - :py:const:`promptflow.evals.synthetic._constants.SupportedLanguages.English`
+        :paramtype language: promptflow.evals.synthetic._constants.SupportedLanguages
         :return: A list of dictionaries, each representing a simulated conversation. Each dictionary contains:
 
          - 'template_parameters': A dictionary with parameters used in the conversation template,
@@ -151,12 +158,12 @@ class JailbreakAdversarialSimulator:
         .. code-block:: python
 
             return_value = {
-                "jailbreak": [
+                "upia_jailbreak": [
                 {
                     'template_parameters': {},
                     'messages': [
                         {
-                            'content': '<jailbreak prompt> <adversarial question>',
+                            'content': '<upia_jailbreak prompt> <adversarial question>',
                             'role': 'user'
                         },
                         {
@@ -196,7 +203,8 @@ class JailbreakAdversarialSimulator:
             api_call_retry_sleep_sec=api_call_retry_sleep_sec,
             api_call_delay_sec=api_call_delay_sec,
             concurrent_async_task=concurrent_async_task,
-            jailbreak=False,
+            upia_jailbreak=False,
+            language=language,
         )
         jb_sim = AdversarialSimulator(azure_ai_project=self.azure_ai_project, credential=self.credential)
         jb_sim_results = await jb_sim(
@@ -208,6 +216,7 @@ class JailbreakAdversarialSimulator:
             api_call_retry_sleep_sec=api_call_retry_sleep_sec,
             api_call_delay_sec=api_call_delay_sec,
             concurrent_async_task=concurrent_async_task,
-            jailbreak=True,
+            upia_jailbreak=True,
+            language=language,
         )
-        return {"jailbreak": jb_sim_results, "regular": regular_sim_results}
+        return {"upia_jailbreak": jb_sim_results, "regular": regular_sim_results}

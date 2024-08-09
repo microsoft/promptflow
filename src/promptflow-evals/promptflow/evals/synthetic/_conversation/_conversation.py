@@ -6,6 +6,9 @@ import asyncio
 import logging
 from typing import Callable, Dict, List, Tuple, Union
 
+from promptflow.evals.synthetic._constants import SupportedLanguages
+from promptflow.evals.synthetic._helpers._language_suffix_mapping import SUPPORTED_LANGUAGES_MAPPING
+
 from .._model_tools import RetryClient
 from . import ConversationBot, ConversationTurn
 
@@ -60,8 +63,10 @@ def is_closing_message_helper(response: str) -> bool:
 
 
 async def simulate_conversation(
+    *,
     bots: List[ConversationBot],
     session: RetryClient,
+    language: SupportedLanguages,
     stopping_criteria: Callable[[str], bool] = is_closing_message,
     turn_limit: int = 10,
     history_limit: int = 5,
@@ -71,20 +76,22 @@ async def simulate_conversation(
     """
     Simulate a conversation between the given bots.
 
-    :param bots: List of ConversationBot instances participating in the conversation.
-    :type bots: List[ConversationBot]
-    :param session: The session to use for making API calls.
-    :type session: RetryClient
-    :param stopping_criteria: A callable that determines when the conversation should stop.
-    :type stopping_criteria: Callable[[str], bool]
-    :param turn_limit: The maximum number of turns in the conversation. Defaults to 10.
-    :type turn_limit: int
-    :param history_limit: The maximum number of turns to keep in the conversation history. Defaults to 5.
-    :type history_limit: int
-    :param api_call_delay_sec: Delay between API calls in seconds. Defaults to 0.
-    :type api_call_delay_sec: float
-    :param logger: The logger to use for logging. Defaults to the logger named after the current module.
-    :type logger: logging.Logger
+    :keyword bots: List of ConversationBot instances participating in the conversation.
+    :paramtype bots: List[ConversationBot]
+    :keyword language: The language in which the conversation should be generated.
+    :paramtype language: promptflow.evals.synthetic._constants.SupportedLanguages
+    :keyword session: The session to use for making API calls.
+    :paramtype session: RetryClient
+    :keyword stopping_criteria: A callable that determines when the conversation should stop.
+    :paramtype stopping_criteria: Callable[[str], bool]
+    :keyword turn_limit: The maximum number of turns in the conversation. Defaults to 10.
+    :paramtype turn_limit: int
+    :keyword history_limit: The maximum number of turns to keep in the conversation history. Defaults to 5.
+    :paramtype history_limit: int
+    :keyword api_call_delay_sec: Delay between API calls in seconds. Defaults to 0.
+    :paramtype api_call_delay_sec: float
+    :keyword logger: The logger to use for logging. Defaults to the logger named after the current module.
+    :paramtype logger: logging.Logger
     :return: Simulation a conversation between the given bots.
     :rtype: Tuple
     """
@@ -101,6 +108,8 @@ async def simulate_conversation(
     else:
         conversation_id = None
     first_prompt = first_response["samples"][0]
+    if language != SupportedLanguages.English:
+        first_prompt += f" {SUPPORTED_LANGUAGES_MAPPING[language]}"
     # Add all generated turns into array to pass for each bot while generating
     # new responses. We add generated response and the person generating it.
     # in the case of the first turn, it is supposed to be the user search query
