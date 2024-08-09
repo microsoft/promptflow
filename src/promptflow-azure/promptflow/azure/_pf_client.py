@@ -4,6 +4,8 @@
 import os
 from os import PathLike
 from typing import Dict, List, Optional, Union
+import agentops
+from dotenv import load_dotenv
 
 from azure.ai.ml import MLClient
 from azure.core.credentials import TokenCredential
@@ -23,6 +25,11 @@ from promptflow.exceptions import UserErrorException
 
 from ._user_agent import USER_AGENT
 
+# Load environment variables
+load_dotenv()
+
+# Initialize AgentOps
+agentops.init(os.getenv('AGENTOPS_API_KEY'))
 
 class PFClient:
     """A client class to interact with Promptflow service.
@@ -42,6 +49,7 @@ class PFClient:
     :type kwargs: dict
     """
 
+    @agentops.record_function('PFClient initialization')
     def __init__(
         self,
         credential: TokenCredential = None,
@@ -150,6 +158,7 @@ class PFClient:
         return self._flows
 
     @classmethod
+    @agentops.record_function('PFClient from_config')
     def from_config(
         cls,
         credential: TokenCredential,
@@ -185,6 +194,7 @@ class PFClient:
             **kwargs,
         )
 
+    @agentops.record_function('PFClient run')
     def run(
         self,
         flow: Union[str, PathLike] = None,
@@ -304,6 +314,7 @@ class PFClient:
             )
             return self.runs.create_or_update(run=run, **kwargs)
 
+    @agentops.record_function('PFClient stream')
     def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream run logs to the console.
 
@@ -317,6 +328,7 @@ class PFClient:
             run = run.name
         return self.runs.stream(run, raise_on_error)
 
+    @agentops.record_function('PFClient get_details')
     def get_details(
         self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
     ) -> "DataFrame":
@@ -338,6 +350,7 @@ class PFClient:
         """
         return self.runs.get_details(run=run, max_results=max_results, all_results=all_results)
 
+    @agentops.record_function('PFClient get_metrics')
     def get_metrics(self, run: Union[str, Run]) -> dict:
         """Print run metrics to the console.
 
@@ -350,6 +363,7 @@ class PFClient:
             run = run.name
         return self.runs.get_metrics(run=run)
 
+    @agentops.record_function('PFClient visualize')
     def visualize(self, runs: Union[List[str], List[Run]]) -> None:
         """Visualize run(s).
 
@@ -357,3 +371,8 @@ class PFClient:
         :type run: Union[str, ~promptflow.sdk.entities.Run]
         """
         self.runs.visualize(runs)
+
+# End of PFClient class
+
+# End of program
+agentops.end_session('Success')
