@@ -51,7 +51,8 @@
     ".github/pipelines/**",
     ".github/CODEOWNERS",
     "src/promptflow-evals/tests/**",
-    "benchmark/promptflow-serve/result-archive/**"
+    "benchmark/promptflow-serve/result-archive/**",
+    "src/promptflow-evals/samples/**"
   ],
   "words": [
     "aoai",
