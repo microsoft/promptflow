@@ -1,7 +1,12 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 from enum import Enum
 
 
 class AdversarialScenario(Enum):
+    """Adversarial scenario types"""
     ADVERSARIAL_QA = "adv_qa"
     ADVERSARIAL_CONVERSATION = "adv_conversation"
     ADVERSARIAL_SUMMARIZATION = "adv_summarization"

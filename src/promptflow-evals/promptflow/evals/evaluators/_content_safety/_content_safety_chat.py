@@ -1,95 +1,40 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+import asyncio
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List
 
 import numpy as np
 
-from ._hate_unfairness import HateUnfairnessEvaluator
-from ._self_harm import SelfHarmEvaluator
-from ._sexual import SexualEvaluator
-from ._violence import ViolenceEvaluator
+from promptflow._utils.async_utils import async_run_allowing_running_loop
+
+try:
+    from ._hate_unfairness import HateUnfairnessEvaluator
+    from ._self_harm import SelfHarmEvaluator
+    from ._sexual import SexualEvaluator
+    from ._violence import ViolenceEvaluator
+except ImportError:
+    from _hate_unfairness import HateUnfairnessEvaluator
+    from _self_harm import SelfHarmEvaluator
+    from _sexual import SexualEvaluator
+    from _violence import ViolenceEvaluator
 
 logger = logging.getLogger(__name__)
 
 
-class ContentSafetyChatEvaluator:
-    """
-    Initialize a content safety chat evaluator configured to evaluate content safetry metrics for chat scenario.
-
-    :param project_scope: The scope of the Azure AI project.
-        It contains subscription id, resource group, and project name.
-    :type project_scope: dict
-    :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue,
-        focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
-    :type eval_last_turn: bool
-    :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
-        Default is True.
-    :type parallel: bool
-    :param credential: The credential for connecting to Azure AI project.
-    :type credential: TokenCredential
-    :return: A function that evaluates and generates metrics for "chat" scenario.
-    :rtype: function
-
-    **Usage**
-
-    .. code-block:: python
-
-        eval_fn = ContentSafetyChatEvaluator(model_config)
-        conversation = [
-            {"role": "user", "content": "What is the value of 2 + 2?"},
-            {"role": "assistant", "content": "2 + 2 = 4"}
-        ]
-        result = ContentSafetyChatEvaluator(conversation=conversation)
-
-    **Output format**
-
-    .. code-block:: python
-
-        {
-            "evaluation_per_turn": {
-                "violence": ["High", "Low"],
-                "violence_score": [7.0, 3.0],
-                "violence_reason": "Some reason",
-                "sexual": ["High", "Low"],
-                "sexual_score": [7.0, 3.0],
-                "sexual_reason": "Some reason",
-                "self_harm": ["High", "Low"],
-                "self_harm_score": [7.0, 3.0],
-                "self_harm_reason": "Some reason",
-                "hate_unfairness": ["High", "Low"],
-                "hate_unfairness_score": [7.0, 3.0],
-                "hate_unfairness_reason": "Some reason"
-            },
-            "violence": "Medium",
-            "violence_score": 5.0,
-            "sexual": "Medium",
-            "sexual_score": 5.0,
-            "self_harm": "Medium",
-            "self_harm_score": 5.0,
-            "hate_unfairness": "Medium",
-            "hate_unfairness_score": 5.0,
-        }
-    """
-
+class _AsyncContentSafetyChatEvaluator:
     def __init__(self, project_scope: dict, eval_last_turn: bool = False, parallel: bool = True, credential=None):
         self._eval_last_turn = eval_last_turn
         self._parallel = parallel
         self._evaluators = [
-            ViolenceEvaluator(project_scope, credential),
-            SexualEvaluator(project_scope, credential),
-            SelfHarmEvaluator(project_scope, credential),
-            HateUnfairnessEvaluator(project_scope, credential),
+            ViolenceEvaluator(project_scope, credential)._to_async(),
+            SexualEvaluator(project_scope, credential)._to_async(),
+            SelfHarmEvaluator(project_scope, credential)._to_async(),
+            HateUnfairnessEvaluator(project_scope, credential)._to_async(),
         ]
 
-    def __call__(self, *, conversation, **kwargs):
-        """
-        Evaluates content-safety metrics for "chat" scenario.
-
-        :param conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
-        :type conversation: List[Dict]
-        :return: The scores for Chat scenario.
-        :rtype: dict
-        """
+    async def __call__(self, *, conversation, **kwargs):
         self._validate_conversation(conversation)
 
         # Extract questions, answers from conversation
@@ -116,19 +61,17 @@ class ContentSafetyChatEvaluator:
 
             if self._parallel:
                 # Parallel execution
-                with ThreadPoolExecutor() as executor:
-                    future_to_evaluator = {
-                        executor.submit(self._evaluate_turn, turn_num, questions, answers, evaluator): evaluator
-                        for evaluator in self._evaluators
-                    }
-
-                    for future in as_completed(future_to_evaluator):
-                        result = future.result()
+                tasks = [self._evaluate_turn(turn_num, questions, answers, evaluator) for evaluator in self._evaluators]
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                for result in results:
+                    if isinstance(result, Exception):
+                        logger.warning(f"Exception occurred during evaluation: {result}")
+                    else:
                         current_turn_result.update(result)
             else:
                 # Sequential execution
                 for evaluator in self._evaluators:
-                    result = self._evaluate_turn(turn_num, questions, answers, evaluator)
+                    result = await self._evaluate_turn(turn_num, questions, answers, evaluator)
                     current_turn_result.update(result)
 
             per_turn_results.append(current_turn_result)
@@ -136,15 +79,15 @@ class ContentSafetyChatEvaluator:
         aggregated = self._aggregate_results(per_turn_results)
         return aggregated
 
-    def _evaluate_turn(self, turn_num, questions, answers, evaluator):
+    async def _evaluate_turn(self, turn_num, questions, answers, evaluator):
         try:
             question = questions[turn_num] if turn_num < len(questions) else ""
             answer = answers[turn_num] if turn_num < len(answers) else ""
 
-            score = evaluator(question=question, answer=answer)
+            score = await evaluator(question=question, answer=answer)
 
             return score
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(
                 f"Evaluator {evaluator.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}"
             )
@@ -199,8 +142,7 @@ class ContentSafetyChatEvaluator:
             one_based_turn_num = turn_num + 1
 
             if not isinstance(turn, dict):
-                raise ValueError(
-                    f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
+                raise ValueError(f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
 
             if "role" not in turn or "content" not in turn:
                 raise ValueError(
@@ -235,7 +177,84 @@ class ContentSafetyChatEvaluator:
             return np.nan
 
         for harm_level, harm_score_range in HARM_SEVERITY_LEVEL_MAPPING.items():
-            if harm_score >= harm_score_range[0] and harm_score <= harm_score_range[1]:
+            if harm_score_range[0] <= harm_score <= harm_score_range[1]:
                 return harm_level
 
         return np.nan
+
+
+class ContentSafetyChatEvaluator:
+    """
+    Initialize a content safety chat evaluator configured to evaluate content safetry metrics for chat scenario.
+
+    :param project_scope: The scope of the Azure AI project.
+        It contains subscription id, resource group, and project name.
+    :type project_scope: dict
+    :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue,
+        focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
+    :type eval_last_turn: bool
+    :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
+        Default is True.
+    :type parallel: bool
+    :param credential: The credential for connecting to Azure AI project.
+    :type credential: ~azure.core.credentials.TokenCredential
+    :return: A function that evaluates and generates metrics for "chat" scenario.
+    :rtype: Callable
+
+    **Usage**
+
+    .. code-block:: python
+
+        eval_fn = ContentSafetyChatEvaluator(model_config)
+        conversation = [
+            {"role": "user", "content": "What is the value of 2 + 2?"},
+            {"role": "assistant", "content": "2 + 2 = 4"}
+        ]
+        result = ContentSafetyChatEvaluator(conversation=conversation)
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "evaluation_per_turn": {
+                "violence": ["High", "Low"],
+                "violence_score": [7.0, 3.0],
+                "violence_reason": "Some reason",
+                "sexual": ["High", "Low"],
+                "sexual_score": [7.0, 3.0],
+                "sexual_reason": "Some reason",
+                "self_harm": ["High", "Low"],
+                "self_harm_score": [7.0, 3.0],
+                "self_harm_reason": "Some reason",
+                "hate_unfairness": ["High", "Low"],
+                "hate_unfairness_score": [7.0, 3.0],
+                "hate_unfairness_reason": "Some reason"
+            },
+            "violence": "Medium",
+            "violence_score": 5.0,
+            "sexual": "Medium",
+            "sexual_score": 5.0,
+            "self_harm": "Medium",
+            "self_harm_score": 5.0,
+            "hate_unfairness": "Medium",
+            "hate_unfairness_score": 5.0,
+        }
+    """
+
+    def __init__(self, project_scope: dict, eval_last_turn: bool = False, parallel: bool = True, credential=None):
+        self._async_evaluator = _AsyncContentSafetyChatEvaluator(project_scope, eval_last_turn, parallel, credential)
+
+    def __call__(self, *, conversation, **kwargs):
+        """
+        Evaluates content-safety metrics for "chat" scenario.
+
+        :keyword conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
+        :paramtype conversation: List[Dict]
+        :return: The scores for Chat scenario.
+        :rtype: dict
+        """
+        return async_run_allowing_running_loop(self._async_evaluator, conversation=conversation, **kwargs)
+
+    def _to_async(self):
+        return self._async_evaluator

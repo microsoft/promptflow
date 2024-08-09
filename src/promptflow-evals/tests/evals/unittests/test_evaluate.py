@@ -12,9 +12,8 @@ from promptflow.client import PFClient
 from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME
 from promptflow.evals.evaluate import evaluate
 from promptflow.evals.evaluate._evaluate import _apply_target_to_data, _rename_columns_conditionally
-from promptflow.evals.evaluate._utils import _apply_column_mapping
+from promptflow.evals.evaluate._utils import _apply_column_mapping, _trace_destination_from_project_scope
 from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
-from promptflow.evals.evaluate._utils import _trace_destination_from_project_scope
 
 
 def _get_file(name):
@@ -407,7 +406,8 @@ class TestEvaluate:
         pf_client = PFClient(
             config={
                 "trace.destination": _trace_destination_from_project_scope(mock_project_scope)
-                if mock_project_scope else None
+                if mock_project_scope
+                else None
             }
         )
 

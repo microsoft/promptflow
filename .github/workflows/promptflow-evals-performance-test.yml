@@ -1,0 +1,71 @@
+name: promptflow-evals-performance-test
+
+on:
+  schedule:
+    - cron: "40 10 * * *" # 2:40 PST every day
+  pull_request:
+    paths:
+      - src/promptflow-evals/**
+      - .github/workflows/promptflow-evals-performance-test.yml
+  workflow_dispatch:
+
+env:
+  IS_IN_CI_PIPELINE: "true"
+  WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-evals
+  PROMPT_FLOW_TEST_MODE: "live"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-13]
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+      fail-fast: false
+    # snok/install-poetry need this to support Windows
+    defaults:
+      run:
+        shell: bash
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: snok/install-poetry@v1
+      - name: install test dependency group
+        run: poetry install --only test
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install promptflow-evals from wheel
+        id: install_promptflow
+        run: |
+          # Estimate the installation time.
+          poetry run pip install -e ../promptflow
+          poetry run pip install -e ../promptflow-core
+          poetry run pip install -e ../promptflow-devkit
+          poetry run pip install -e ../promptflow-tracing
+          poetry run pip install -e ../promptflow-tools
+          poetry run pip install -e ../promptflow-azure
+          poetry run pip install -e ../promptflow-evals
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install recording
+        run: poetry run pip install -e ../promptflow-recording
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: generate end-to-end test config from secret
+        run: echo '${{ secrets.PF_EVALS_E2E_TEST_CONFIG }}' >> connections.json
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.PF_EVALS_SP_CLIENT_ID }}
+          tenant-id: ${{ secrets.PF_EVALS_SP_TENANT_ID }}
+          subscription-id: ${{ secrets.PF_EVALS_SP_SUBSCRIPTION_ID }}
+      - name: run performance tests
+        id: performance_tests
+        run: |
+          # Estimate the run time for evaluator.
+          poetry run pytest -m performance_test --junit-xml=test-results.xml
+          poetry run python ../../scripts/code_qa/report_to_app_insights.py --activity evaluator_live_tests_run_time_s --junit-xml test-results.xml --git-hub-action-run-id ${{ github.run_id }} --git-hub-workflow ${{ github.workflow }} --git-hub-action ${{ github.action }} --git-branch ${{ github.ref }}
+        working-directory: ${{ env.WORKING_DIRECTORY }}

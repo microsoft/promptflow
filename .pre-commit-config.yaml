@@ -44,56 +44,9 @@ repos:
           # Use black profile for isort to avoid conflicts
           # see https://github.com/PyCQA/isort/issues/1518
           args: ["--profile", "black", --line-length=120]
-    - repo: local
+    - repo: https://github.com/pylint-dev/pylint
+      rev: v3.0.3
       hooks:
         - id: pylint
           name: pylint
-          entry: python
-          language: system
-          args: [ -m, pylint, --rcfile=pylintrc, --output-format=parseable ]
-          types: [python]
-    - repo: local
-      hooks:
-      - id: pylint-dependencies-check
-        name: pylint-dependencies-check
-        entry: python
-        language: system
-        types: [python]
-        args:
-        - "-c"
-        - |
-            import os
-            import sys
-
-            import pkg_resources
-
-            # These are the versions that run in our CI
-            dependencies = [
-                (
-                    "azure-pylint-guidelines-checker",
-                    "0.3.1",
-                    [
-                        "--index-url",
-                        "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/",
-                    ],
-                ),
-                ("pylint", "3.0.3", []),
-            ]
-
-            # Make sure that correct versions are installed
-            for packagename, required_version, install_args in dependencies:
-                try:
-                    version = pkg_resources.get_distribution(packagename).version
-                    assert version == required_version
-                except AssertionError:
-                    print(
-                        f"Version mismatch: Installed version '{version}' of '{packagename}' does not match required version {required_version}"
-                    )
-                except pkg_resources.DistributionNotFound:
-                    print(f"Package '{packagename}' is not installed")
-                else:
-                    continue
-
-                print(f"Please run the following command to install the correct version of {packagename}")
-                print(f"\tpython -m pip install {packagename}=={required_version} {' '.join(install_args)}")
-                sys.exit(1)
+          args: [ --rcfile=pylintrc, --output-format=parseable ]

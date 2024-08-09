@@ -153,7 +153,7 @@ def render(template, **kwargs):
 def prompt_tpl_completion(connection: dict, prompt_tpl: str, stream: bool = False, **kwargs):
     client = AzureOpenAI(**connection)
     prompt = render(prompt_tpl, **kwargs)
-    response = client.completions.create(model="text-ada-001", prompt=prompt, stream=stream)
+    response = client.completions.create(model="gpt-35-turbo-instruct", prompt=prompt, stream=stream)
 
     if stream:
 
