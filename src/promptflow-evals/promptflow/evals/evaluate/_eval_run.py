@@ -5,51 +5,37 @@ import dataclasses
 import logging
 import os
 import posixpath
-import requests
 import time
 import uuid
 from typing import Any, Dict, Optional, Type
 from urllib.parse import urlparse
 
+import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from promptflow.evals._version import VERSION
 from promptflow._sdk.entities import Run
+from promptflow.evals._version import VERSION
 
 LOGGER = logging.getLogger(__name__)
 
 try:
-    from azure.storage.blob import BlobServiceClient
     from azure.ai.ml.entities._credentials import AccountKeyConfiguration
+    from azure.storage.blob import BlobServiceClient
 except ImportError:
     LOGGER.debug("promptflow.azure is not installed.")
 
 
 @dataclasses.dataclass
 class RunInfo:
-    """
-    A holder for run info, needed for logging.
-    """
 
     run_id: str
     experiment_id: str
     run_name: str
 
     @staticmethod
-    def generate(run_name: Optional[str]) -> 'RunInfo':
-        """
-        Generate the new RunInfo instance with the RunID and Experiment ID.
-
-        **Note:** This code is used when we are in failed state and cannot get a run.
-        :param run_name: The name of a run.
-        :type run_name: str
-        """
-        return RunInfo(
-            str(uuid.uuid4()),
-            str(uuid.uuid4()),
-            run_name or ""
-        )
+    def generate(run_name: Optional[str]) -> "RunInfo":
+        return RunInfo(str(uuid.uuid4()), str(uuid.uuid4()), run_name or "")
 
 
 class Singleton(type):
@@ -97,18 +83,19 @@ class EvalRun(metaclass=Singleton):
     _TIMEOUT = 5
     _SCOPE = "https://management.azure.com/.default"
 
-    EVALUATION_ARTIFACT = 'instance_results.jsonl'
-    EVALUATION_ARTIFACT_DUMMY_RUN = 'eval_results.jsonl'
+    EVALUATION_ARTIFACT = "instance_results.jsonl"
+    EVALUATION_ARTIFACT_DUMMY_RUN = "eval_results.jsonl"
 
-    def __init__(self,
-                 run_name: Optional[str],
-                 tracking_uri: str,
-                 subscription_id: str,
-                 group_name: str,
-                 workspace_name: str,
-                 ml_client: Any,
-                 promptflow_run: Optional[Run] = None,
-                 ):
+    def __init__(
+        self,
+        run_name: Optional[str],
+        tracking_uri: str,
+        subscription_id: str,
+        group_name: str,
+        workspace_name: str,
+        ml_client: Any,
+        promptflow_run: Optional[Run] = None,
+    ):
         """
         Constructor
         """
@@ -121,19 +108,16 @@ class EvalRun(metaclass=Singleton):
         self._is_promptflow_run: bool = promptflow_run is not None
         self._is_broken = False
         if self._tracking_uri is None:
-            LOGGER.warning("tracking_uri was not provided, "
-                           "The results will be saved locally, but will not be logged to Azure.")
+            LOGGER.warning(
+                "tracking_uri was not provided, " "The results will be saved locally, but will not be logged to Azure."
+            )
             self._url_base = None
             self._is_broken = True
             self.info = RunInfo.generate(run_name)
         else:
             self._url_base = urlparse(self._tracking_uri).netloc
             if promptflow_run is not None:
-                self.info = RunInfo(
-                    promptflow_run.name,
-                    promptflow_run._experiment_name,
-                    promptflow_run.name
-                )
+                self.info = RunInfo(promptflow_run.name, promptflow_run._experiment_name, promptflow_run.name)
             else:
                 self._is_broken = self._start_run(run_name)
 
@@ -174,21 +158,19 @@ class EvalRun(metaclass=Singleton):
         }
         if run_name:
             body["run_name"] = run_name
-        response = self.request_with_retry(
-            url=url,
-            method='POST',
-            json_dict=body
-        )
+        response = self.request_with_retry(url=url, method="POST", json_dict=body)
         if response.status_code != 200:
             self.info = RunInfo.generate(run_name)
-            LOGGER.warning(f"The run failed to start: {response.status_code}: {response.text}."
-                           "The results will be saved locally, but will not be logged to Azure.")
+            LOGGER.warning(
+                f"The run failed to start: {response.status_code}: {response.text}."
+                "The results will be saved locally, but will not be logged to Azure."
+            )
             return True
         parsed_response = response.json()
         self.info = RunInfo(
-            run_id=parsed_response['run']['info']['run_id'],
-            experiment_id=parsed_response['run']['info']['experiment_id'],
-            run_name=parsed_response['run']['info']['run_name']
+            run_id=parsed_response["run"]["info"]["run_id"],
+            experiment_id=parsed_response["run"]["info"]["experiment_id"],
+            run_name=parsed_response["run"]["info"]["run_name"],
         )
         return False
 
@@ -254,6 +236,7 @@ class EvalRun(metaclass=Singleton):
         # We have to use lazy import because promptflow.azure
         # is an optional dependency.
         from promptflow.azure._utils._token_cache import ArmTokenCache
+
         return ArmTokenCache().get_token(self._ml_client._credential)
 
     def request_with_retry(
@@ -330,15 +313,15 @@ class EvalRun(metaclass=Singleton):
             LOGGER.warning("The run results file was not found, skipping artifacts upload.")
             return
         # First we will list the files and the appropriate remote paths for them.
-        root_upload_path = posixpath.join("promptflow", 'PromptFlowArtifacts', self.info.run_name)
-        remote_paths = {'paths': []}
+        root_upload_path = posixpath.join("promptflow", "PromptFlowArtifacts", self.info.run_name)
+        remote_paths = {"paths": []}
         local_paths = []
         # Go over the artifact folder and upload all artifacts.
         for (root, _, filenames) in os.walk(artifact_folder):
             upload_path = root_upload_path
             if root != artifact_folder:
                 rel_path = os.path.relpath(root, artifact_folder)
-                if rel_path != '.':
+                if rel_path != ".":
                     upload_path = posixpath.join(root_upload_path, rel_path)
             for f in filenames:
                 remote_file_path = posixpath.join(upload_path, f)
@@ -349,13 +332,10 @@ class EvalRun(metaclass=Singleton):
         # We will write the artifacts to the workspaceblobstore
         datastore = self._ml_client.datastores.get_default(include_secrets=True)
         account_url = f"{datastore.account_name}.blob.{datastore.endpoint}"
-        svc_client = BlobServiceClient(
-            account_url=account_url, credential=self._get_datastore_credential(datastore))
-        for local, remote in zip(local_paths, remote_paths['paths']):
-            blob_client = svc_client.get_blob_client(
-                container=datastore.container_name,
-                blob=remote['path'])
-            with open(local, 'rb') as fp:
+        svc_client = BlobServiceClient(account_url=account_url, credential=self._get_datastore_credential(datastore))
+        for local, remote in zip(local_paths, remote_paths["paths"]):
+            blob_client = svc_client.get_blob_client(container=datastore.container_name, blob=remote["path"])
+            with open(local, "rb") as fp:
                 blob_client.upload_blob(fp, overwrite=True)
 
         # To show artifact in UI we will need to register it. If it is a promptflow run,
@@ -382,9 +362,9 @@ class EvalRun(metaclass=Singleton):
             },
         )
         if response.status_code != 200:
-            self._log_warning('register artifact', response)
+            self._log_warning("register artifact", response)
 
-    def _get_datastore_credential(self, datastore: 'Datastore'):
+    def _get_datastore_credential(self, datastore: "Datastore"):
         # Reference the logic in azure.ai.ml._artifact._artifact_utilities
         # https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/ml/azure-ai-ml/azure/ai/ml/_artifacts/_artifact_utilities.py#L103
         credential = datastore.credentials
