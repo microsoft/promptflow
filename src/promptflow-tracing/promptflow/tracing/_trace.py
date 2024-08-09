@@ -8,6 +8,7 @@ import functools
 import inspect
 import json
 import logging
+import time
 from collections.abc import AsyncIterator, Iterator
 from importlib.metadata import version
 from threading import Lock
@@ -15,7 +16,7 @@ from typing import Callable, Dict, List, Optional, Sequence
 
 import opentelemetry.trace as otel_trace
 from opentelemetry.trace import Span
-from opentelemetry.trace.span import format_trace_id
+from opentelemetry.trace.span import TraceFlags, format_trace_id
 from opentelemetry.trace.status import Status, StatusCode
 from opentelemetry.util import types
 
@@ -408,6 +409,64 @@ def serialize_attribute(value):
     except Exception as e:
         logging.warning(f"Failed to serialize attribute: {e}")
         return None
+
+
+def log_evaluation_event(name: str, scores: dict, span_context: dict) -> None:
+    """Logs an evaluation as an opentelemetry LogRecord for a particular trace
+
+    :param name: The name of the evaluation to be logged
+    :type name: str
+    :param scores: A json-serializable dictionary of the evaluation results to be logged
+    :type scores: dict
+    :param span_context: A dictionary containing the 'traceparent' key that will be used to
+        determine which trace/span evaluation will be logged to
+    :type span_context: dict
+    :rtype: None
+
+    :Examples:
+
+    Adding an evaluation result to a trace:
+
+    .. code-block:: python
+
+        @trace
+        def greetings(user_id, span_context):
+            from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+
+            TraceContextTextMapPropagator().inject(span_context)
+            name = get_name(user_id)
+            return f"Hello, {name}"
+
+        span_context = {}
+        greetings("user_id", span_context)
+
+        log_evaluation_result("eval", {"event": "eval1", score: "0.5"}, span_context)
+    """
+
+    # local import since _logs is not GA in both opentelemetry and opentelemetry-sdk
+    import opentelemetry.sdk._logs
+    from opentelemetry import _logs
+
+    split_traceparent = span_context["traceparent"].split("-")
+    trace_id = int(split_traceparent[1], 16)
+    span_id = int(split_traceparent[2], 16)
+    trace_flags = TraceFlags(split_traceparent[3], 16)
+
+    attributes = {"event.name": "gen_ai.evaluation", "gen_ai.evaluation": name}
+    body = json.dumps(scores)
+
+    event = opentelemetry.sdk._logs.LogRecord(
+        timestamp=time.time_ns(),
+        observed_timestamp=time.time_ns(),
+        trace_id=trace_id,
+        span_id=span_id,
+        trace_flags=trace_flags,
+        severity_text=None,
+        severity_number=_logs.SeverityNumber.UNSPECIFIED,
+        body=body,
+        attributes=attributes,
+    )
+    _logs.get_logger(__name__).emit(event)
 
 
 def _traced(
