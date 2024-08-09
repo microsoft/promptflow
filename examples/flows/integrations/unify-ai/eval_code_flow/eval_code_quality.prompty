@@ -1,0 +1,39 @@
+---
+name: Evaluate code quality
+description: Evaluate the quality of code snippet.
+model:
+  api: chat
+  configuration:
+    type: unify
+    model_name: llama-3.1-8b-chat
+    provider_name: together-ai
+  parameters:
+    temperature: 0.2
+inputs: 
+  code:
+    type: string
+sample: ${file:sample.json}
+---
+# system:
+You are an AI assistant. 
+You task is to evaluate the code based on correctness, readability.
+Only accepts valid JSON format response without extra prefix or postfix.
+
+# user:
+This correctness value should always be an integer between 1 and 5. So the correctness produced should be 1 or 2 or 3 or 4 or 5.
+This readability value should always be an integer between 1 and 5. So the readability produced should be 1 or 2 or 3 or 4 or 5.
+
+Here are a few examples:
+
+**Example 1**
+Code: print(\"Hello, world!\")
+OUTPUT:
+{
+    "correctness": 5,
+    "readability": 5,
+    "explanation": "The code is correct as it is a simple question and answer format. The readability is also good as the code is short and easy to understand."
+}
+
+For a given code, valuate the code based on correctness, readability:
+Code: {{code}}
+OUTPUT:

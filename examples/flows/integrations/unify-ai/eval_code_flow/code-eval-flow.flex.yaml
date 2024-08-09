@@ -1,0 +1,6 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+# flow is defined as python function
+entry: code_quality_unify_ai:CodeEvaluator
+environment:
+  # image: mcr.microsoft.com/azureml/promptflow/promptflow-python
+  python_requirements_txt: requirements.txt
