@@ -4,12 +4,11 @@
 
 import os
 import re
-from typing import Union
 
 import numpy as np
 
 from promptflow._utils.async_utils import async_run_allowing_running_loop
-from promptflow.core import AsyncPrompty, AzureOpenAIModelConfiguration, OpenAIModelConfiguration
+from promptflow.core import AsyncPrompty, AzureOpenAIModelConfiguration
 
 try:
     from ..._user_agent import USER_AGENT
@@ -18,17 +17,12 @@ except ImportError:
 
 
 class _AsyncRelevanceEvaluator:
-    # Constants must be defined within eval's directory to be save/loadable
     PROMPTY_FILE = "relevance.prompty"
     LLM_CALL_TIMEOUT = 600
-    DEFAULT_OPEN_API_VERSION = "2024-02-15-preview"
 
-    def __init__(self, model_config: Union[AzureOpenAIModelConfiguration, OpenAIModelConfiguration]):
-        if (
-            isinstance(model_config, AzureOpenAIModelConfiguration)
-            and (not hasattr(model_config, "api_version") or model_config.api_version) is None
-        ):
-            model_config.api_version = self.DEFAULT_OPEN_API_VERSION
+    def __init__(self, model_config: AzureOpenAIModelConfiguration):
+        if model_config.api_version is None:
+            model_config.api_version = "2024-02-15-preview"
 
         prompty_model_config = {"configuration": model_config, "parameters": {"extra_headers": {}}}
 
@@ -71,8 +65,7 @@ class RelevanceEvaluator:
     Initialize a relevance evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: Union[~promptflow.core.AzureOpenAIModelConfiguration,
-        ~promptflow.core.OpenAIModelConfiguration]
+    :type model_config: ~promptflow.core.AzureOpenAIModelConfiguration
 
     **Usage**
 
@@ -94,7 +87,7 @@ class RelevanceEvaluator:
         }
     """
 
-    def __init__(self, model_config: Union[AzureOpenAIModelConfiguration, OpenAIModelConfiguration]):
+    def __init__(self, model_config: AzureOpenAIModelConfiguration):
         self._async_evaluator = _AsyncRelevanceEvaluator(model_config)
 
     def __call__(self, *, question: str, answer: str, context: str, **kwargs):

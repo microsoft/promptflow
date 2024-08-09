@@ -166,26 +166,6 @@ class TestBuiltInEvaluators:
         assert score["gpt_similarity"] > 0.0
         assert score["f1_score"] > 0.0
 
-    @pytest.mark.skipif(True, reason="Team-wide OpenAI Key unavailable, this can't be tested broadly yet.")
-    @pytest.mark.parametrize("parallel", [False, True])
-    def test_composite_evaluator_qa_with_openai_config(self, non_azure_openai_model_config, parallel):
-        # openai_config as in "not azure openai"
-        qa_eval = QAEvaluator(non_azure_openai_model_config, parallel=parallel)
-        score = qa_eval(
-            question="Tokyo is the capital of which country?",
-            answer="Japan",
-            context="Tokyo is the capital of Japan.",
-            ground_truth="Japan",
-        )
-
-        assert score is not None
-        assert score["gpt_groundedness"] > 0.0
-        assert score["gpt_relevance"] > 0.0
-        assert score["gpt_coherence"] > 0.0
-        assert score["gpt_fluency"] > 0.0
-        assert score["gpt_similarity"] > 0.0
-        assert score["f1_score"] > 0.0
-
     def test_composite_evaluator_qa_for_nans(self, model_config):
         qa_eval = QAEvaluator(model_config)
         # Test Q/A below would cause NaNs in the evaluation metrics before the fix.

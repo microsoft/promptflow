@@ -9,7 +9,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from promptflow.client import PFClient
-from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
+from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
@@ -100,38 +100,6 @@ def model_config() -> dict:
     model_config.azure_deployment = "gpt-35-turbo"
 
     AzureOpenAIModelConfiguration.__repr__ = lambda self: "<sensitive data redacted>"
-
-    return model_config
-
-
-@pytest.fixture
-def non_azure_openai_model_config() -> dict:
-    """Requires the following in your local connections.json file. If not present, ask around the team.
-
-
-        "openai_model_config": {
-            "value": {
-                "api_key": "<Actual API key>,
-                "base_url": "https://api.openai.com/v1",
-                "model": "gpt-35-turbo"
-            }
-        }
-    }
-    """
-    conn_name = "openai_model_config"
-
-    with open(
-        file=CONNECTION_FILE,
-        mode="r",
-    ) as f:
-        dev_connections = json.load(f)
-
-    if conn_name not in dev_connections:
-        raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
-
-    model_config = OpenAIModelConfiguration(**dev_connections[conn_name]["value"])
-
-    OpenAIModelConfiguration.__repr__ = lambda self: "<sensitive data redacted>"
 
     return model_config
 
