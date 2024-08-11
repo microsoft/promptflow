@@ -29,6 +29,12 @@ class Result(TypedDict):
 
 
 class CodeEvaluator:
+    """ Uses Unify AI's LLM to evaluate a code block.
+    Note:
+    OpenAI client is being repurposed to call Unify AI API, Since Unify AI API is competable with OpenAI API.
+    This enables reusing Promptflow's OpenAI integration/support with Unify AI.
+
+    """
     def __init__(self, model_config: OpenAIModelConfiguration):
         self.model_config = model_config
 
