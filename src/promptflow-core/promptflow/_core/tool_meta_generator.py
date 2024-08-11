@@ -516,7 +516,11 @@ def validate_interface(ports, fields, tool_name, port_type, support_model_config
     for k, v in ports.items():
         if ValueType.OBJECT not in v.type:
             continue
-        if resolve_annotation(fields[k]) not in supported_types:
+        annotations = resolve_annotation(fields[k])
+
+        if not isinstance(annotations, list):
+            annotations = [annotations]
+        if any([note not in supported_types for note in annotations]):
             raise BadFunctionInterface(
                 message_format=(
                     "Parse interface for tool '{tool_name}' failed: "
