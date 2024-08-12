@@ -1,9 +1,10 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from enum import Enum
 
 
-class SupportedLanguages:
+class SupportedLanguages(Enum):
     """Supported languages for evaluation, using ISO standard language codes.
 
     Example usage:

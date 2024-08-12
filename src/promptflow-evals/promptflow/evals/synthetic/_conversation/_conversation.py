@@ -111,8 +111,9 @@ async def simulate_conversation(
     if language != SupportedLanguages.English:
         if language not in SUPPORTED_LANGUAGES_MAPPING:
             raise Exception(  # pylint: disable=broad-exception-raised
-                f"Language option '{language}' isn't supported. Select a supported language option from"
-                "promptflow.evals.synthetic._constants.SupportedLanguages."
+                f"Language option '{language}' isn't supported. Select a supported language option from "
+                "promptflow.evals.synthetic._constants.SupportedLanguages: "
+                f"{[e.value for e in SupportedLanguages]}"
             )
         first_prompt += f" {SUPPORTED_LANGUAGES_MAPPING[language]}"
     # Add all generated turns into array to pass for each bot while generating
