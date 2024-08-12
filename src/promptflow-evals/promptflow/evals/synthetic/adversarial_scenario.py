@@ -18,6 +18,11 @@ class AdversarialScenario(Enum):
     ADVERSARIAL_CONTENT_PROTECTED_MATERIAL = (
         "adv_content_protected_material"  # TODO make sure that the underlying values work properly
     )
-    _ADVERSARIAL_CONTENT_ELECTION_CRITICAL_INFORMATION = (
+
+
+class _PrivateAdverarialScenario(Enum):
+    """Adversarial scenario types that we haven't published, but still want available for internal use"""
+
+    ADVERSARIAL_CONTENT_ELECTION_CRITICAL_INFORMATION = (
         "adv_content_election_critical_information"  # TODO make sure that the underlying values work properly
     )

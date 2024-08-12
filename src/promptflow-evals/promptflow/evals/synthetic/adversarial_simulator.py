@@ -104,6 +104,8 @@ class AdversarialSimulator:
     async def __call__(
         self,
         *,
+        # Note: the scenario input also accepts inputs from _PrivateAdverarialScenario, but that's
+        # not stated since those values are nominally for internal use only.
         scenario: AdversarialScenario,
         target: Callable,
         max_conversation_turns: int = 1,
@@ -181,6 +183,7 @@ class AdversarialSimulator:
                 }
             ]
         """
+
         # validate the inputs
         if scenario != AdversarialScenario.ADVERSARIAL_CONVERSATION:
             max_conversation_turns = 2
