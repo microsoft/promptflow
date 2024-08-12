@@ -145,6 +145,7 @@ class TestTelemetry:
                         "error_target",
                         "error_message",
                         "error_detail",
+                        "mac_address_hash",
                     }
                 )
             elif "complete" in envelope.data.base_data.name:
@@ -169,6 +170,7 @@ class TestTelemetry:
                         "error_target",
                         "error_message",
                         "error_detail",
+                        "mac_address_hash",
                     }
                 )
             else:
