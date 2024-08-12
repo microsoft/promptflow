@@ -66,7 +66,7 @@ async def simulate_conversation(
     *,
     bots: List[ConversationBot],
     session: RetryClient,
-    language: SupportedLanguages,
+    language: SupportedLanguages = SupportedLanguages.English,
     stopping_criteria: Callable[[str], bool] = is_closing_message,
     turn_limit: int = 10,
     history_limit: int = 5,
@@ -78,7 +78,7 @@ async def simulate_conversation(
 
     :keyword bots: List of ConversationBot instances participating in the conversation.
     :paramtype bots: List[ConversationBot]
-    :keyword language: The language in which the conversation should be generated.
+    :keyword language: The language in which the conversation should be generated. Defaults to English.
     :paramtype language: promptflow.evals.synthetic._constants.SupportedLanguages
     :keyword session: The session to use for making API calls.
     :paramtype session: RetryClient
@@ -109,6 +109,11 @@ async def simulate_conversation(
         conversation_id = None
     first_prompt = first_response["samples"][0]
     if language != SupportedLanguages.English:
+        if language not in SUPPORTED_LANGUAGES_MAPPING:
+            raise Exception(  # pylint: disable=broad-exception-raised
+                f"Language option '{language}' isn't supported. Select a supported language option from"
+                "promptflow.evals.synthetic._constants.SupportedLanguages."
+            )
         first_prompt += f" {SUPPORTED_LANGUAGES_MAPPING[language]}"
     # Add all generated turns into array to pass for each bot while generating
     # new responses. We add generated response and the person generating it.
