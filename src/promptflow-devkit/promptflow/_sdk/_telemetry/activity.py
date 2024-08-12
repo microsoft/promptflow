@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import contextlib
 import functools
+import hashlib
 import threading
 import uuid
 from contextvars import ContextVar
@@ -99,6 +100,46 @@ def generate_request_id():
     return str(uuid.uuid4())
 
 
+def hash256_result(func):
+    """
+    Secure the return string of the annotated function with SHA256 algorithm. If the annotated function doesn't return
+    string or return None, raise ValueError.
+    """
+
+    @wraps(func)
+    def _decorator(*args, **kwargs):
+        val = func(*args, **kwargs)
+        if val is None:
+            raise ValueError('Return value is None')
+        if not isinstance(val, str):
+            raise ValueError('Return value is not string')
+        if not val:
+            return val
+        hash_object = hashlib.sha256(val.encode('utf-8'))
+        return str(hash_object.hexdigest())
+
+    return _decorator
+
+
+def _get_mac_address_hash():
+    # not able to calucate mac address, return unknown
+    hashed_mac_address = "unknown"
+    try:
+        s = ''
+        for index, c in enumerate(hex(uuid.getnode())[2:].upper()):
+            s += c
+            if index % 2:
+                s += '-'
+
+        s = s.strip('-')
+
+        hash_object = hashlib.sha256(s.encode('utf-8'))
+        hashed_mac_address = str(hash_object.hexdigest())
+    except Exception:
+        pass
+    return hashed_mac_address
+
+
 @contextlib.contextmanager
 def log_activity(
     logger,
@@ -147,6 +188,7 @@ def log_activity(
         "activity_name": activity_name,
         "activity_type": activity_type,
         "user_agent": user_agent,
+        "mac_address_hash": _get_mac_address_hash()
     }
     activity_info.update(custom_dimensions)
 
