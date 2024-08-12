@@ -7,6 +7,7 @@ from enum import Enum
 
 class AdversarialScenario(Enum):
     """Adversarial scenario types"""
+
     ADVERSARIAL_QA = "adv_qa"
     ADVERSARIAL_CONVERSATION = "adv_conversation"
     ADVERSARIAL_SUMMARIZATION = "adv_summarization"
@@ -14,3 +15,9 @@ class AdversarialScenario(Enum):
     ADVERSARIAL_REWRITE = "adv_rewrite"
     ADVERSARIAL_CONTENT_GEN_UNGROUNDED = "adv_content_gen_ungrounded"
     ADVERSARIAL_CONTENT_GEN_GROUNDED = "adv_content_gen_grounded"
+    ADVERSARIAL_CONTENT_PROTECTED_MATERIAL = (
+        "adv_content_protected_material"  # TODO make sure that the underlying values work properly
+    )
+    _ADVERSARIAL_CONTENT_ELECTION_CRITICAL_INFORMATION = (
+        "adv_content_election_critical_information"  # TODO make sure that the underlying values work properly
+    )

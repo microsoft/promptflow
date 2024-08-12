@@ -15,12 +15,15 @@ CONTENT_HARM_TEMPLATES_COLLECTION_KEY = set(
         "adv_rewrite",
         "adv_content_gen_ungrounded",
         "adv_content_gen_grounded",
+        "adv_content_protected_material",  # TODO make sure this is correct according to the backend.
+        "adv_content_election_critical_information",  # TODO make sure this is correct according to the backend.
     ]
 )
 
 
 class ContentHarmTemplatesUtils:
     """Content harm templates utility functions."""
+
     @staticmethod
     def get_template_category(key: str) -> str:
         """Parse category from template key
@@ -32,9 +35,17 @@ class ContentHarmTemplatesUtils:
         """
         return key.split("/")[0]
 
-    # Bug 3353405: Need to add docstring
     @staticmethod
-    def get_template_key(key: str) -> str:  # pylint: disable=missing-function-docstring
+    def get_template_key(key: str) -> str:
+        """Given a template dataset name (which looks like a .json file name) convert it into
+        the corresponding template key (which looks like a .md file name). This allows us to
+        properly link datasets to the LLM that must be used to simulate them.
+
+        :param key: The dataset key.
+        :type key: str
+        :return: The template key.
+        :rtype: str
+        """
         filepath = key.rsplit(".json")[0]
         parts = str(filepath).split("/")
         filename = ContentHarmTemplatesUtils.json_name_to_md_name(parts[-1])
@@ -67,6 +78,7 @@ class AdversarialTemplate:
     :param context_key: The context key.
     :param template_parameters: The template parameters.
     """
+
     def __init__(self, template_name, text, context_key, template_parameters=None) -> None:
         self.text = text
         self.context_key = context_key
@@ -86,6 +98,7 @@ class AdversarialTemplateHandler:
     :param rai_client: The RAI client.
     :type rai_client: ~promptflow.evals.synthetic._model_tools.RAIClient
     """
+
     def __init__(self, azure_ai_project: Dict[str, Any], rai_client: RAIClient) -> None:
         self.cached_templates_source = {}
         # self.template_env = JinjaEnvironment(loader=JinjaFileSystemLoader(searchpath=template_dir))
