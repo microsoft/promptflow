@@ -122,8 +122,8 @@ def hash256_result(func):
 
 
 def _get_mac_address_hash():
-    # not able to calucate mac address, return unknown
-    hashed_mac_address = "unknown"
+    # not able to calculate mac address, return unknown
+    hashed_mac_address = ""
     try:
         s = ''
         for index, c in enumerate(hex(uuid.getnode())[2:].upper()):
