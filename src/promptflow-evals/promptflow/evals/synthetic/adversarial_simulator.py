@@ -151,7 +151,7 @@ class AdversarialSimulator:
         :keyword jailbreak: If set to True, allows breaking out of the conversation flow defined by the scenario.
             Defaults to False.
         :paramtype jailbreak: bool
-        :keyword language: The language in which the conversation should be generated.
+        :keyword language: The language in which the conversation should be generated. Defaults to English.
          example:
 
          - :py:const:`promptflow.evals.synthetic._constants.SupportedLanguages.English`

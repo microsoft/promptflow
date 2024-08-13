@@ -66,7 +66,7 @@ async def simulate_conversation(
     *,
     bots: List[ConversationBot],
     session: RetryClient,
-    language: SupportedLanguages = SupportedLanguages.English,
+    language: SupportedLanguages,
     stopping_criteria: Callable[[str], bool] = is_closing_message,
     turn_limit: int = 10,
     history_limit: int = 5,
@@ -109,11 +109,10 @@ async def simulate_conversation(
         conversation_id = None
     first_prompt = first_response["samples"][0]
     if language != SupportedLanguages.English:
-        if language not in SUPPORTED_LANGUAGES_MAPPING:
+        if not isinstance(language, SupportedLanguages) or language not in SupportedLanguages:
             raise Exception(  # pylint: disable=broad-exception-raised
                 f"Language option '{language}' isn't supported. Select a supported language option from "
-                "promptflow.evals.synthetic._constants.SupportedLanguages: "
-                f"{[e.value for e in SupportedLanguages]}"
+                f"promptflow.evals.synthetic._constants.SupportedLanguages: {[f'{e}' for e in SupportedLanguages]}"
             )
         first_prompt += f" {SUPPORTED_LANGUAGES_MAPPING[language]}"
     # Add all generated turns into array to pass for each bot while generating

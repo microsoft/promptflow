@@ -27,7 +27,7 @@ async def callback(
 
     # we are formatting the response to follow the openAI chat protocol format
     formatted_response = {
-        "content": response,
+        "content": query,
         "role": "assistant",
         "context": {
             "citations": None,
