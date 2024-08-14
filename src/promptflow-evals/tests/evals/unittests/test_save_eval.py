@@ -65,4 +65,4 @@ class TestSaveEval:
         pf_client.flows.save(ToyEvaluator, path=tmpdir)
         with pytest.raises(GenerateFlowMetaJsonError) as info:
             _ = pf_client.run(tmpdir, data=data_file)
-        assert "Relative imports fail in evaluators that are saved and loaded." in info._excinfo[1].message
+        assert "Relative imports fail in loaded code that is not a known python module." in info._excinfo[1].message
