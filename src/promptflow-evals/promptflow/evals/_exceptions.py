@@ -78,60 +78,8 @@ class PromptflowEvalsException(AzureError):
         blame: ErrorBlame = ErrorBlame.UNKNOWN,
         **kwargs,
     ) -> None:
-        self._category = category
-        self._target = target
-        self._blame = blame
-        self._no_personal_data_message = no_personal_data_message
+        self.category = category
+        self.target = target
+        self.blame = blame
+        self.no_personal_data_message = no_personal_data_message
         super().__init__(message, *args, **kwargs)
-
-    @property
-    def target(self) -> ErrorTarget:
-        """Return the error target.
-
-        :return: The error target.
-        :rtype: ~promptflow.evals._exceptions.ErrorTarget
-        """
-        return self._target
-
-    @target.setter
-    def target(self, value: ErrorTarget):
-        self._target = value
-
-    @property
-    def no_personal_data_message(self) -> str:
-        """Return the error message with no personal data.
-
-        :return: No personal data error message.
-        :rtype: str
-        """
-        return self._no_personal_data_message
-
-    @no_personal_data_message.setter
-    def no_personal_data_message(self, value: str):
-        self._no_personal_data_message = value
-
-    @property
-    def category(self) -> ErrorCategory:
-        """Return the error category.
-
-        :return: The error category.
-        :rtype: ~promptflow.evals._exceptions.ErrorCategory
-        """
-        return self._category
-
-    @category.setter
-    def category(self, value: ErrorCategory):
-        self._category = value
-
-    @property
-    def blame(self) -> ErrorBlame:
-        """Return who is to blame for the error.
-
-        :return: The error blame.
-        :rtype: ~promptflow.evals._exceptions.ErrorBlame
-        """
-        return self._blame
-
-    @blame.setter
-    def blame(self, value: ErrorBlame):
-        self._blame = value
