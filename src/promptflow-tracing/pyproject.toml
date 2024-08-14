@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 # poetry
 [tool.poetry]
 name = "promptflow-tracing"
-version = "1.15.0.dev0"
+version = "1.15.0rc1"
 description = "Prompt flow tracing"
 license = "MIT"
 authors = [
