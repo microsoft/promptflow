@@ -6,12 +6,10 @@
 # that would have otherwise been a relative import scoped to single evaluator directories.
 
 from . import constants
-from .content_safety_base import ContentSafetyEvaluatorBase
 from .rai_service import evaluate_with_rai_service
 from .utils import get_harm_severity_level
 
 __all__ = [
-    "ContentSafetyEvaluatorBase",
     "get_harm_severity_level",
     "evaluate_with_rai_service",
     "constants",

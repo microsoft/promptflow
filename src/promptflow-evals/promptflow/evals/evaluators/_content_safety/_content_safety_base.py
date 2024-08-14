@@ -4,8 +4,8 @@
 
 from abc import ABC
 
-from .constants import EvaluationMetrics
-from .rai_service import evaluate_with_rai_service
+from promptflow.evals.common.constants import EvaluationMetrics
+from promptflow.evals.common.rai_service import evaluate_with_rai_service
 
 
 class ContentSafetyEvaluatorBase(ABC):
