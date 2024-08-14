@@ -4,12 +4,8 @@
 
 from abc import ABC
 
-try:
-    from .constants import EvaluationMetrics
-    from .evaluate_with_rai_service import evaluate_with_rai_service
-except ImportError:
-    from constants import EvaluationMetrics
-    from evaluate_with_rai_service import evaluate_with_rai_service
+from .constants import EvaluationMetrics
+from .rai_service import evaluate_with_rai_service
 
 
 class ContentSafetyEvaluatorBase(ABC):
