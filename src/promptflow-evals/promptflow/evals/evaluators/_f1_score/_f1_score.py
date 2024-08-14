@@ -5,62 +5,24 @@
 from collections import Counter
 from typing import List
 
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 
-class F1ScoreEvaluator:
-    """
-    Initialize a f1 score evaluator for calculating F1 score.
 
-    **Usage**
-
-    .. code-block:: python
-
-        eval_fn = F1ScoreEvaluator()
-        result = eval_fn(
-            answer="The capital of Japan is Tokyo.",
-            ground_truth="Tokyo is Japan's capital, known for its blend of traditional culture \
-                and technological advancements.")
-
-    **Output format**
-
-    .. code-block:: python
-
-        {
-            "f1_score": 0.42
-        }
-    """
-
+class _AsyncF1ScoreEvaluator:
     def __init__(self):
         pass
 
-    def __call__(self, *, answer: str, ground_truth: str, **kwargs):
-        """
-        Evaluate F1 score.
-
-        :keyword answer: The answer to be evaluated.
-        :paramtype answer: str
-        :keyword ground_truth: The ground truth to be evaluated.
-        :paramtype ground_truth: str
-        :return: The F1 score.
-        :rtype: dict
-        """
-
+    async def __call__(self, *, answer: str, ground_truth: str, **kwargs):
         # Validate inputs
-        # Raises value error if failed, so execution alone signifies success.
-        _ = self._validate_inputs(answer=answer, ground_truth=ground_truth)
-
-        # Run f1 score computation.
-        f1_result = self._compute_f1_score(answer=answer, ground_truth=ground_truth)
-
-        return {"f1_score": f1_result}
-
-    @classmethod
-    def _validate_inputs(cls, answer: str, ground_truth: str):
         if not (answer and answer.strip() and answer != "None") or not (
             ground_truth and ground_truth.strip() and ground_truth != "None"
         ):
             raise ValueError("Both 'answer' and 'ground_truth' must be non-empty strings.")
 
-        return True
+        # Run f1 score computation.
+        f1_result = self._compute_f1_score(answer=answer, ground_truth=ground_truth)
+
+        return {"f1_score": f1_result}
 
     @classmethod
     def _compute_f1_score(cls, answer: str, ground_truth: str) -> str:
@@ -123,3 +85,49 @@ class F1ScoreEvaluator:
             f1 = (2.0 * precision * recall) / (precision + recall)
 
         return f1
+
+
+class F1ScoreEvaluator:
+    """
+    Initialize a f1 score evaluator for calculating F1 score.
+
+    **Usage**
+
+    .. code-block:: python
+
+        eval_fn = F1ScoreEvaluator()
+        result = eval_fn(
+            answer="The capital of Japan is Tokyo.",
+            ground_truth="Tokyo is Japan's capital, known for its blend of traditional culture \
+                and technological advancements.")
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "f1_score": 0.42
+        }
+    """
+
+    def __init__(self):
+        self._async_evaluator = _AsyncF1ScoreEvaluator()
+
+    def __call__(self, *, answer: str, ground_truth: str, **kwargs):
+        """
+        Evaluate F1 score.
+
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
+        :keyword ground_truth: The ground truth to be evaluated.
+        :paramtype ground_truth: str
+        :return: The F1 score.
+        :rtype: dict
+        """
+
+        return async_run_allowing_running_loop(
+            self._async_evaluator, answer=answer, ground_truth=ground_truth, **kwargs
+        )
+
+    def _to_async(self):
+        return self._async_evaluator

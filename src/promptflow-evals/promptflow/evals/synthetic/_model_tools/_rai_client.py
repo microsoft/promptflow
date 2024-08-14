@@ -6,7 +6,7 @@ import os
 from typing import Any, Dict
 from urllib.parse import urljoin, urlparse
 
-import requests  # pylint: disable=networking-import-outside-azure-core-transport
+import requests
 
 from promptflow.evals._user_agent import USER_AGENT
 
@@ -28,6 +28,7 @@ class RAIClient:
     :param token_manager: The token manager
     :type token_manage: ~promptflow.evals.synthetic._model_tools._identity_manager.APITokenManager
     """
+
     def __init__(self, azure_ai_project: Dict, token_manager: APITokenManager) -> None:
         self.azure_ai_project = azure_ai_project
         self.token_manager = token_manager

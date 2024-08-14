@@ -14,6 +14,10 @@ env:
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-evals
   PROMPT_FLOW_TEST_MODE: "live"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   test:
     strategy:
@@ -53,10 +57,11 @@ jobs:
       - name: generate end-to-end test config from secret
         run: echo '${{ secrets.PF_EVALS_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}
-      - uses: azure/login@v2
+      - uses: azure/login@v1
         with:
-          creds: ${{ secrets.PF_EVALS_SP_CREDENTIALS }}
-          enable-AzPSSession: true
+          client-id: ${{ secrets.PF_EVALS_SP_CLIENT_ID }}
+          tenant-id: ${{ secrets.PF_EVALS_SP_TENANT_ID }}
+          subscription-id: ${{ secrets.PF_EVALS_SP_SUBSCRIPTION_ID }}
       - name: run performance tests
         id: performance_tests
         run: |
