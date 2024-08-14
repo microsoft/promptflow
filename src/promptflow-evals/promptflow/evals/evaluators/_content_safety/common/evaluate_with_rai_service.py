@@ -16,10 +16,10 @@ from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
 
 try:
-    from .constants import EvaluationMetrics, RAIService, Tasks
+    from .constants import CommonConstants, EvaluationMetrics, RAIService, Tasks
     from .utils import get_harm_severity_level
 except ImportError:
-    from constants import EvaluationMetrics, RAIService, Tasks
+    from constants import CommonConstants, EvaluationMetrics, RAIService, Tasks
     from utils import get_harm_severity_level
 
 try:
@@ -27,6 +27,24 @@ try:
 except importlib.metadata.PackageNotFoundError:
     version = "unknown"
 USER_AGENT = "{}/{}".format("promptflow-evals", version)
+
+
+def get_common_headers(token: str) -> Dict:
+    """Get common headers for the HTTP request
+
+    :param token: The Azure authentication token.
+    :type token: str
+    :return: The common headers.
+    :rtype: Dict
+    """
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "User-Agent": USER_AGENT,
+        # Handle "RuntimeError: Event loop is closed" from httpx AsyncClient
+        # https://github.com/encode/httpx/discussions/2959
+        "Connection": "close",
+    }
 
 
 async def ensure_service_availability(rai_svc_url: str, token: str, capability: str = None) -> None:
@@ -40,15 +58,11 @@ async def ensure_service_availability(rai_svc_url: str, token: str, capability: 
     :type capability: str
     :raises Exception: If the service is not available in the region or the capability is not available.
     """
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-        "User-Agent": USER_AGENT,
-    }
-
+    headers = get_common_headers(token)
     svc_liveness_url = rai_svc_url + "/checkannotation"
+
     async with httpx.AsyncClient() as client:
-        response = await client.get(svc_liveness_url, headers=headers)
+        response = await client.get(svc_liveness_url, headers=headers, timeout=CommonConstants.DEFAULT_HTTP_TIMEOUT)
 
     if response.status_code != 200:
         raise Exception(  # pylint: disable=broad-exception-raised
@@ -84,14 +98,10 @@ async def submit_request(question: str, answer: str, metric: str, rai_svc_url: s
     payload = {"UserTextList": [normalized_user_text], "AnnotationTask": Tasks.CONTENT_HARM, "MetricList": [metric]}
 
     url = rai_svc_url + "/submitannotation"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-        "User-Agent": USER_AGENT,
-    }
+    headers = get_common_headers(token)
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(url, json=payload, headers=headers)
+        response = await client.post(url, json=payload, headers=headers, timeout=CommonConstants.DEFAULT_HTTP_TIMEOUT)
 
     if response.status_code != 202:
         print("Fail evaluating '%s' with error message: %s" % (payload["UserTextList"], response.text))
@@ -110,7 +120,7 @@ async def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCre
     :param rai_svc_url: The Responsible AI service URL.
     :type rai_svc_url: str
     :param credential: The Azure authentication credential.
-    :type credential: TokenCredential
+    :type credential: ~azure.core.credentials.TokenCredential
     :param token: The Azure authentication token.
     :type token: str
     :return: The annotation result.
@@ -122,10 +132,10 @@ async def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCre
     url = rai_svc_url + "/operations/" + operation_id
     while True:
         token = await fetch_or_reuse_token(credential, token)
-        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        headers = get_common_headers(token)
 
         async with httpx.AsyncClient() as client:
-            response = await client.get(url, headers=headers)
+            response = await client.get(url, headers=headers, timeout=CommonConstants.DEFAULT_HTTP_TIMEOUT)
 
         if response.status_code == 200:
             return response.json()
@@ -227,7 +237,7 @@ async def _get_service_discovery_url(azure_ai_project: dict, token: str) -> str:
     :return: The discovery service URL.
     :rtype: str
     """
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    headers = get_common_headers(token)
     async with httpx.AsyncClient() as client:
         response = await client.get(
             f"https://management.azure.com/subscriptions/{azure_ai_project['subscription_id']}/"
@@ -235,7 +245,7 @@ async def _get_service_discovery_url(azure_ai_project: dict, token: str) -> str:
             f"providers/Microsoft.MachineLearningServices/workspaces/{azure_ai_project['project_name']}?"
             f"api-version=2023-08-01-preview",
             headers=headers,
-            timeout=5,
+            timeout=CommonConstants.DEFAULT_HTTP_TIMEOUT,
         )
     if response.status_code != 200:
         raise Exception("Failed to retrieve the discovery service URL")  # pylint: disable=broad-exception-raised
@@ -270,11 +280,12 @@ async def get_rai_svc_url(project_scope: dict, token: str) -> str:
 async def fetch_or_reuse_token(credential: TokenCredential, token: str = None) -> str:
     """Get token. Fetch a new token if the current token is near expiry
 
-    :param credential: The Azure authentication credential.
-    :type credential: TokenCredential
-    :param token: The Azure authentication token. Defaults to None. If none, a new token will be fetched.
-    :type token: str
-    :return: The Azure authentication token.
+       :param credential: The Azure authentication credential.
+       :type credential:
+    ~azure.core.credentials.TokenCredential
+       :param token: The Azure authentication token. Defaults to None. If none, a new token will be fetched.
+       :type token: str
+       :return: The Azure authentication token.
     """
     acquire_new_token = True
     try:
@@ -301,18 +312,19 @@ async def evaluate_with_rai_service(
 ):
     """ "Evaluate the content safety of the answer using Responsible AI service
 
-    :param question: The question to evaluate.
-    :type question: str
-    :param answer: The answer to evaluate.
-    :type answer: str
-    :param metric_name: The evaluation metric to use.
-    :type metric_name: str
-    :param project_scope: The Azure AI project scope details.
-    :type project_scope: Dict
-    :param credential: The Azure authentication credential.
-    :type credential: TokenCredential
-    :return: The parsed annotation result.
-    :rtype: List[List[Dict]]
+       :param question: The question to evaluate.
+       :type question: str
+       :param answer: The answer to evaluate.
+       :type answer: str
+       :param metric_name: The evaluation metric to use.
+       :type metric_name: str
+       :param project_scope: The Azure AI project scope details.
+       :type project_scope: Dict
+       :param credential: The Azure authentication credential.
+       :type credential:
+    ~azure.core.credentials.TokenCredential
+       :return: The parsed annotation result.
+       :rtype: List[List[Dict]]
     """
     # Use DefaultAzureCredential if no credential is provided
     # This is for the for batch run scenario as the credential cannot be serialized by promoptflow

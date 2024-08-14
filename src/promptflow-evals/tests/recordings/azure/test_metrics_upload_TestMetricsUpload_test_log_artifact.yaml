@@ -1,5 +1,64 @@
 interactions:
 - request:
+    body: !!binary |
+      CocHCoYCChwKDHNlcnZpY2UubmFtZRIMCgpwcm9tcHRmbG93ClwKCmNvbGxlY3Rpb24STgpMcHJv
+      bXB0Zmxvd19ldmFsc19ldmFsdWF0b3JzX2YxX3Njb3JlX2YxX3Njb3JlX2FzeW5jZjFzY29yZWV2
+      YWx1YXRvcl82eWlsNXE4cQo5Cg9zdWJzY3JpcHRpb24uaWQSJgokYjE3MjUzZmEtZjMyNy00MmQ2
+      LTk2ODYtZjNlNTUzZTI0NzYzCiwKE3Jlc291cmNlX2dyb3VwLm5hbWUSFQoTcHJvbXB0Zmxvdy1l
+      dmFscy1jaQofCg53b3Jrc3BhY2UubmFtZRINCgtwZi1ldmFscy13cxL7BAoMCgpwcm9tcHRmbG93
+      EuoEChCN/ZV3XB+/anIE1wDtZVmOEgjcRNEGFBHR4CoaQW5zd2VyTGVuZ3RoLl9fYWdncmVnYXRl
+      X18wATlcVOx8MBvnF0FcVOx8MBvnF0oZCglmcmFtZXdvcmsSDAoKcHJvbXB0Zmxvd0oXCglzcGFu
+      X3R5cGUSCgoIRnVuY3Rpb25KKAoIZnVuY3Rpb24SHAoaQW5zd2VyTGVuZ3RoLl9fYWdncmVnYXRl
+      X19KGgoQZXhlY3V0aW9uX3RhcmdldBIGCgRmbGV4ShQKDmlzX2FnZ3JlZ2F0aW9uEgIQAUqFAQoM
+      YmF0Y2hfcnVuX2lkEnUKc2V2YWxzX2UyZXRlc3RzX2N1c3RvbV9ldmFsdWF0b3JzX2Fuc3dlcl9s
+      ZW5ndGhfd2l0aF9hZ2dyZWdhdGlvbl9hbnN3ZXJsZW5ndGhfcWdrN255a2RfMjAyNDA3MzBfMTQz
+      NDA5XzAwMDA4MF9yZWR1Y2VKQQoGaW5wdXRzEjcKNXsKICAibGluZV9yZXN1bHRzIjogWwogICAg
+      OTgxLAogICAgMTYyNiwKICAgIDMxCiAgXQp9ShEKBm91dHB1dBIHCgU5ODEuMFppCVxU7HwwG+cX
+      Ehpwcm9tcHRmbG93LmZ1bmN0aW9uLmlucHV0cxpCCgdwYXlsb2FkEjcKNXsKICAibGluZV9yZXN1
+      bHRzIjogWwogICAgOTgxLAogICAgMTYyNiwKICAgIDMxCiAgXQp9WjkJXFTsfDAb5xcSGnByb21w
+      dGZsb3cuZnVuY3Rpb24ub3V0cHV0GhIKB3BheWxvYWQSBwoFOTgxLjB6AhgBhQEAAQAA
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '906'
+      Content-Type:
+      - application/x-protobuf
+      User-Agent:
+      - OTel-OTLP-Exporter-Python/1.25.0
+    method: POST
+    uri: http://127.0.0.1:23333/v1/traces
+  response:
+    body:
+      string: '<!doctype html>
+
+        <html lang=en>
+
+        <title>500 Internal Server Error</title>
+
+        <h1>Internal Server Error</h1>
+
+        <p>The server encountered an internal error and was unable to complete your
+        request. Either the server is overloaded or there is an error in the application.</p>
+
+        '
+    headers:
+      access-control-allow-origin:
+      - '*'
+      content-length:
+      - '265'
+      content-type:
+      - text/html; charset=utf-8
+      server:
+      - waitress
+    status:
+      code: 500
+      message: INTERNAL SERVER ERROR
+- request:
     body: null
     headers:
       Accept:
@@ -44,6 +103,65 @@ interactions:
     status:
       code: 200
       message: OK
+- request:
+    body: !!binary |
+      CocHCoYCChwKDHNlcnZpY2UubmFtZRIMCgpwcm9tcHRmbG93ClwKCmNvbGxlY3Rpb24STgpMcHJv
+      bXB0Zmxvd19ldmFsc19ldmFsdWF0b3JzX2YxX3Njb3JlX2YxX3Njb3JlX2FzeW5jZjFzY29yZWV2
+      YWx1YXRvcl82eWlsNXE4cQo5Cg9zdWJzY3JpcHRpb24uaWQSJgokYjE3MjUzZmEtZjMyNy00MmQ2
+      LTk2ODYtZjNlNTUzZTI0NzYzCiwKE3Jlc291cmNlX2dyb3VwLm5hbWUSFQoTcHJvbXB0Zmxvdy1l
+      dmFscy1jaQofCg53b3Jrc3BhY2UubmFtZRINCgtwZi1ldmFscy13cxL7BAoMCgpwcm9tcHRmbG93
+      EuoEChCN/ZV3XB+/anIE1wDtZVmOEgjcRNEGFBHR4CoaQW5zd2VyTGVuZ3RoLl9fYWdncmVnYXRl
+      X18wATlcVOx8MBvnF0FcVOx8MBvnF0oZCglmcmFtZXdvcmsSDAoKcHJvbXB0Zmxvd0oXCglzcGFu
+      X3R5cGUSCgoIRnVuY3Rpb25KKAoIZnVuY3Rpb24SHAoaQW5zd2VyTGVuZ3RoLl9fYWdncmVnYXRl
+      X19KGgoQZXhlY3V0aW9uX3RhcmdldBIGCgRmbGV4ShQKDmlzX2FnZ3JlZ2F0aW9uEgIQAUqFAQoM
+      YmF0Y2hfcnVuX2lkEnUKc2V2YWxzX2UyZXRlc3RzX2N1c3RvbV9ldmFsdWF0b3JzX2Fuc3dlcl9s
+      ZW5ndGhfd2l0aF9hZ2dyZWdhdGlvbl9hbnN3ZXJsZW5ndGhfcWdrN255a2RfMjAyNDA3MzBfMTQz
+      NDA5XzAwMDA4MF9yZWR1Y2VKQQoGaW5wdXRzEjcKNXsKICAibGluZV9yZXN1bHRzIjogWwogICAg
+      OTgxLAogICAgMTYyNiwKICAgIDMxCiAgXQp9ShEKBm91dHB1dBIHCgU5ODEuMFppCVxU7HwwG+cX
+      Ehpwcm9tcHRmbG93LmZ1bmN0aW9uLmlucHV0cxpCCgdwYXlsb2FkEjcKNXsKICAibGluZV9yZXN1
+      bHRzIjogWwogICAgOTgxLAogICAgMTYyNiwKICAgIDMxCiAgXQp9WjkJXFTsfDAb5xcSGnByb21w
+      dGZsb3cuZnVuY3Rpb24ub3V0cHV0GhIKB3BheWxvYWQSBwoFOTgxLjB6AhgBhQEAAQAA
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '906'
+      Content-Type:
+      - application/x-protobuf
+      User-Agent:
+      - OTel-OTLP-Exporter-Python/1.25.0
+    method: POST
+    uri: http://127.0.0.1:23333/v1/traces
+  response:
+    body:
+      string: '<!doctype html>
+
+        <html lang=en>
+
+        <title>500 Internal Server Error</title>
+
+        <h1>Internal Server Error</h1>
+
+        <p>The server encountered an internal error and was unable to complete your
+        request. Either the server is overloaded or there is an error in the application.</p>
+
+        '
+    headers:
+      access-control-allow-origin:
+      - '*'
+      content-length:
+      - '265'
+      content-type:
+      - text/html; charset=utf-8
+      server:
+      - waitress
+    status:
+      code: 500
+      message: INTERNAL SERVER ERROR
 - request:
     body: '{"experiment_id": "0", "user_id": "promptflow-evals", "start_time": "1717563256142",
       "tags": [{"key": "mlflow.user", "value": "promptflow-evals"}], "run_name": "test"}'
