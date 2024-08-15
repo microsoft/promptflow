@@ -1,8 +1,9 @@
 # promptflow-devkit package
 
-## v1.15.0 (Upcoming)
+## v1.15.0 (2024.08.15)
+
 ### Bugs fixed
-- Fixed trace view can't display boolean output (#3613)
+- Fixed trace view can't display boolean output.
 
 ## v1.14.0 (2024.07.25)
 ### Improvements
