@@ -1,0 +1,20 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+type: command
+
+name: convert_to_parquet
+display_name: Convert evaluation results to parquet
+inputs:
+  eval_qna_rag_metrics_output_folder: 
+    type: uri_folder
+  eval_perceived_intelligence_output_folder:
+    type: uri_folder
+  eval_summarization_output_folder:
+    type: uri_folder
+outputs:
+  eval_results_output:
+    type: uri_folder
+code: ./
+command: python convert_parquet.py --eval_qna_rag_metrics_output_folder ${{inputs.eval_qna_rag_metrics_output_folder}} --eval_perceived_intelligence_output_folder ${{inputs.eval_perceived_intelligence_output_folder}} --eval_summarization_output_folder ${{inputs.eval_summarization_output_folder}} --eval_results_output ${{outputs.eval_results_output}}
+environment:
+  conda_file: ./conda.yaml
+  image: mcr.microsoft.com/azureml/inference-base-2004:latest

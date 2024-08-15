@@ -3,13 +3,12 @@
 # ---------------------------------------------------------
 import inspect
 import logging
+import os
 
 import numpy as np
 
 from promptflow.client import PFClient
 from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
-
-from ..._constants import BATCH_RUN_TIMEOUT
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,20 +40,24 @@ class ProxyClient:
         return ProxyRun(run=eval_future)
 
     def get_details(self, proxy_run, all_results=False):
-        run = proxy_run.run.result(timeout=BATCH_RUN_TIMEOUT)
+        run = proxy_run.run.result()
         result_df = self._pf_client.get_details(run, all_results=all_results)
         result_df.replace("(Failed)", np.nan, inplace=True)
         return result_df
 
     def get_metrics(self, proxy_run):
-        run = proxy_run.run.result(timeout=BATCH_RUN_TIMEOUT)
+        run = proxy_run.run.result()
         return self._pf_client.get_metrics(run)
 
     @staticmethod
     def _should_batch_use_async(flow):
-        if hasattr(flow, "__call__") and inspect.iscoroutinefunction(flow.__call__):
-            return True
-        elif inspect.iscoroutinefunction(flow):
-            return True
-        else:
-            return False
+        # TODO: Change default to true after promptflow-core releases fix for error handler for async prompty
+        # https://github.com/microsoft/promptflow/pull/3598
+        if os.getenv("PF_EVALS_BATCH_USE_ASYNC", "false").lower() == "true":
+            if hasattr(flow, "__call__") and inspect.iscoroutinefunction(flow.__call__):
+                return True
+            elif inspect.iscoroutinefunction(flow):
+                return True
+            else:
+                return False
+        return False

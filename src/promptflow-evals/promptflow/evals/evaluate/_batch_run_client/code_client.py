@@ -8,10 +8,10 @@ import logging
 import pandas as pd
 
 from promptflow.contracts.types import AttrDict
-from promptflow.evals.evaluate._utils import _apply_column_mapping, _has_aggregator, load_jsonl
+from promptflow.evals.evaluate._utils import _apply_column_mapping, _has_aggregator, get_int_env_var, load_jsonl
 from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
-from ..._constants import BATCH_RUN_TIMEOUT
+from ..._constants import PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_SEC_DEFAULT
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,19 +24,21 @@ class CodeRun:
         self.aggregated_metrics = aggregated_metrics
 
     def get_result_df(self, exclude_inputs=False):
-        result_df = self.run.result(timeout=BATCH_RUN_TIMEOUT)
+        batch_run_timeout = get_int_env_var(PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_SEC_DEFAULT)
+        result_df = self.run.result(timeout=batch_run_timeout)
         if exclude_inputs:
             result_df = result_df.drop(columns=[col for col in result_df.columns if col.startswith("inputs.")])
         return result_df
 
     def get_aggregated_metrics(self):
         try:
+            batch_run_timeout = get_int_env_var(PF_BATCH_TIMEOUT_SEC, PF_BATCH_TIMEOUT_SEC_DEFAULT)
             aggregated_metrics = (
-                self.aggregated_metrics.result(timeout=BATCH_RUN_TIMEOUT)
+                self.aggregated_metrics.result(timeout=batch_run_timeout)
                 if self.aggregated_metrics is not None
                 else None
             )
-        except Exception as ex:
+        except Exception as ex:  # pylint: disable=broad-exception-caught
             LOGGER.debug(f"Error calculating metrics for evaluator {self.evaluator_name}, failed with error {str(ex)}")
             aggregated_metrics = None
 
@@ -105,7 +107,7 @@ class CodeClient:
                 aggr_func = getattr(evaluator, "__aggregate__")
                 aggregated_output = aggr_func(aggregate_input)
                 return aggregated_output
-        except Exception as ex:
+        except Exception as ex:  # pylint: disable=broad-exception-caught
             LOGGER.warning(
                 f"Error calculating aggregations for evaluator {run.evaluator_name}," f" failed with error {str(ex)}"
             )
@@ -116,8 +118,10 @@ class CodeClient:
         if not isinstance(input_df, pd.DataFrame):
             try:
                 json_data = load_jsonl(data)
-            except json.JSONDecodeError:
-                raise ValueError(f"Failed to parse data as JSON: {data}. Please provide a valid json lines data.")
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    f"Failed to parse data as JSON: {data}. Please provide a valid json lines data."
+                ) from exc
 
             input_df = pd.DataFrame(json_data)
         eval_future = self._thread_pool.submit(self._calculate_metric, flow, input_df, column_mapping, evaluator_name)
@@ -135,7 +139,7 @@ class CodeClient:
             aggregated_metrics = run.get_aggregated_metrics()
             print("Aggregated metrics")
             print(aggregated_metrics)
-        except Exception as ex:
+        except Exception as ex:  # pylint: disable=broad-exception-caught
             LOGGER.debug(f"Error calculating metrics for evaluator {run.evaluator_name}, failed with error {str(ex)}")
             return None
         return aggregated_metrics

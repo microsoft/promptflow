@@ -22,11 +22,11 @@ Please refer to our [examples](https://github.com/microsoft/promptflow/tree/main
 
 ## When to use Flex or DAG flow
 
-`Dag flow` provides a UI-friendly way to develop your LLM app, which has the following benifits:
+`Dag flow` provides a UI-friendly way to develop your LLM app, which has the following benefits:
 - **Low code**: user can drag-and-drop in UI to create a LLM app.
 - **DAG Visualization**: user can easily understand the logic structure of the app with DAG view.
 
-`Flex flow` provides a code-friendly way to develop your LLM app, which has the following benifits:
+`Flex flow` provides a code-friendly way to develop your LLM app, which has the following benefits:
 - **Quick start**: Users can quickly test with a simple prompt, then customize with python code with Tracing visualization UI.
 - **More advanced orchestration**: Users can write complex flow with Python built-in control operators (if-else, foreach) or other 3rd party / open-source library. 
 - **Easy onboard from other platforms**: user might already onboard platforms like `langchain` and `sematic kernel` with existing code. User can easily onboard promptflow with a few code changes.

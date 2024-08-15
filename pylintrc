@@ -1,0 +1,56 @@
+[MASTER]
+py-version=3.9
+ignore-patterns=test_*,conftest,setup,.*_utils\.py
+ignore-paths=src\promptflow-evals\tests,src\promptflow-evals\samples,promptflow\evals\evaluate\_telemetry,promptflow\evals\evaluate\_batch_run_client\code_client.py,promptflow\evals\evaluate\_batch_run_client\proxy_client.py
+reports=no
+
+[MESSAGES CONTROL]
+# For all codes, run 'pylint --list-msgs' or go to 'https://pylint.pycqa.org/en/latest/technical_reference/features.html'
+# locally-disabled: Warning locally suppressed using disable-msg
+# cyclic-import: because of https://github.com/PyCQA/pylint/issues/850
+# too-many-arguments: Due to the nature of the CLI many commands have large arguments set which reflect in large arguments set in corresponding methods.
+# Let's black deal with bad-continuation
+
+# Added disables from super-with-arguments
+disable=useless-object-inheritance,missing-timeout,logging-fstring-interpolation,locally-disabled,fixme,cyclic-import,unnecessary-lambda-assignment,too-many-arguments,invalid-name,duplicate-code,too-few-public-methods,consider-using-f-string,super-with-arguments,redefined-builtin,import-outside-toplevel,unnecessary-dunder-call,unnecessary-ellipsis,protected-access,missing-module-docstring
+
+[FORMAT]
+max-line-length=120
+
+[VARIABLES]
+# Tells whether we should check for unused import in __init__ files.
+init-import=yes
+
+[DESIGN]
+# Maximum number of locals for function / method body
+max-locals=25
+# Maximum number of branch for function / method body
+max-branches=20
+# Maximum number of instance attributes for class
+max-attributes=10
+# Maximum number of ancestors
+max-parents=15
+
+[SIMILARITIES]
+min-similarity-lines=10
+
+[BASIC]
+# Naming hints based on PEP 8 (https://www.python.org/dev/peps/pep-0008/#naming-conventions).
+# Consider these guidelines and not hard rules. Read PEP 8 for more details.
+
+# The invalid-name checker must be **enabled** for these hints to be used.
+include-naming-hint=yes
+
+module-naming-style=snake_case
+const-naming-style=UPPER_CASE
+class-naming-style=PascalCase
+class-attribute-naming-style=snake_case
+attr-naming-style=snake_case
+method-naming-style=snake_case
+function-naming-style=snake_case
+argument-naming-style=snake_case
+variable-naming-style=snake_case
+inlinevar-naming-style=snake_case
+
+[TYPECHECK]
+generated-members=js.*

@@ -1,7 +1,13 @@
 # promptflow-core package
 
-## v1.14.0 (Upcoming)
-TODO
+## v1.15.0 (2024.08.15)
+
+### Bugs fixed
+- Fixed openai error handler not functioning for `AsyncPrompty`.
+
+## v1.14.0 (2024.07.25)
+### Improvements
+- Remove dependency on docutils package.
 
 ## v1.13.0 (2024.06.28)
 
