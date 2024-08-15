@@ -72,6 +72,7 @@ class HateUnfairnessEvaluator:
         :return: The hate unfairness score.
         :rtype: dict
         """
+
         return async_run_allowing_running_loop(self._async_evaluator, question=question, answer=answer, **kwargs)
 
     def _to_async(self):
