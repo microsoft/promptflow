@@ -6,6 +6,7 @@
 - [promptflow-azure] Fixed `Connection aborted` error for local to cloud run when registering the run to cloud.
 - [promptflow-core] Fixed openai error handler not functioning for `AsyncPrompty`.
 - [promptflow-devkit] Fixed trace view can't display boolean output.
+- [promptflow-devkit] Fixed not serialize chat history output in interactive mode
 
 ## v1.14.0 (2024.07.25)
 ### Improvements

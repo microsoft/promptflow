@@ -492,7 +492,7 @@ def _safe_join(generator_output):
 def resolve_generator(flow_result, generator_record):
     # resolve generator in flow result
     for k, v in flow_result.run_info.output.items():
-        if isinstance(v, GeneratorType):
+        if isinstance(v, (GeneratorType, IteratorProxy)):
             flow_output = _safe_join(
                 resolve_generator_output_with_cache(v, generator_record, generator_key=f"run.outputs.{k}")
             )
@@ -505,7 +505,7 @@ def resolve_generator(flow_result, generator_record):
 
     # resolve generator in node outputs
     for node_name, node in flow_result.node_run_infos.items():
-        if isinstance(node.output, GeneratorType):
+        if isinstance(node.output, (GeneratorType, IteratorProxy)):
             node_output = _safe_join(
                 resolve_generator_output_with_cache(
                     node.output, generator_record, generator_key=f"nodes.{node_name}.output"
