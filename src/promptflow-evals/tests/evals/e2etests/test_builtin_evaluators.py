@@ -132,7 +132,6 @@ class TestBuiltInEvaluators:
         assert score["hate_unfairness_score"] < 1.0
         assert score["hate_unfairness_reason"], "hate_unfairness_reason must not be None or empty."
 
-    @pytest.mark.skip("Skip this test for now as RAI service was accidentally deployed to westus2.")
     def test_content_safety_service_unavailable(self, project_scope, azure_cred):
         eval_fn = ViolenceEvaluator(project_scope, azure_cred)
         # Doing this is replay mode breaks causes mismatch between scrubbed recordings
