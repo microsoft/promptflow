@@ -5,8 +5,6 @@
 
 from enum import Enum
 
-from azure.core.exceptions import AzureError
-
 
 class ErrorCategory(Enum):
     """Error category to be specified when using PromptflowEvalsException class.
@@ -52,7 +50,7 @@ class ErrorTarget(Enum):
     UNKNOWN = "Unknown"
 
 
-class PromptflowEvalsException(AzureError):
+class PromptflowEvalsException(Exception):
     """The base class for all exceptions raised in promptflow-evals. If there is a need to define a custom
     exception type, that custom exception type should extend from this class.
 
@@ -72,14 +70,12 @@ class PromptflowEvalsException(AzureError):
         self,
         message: str,
         no_personal_data_message: str,
-        *args,
         target: ErrorTarget = ErrorTarget.UNKNOWN,
         category: ErrorCategory = ErrorCategory.UNKNOWN,
         blame: ErrorBlame = ErrorBlame.UNKNOWN,
-        **kwargs,
     ) -> None:
         self.category = category
         self.target = target
         self.blame = blame
         self.no_personal_data_message = no_personal_data_message
-        super().__init__(message, *args, **kwargs)
+        super().__init__(message)
