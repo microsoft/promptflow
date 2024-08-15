@@ -7,7 +7,6 @@ from typing import Dict, List
 
 import numpy as np
 
-from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 try:
@@ -24,7 +23,65 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class _AsyncContentSafetyChatEvaluator:
+class ContentSafetyChatEvaluator:
+    """
+    Initialize a content safety chat evaluator configured to evaluate content safetry metrics for chat scenario.
+
+    :param project_scope: The scope of the Azure AI project.
+        It contains subscription id, resource group, and project name.
+    :type project_scope: dict
+    :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue,
+        focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
+    :type eval_last_turn: bool
+    :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
+        Default is True.
+    :type parallel: bool
+    :param credential: The credential for connecting to Azure AI project.
+    :type credential: ~azure.core.credentials.TokenCredential
+    :return: A function that evaluates and generates metrics for "chat" scenario.
+    :rtype: Callable
+
+    **Usage**
+
+    .. code-block:: python
+
+        eval_fn = ContentSafetyChatEvaluator(model_config)
+        conversation = [
+            {"role": "user", "content": "What is the value of 2 + 2?"},
+            {"role": "assistant", "content": "2 + 2 = 4"}
+        ]
+        result = ContentSafetyChatEvaluator(conversation=conversation)
+
+    **Output format**
+
+    .. code-block:: python
+
+        {
+            "evaluation_per_turn": {
+                "violence": ["High", "Low"],
+                "violence_score": [7.0, 3.0],
+                "violence_reason": "Some reason",
+                "sexual": ["High", "Low"],
+                "sexual_score": [7.0, 3.0],
+                "sexual_reason": "Some reason",
+                "self_harm": ["High", "Low"],
+                "self_harm_score": [7.0, 3.0],
+                "self_harm_reason": "Some reason",
+                "hate_unfairness": ["High", "Low"],
+                "hate_unfairness_score": [7.0, 3.0],
+                "hate_unfairness_reason": "Some reason"
+            },
+            "violence": "Medium",
+            "violence_score": 5.0,
+            "sexual": "Medium",
+            "sexual_score": 5.0,
+            "self_harm": "Medium",
+            "self_harm_score": 5.0,
+            "hate_unfairness": "Medium",
+            "hate_unfairness_score": 5.0,
+        }
+    """
+
     def __init__(self, project_scope: dict, eval_last_turn: bool = False, parallel: bool = True, credential=None):
         self._eval_last_turn = eval_last_turn
         self._parallel = parallel
@@ -35,7 +92,15 @@ class _AsyncContentSafetyChatEvaluator:
             HateUnfairnessEvaluator(project_scope, credential),
         ]
 
-    async def __call__(self, *, conversation, **kwargs):
+    def __call__(self, *, conversation, **kwargs):
+        """
+        Evaluates content-safety metrics for "chat" scenario.
+
+        :keyword conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
+        :paramtype conversation: List[Dict]
+        :return: The scores for Chat scenario.
+        :rtype: dict
+        """
         self._validate_conversation(conversation)
 
         # Extract questions, answers from conversation
@@ -76,8 +141,7 @@ class _AsyncContentSafetyChatEvaluator:
             else:
                 # Sequential execution
                 for evaluator in self._evaluators:
-                    async_evaluator = evaluator._to_async()
-                    result = await self._evaluate_turn_async(turn_num, questions, answers, async_evaluator)
+                    result = self._evaluate_turn(turn_num, questions, answers, evaluator)
                     current_turn_result.update(result)
 
             per_turn_results.append(current_turn_result)
@@ -91,20 +155,6 @@ class _AsyncContentSafetyChatEvaluator:
             answer = answers[turn_num] if turn_num < len(answers) else ""
 
             score = evaluator(question=question, answer=answer)
-
-            return score
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            logger.warning(
-                f"Evaluator {evaluator.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}"
-            )
-            return {}
-
-    async def _evaluate_turn_async(self, turn_num, questions, answers, evaluator):
-        try:
-            question = questions[turn_num] if turn_num < len(questions) else ""
-            answer = answers[turn_num] if turn_num < len(answers) else ""
-
-            score = await evaluator(question=question, answer=answer)
 
             return score
         except Exception as e:  # pylint: disable=broad-exception-caught
@@ -201,80 +251,3 @@ class _AsyncContentSafetyChatEvaluator:
                 return harm_level
 
         return np.nan
-
-
-class ContentSafetyChatEvaluator:
-    """
-    Initialize a content safety chat evaluator configured to evaluate content safetry metrics for chat scenario.
-
-    :param project_scope: The scope of the Azure AI project.
-        It contains subscription id, resource group, and project name.
-    :type project_scope: dict
-    :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue,
-        focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
-    :type eval_last_turn: bool
-    :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
-        Default is True.
-    :type parallel: bool
-    :param credential: The credential for connecting to Azure AI project.
-    :type credential: ~azure.core.credentials.TokenCredential
-    :return: A function that evaluates and generates metrics for "chat" scenario.
-    :rtype: Callable
-
-    **Usage**
-
-    .. code-block:: python
-
-        eval_fn = ContentSafetyChatEvaluator(model_config)
-        conversation = [
-            {"role": "user", "content": "What is the value of 2 + 2?"},
-            {"role": "assistant", "content": "2 + 2 = 4"}
-        ]
-        result = ContentSafetyChatEvaluator(conversation=conversation)
-
-    **Output format**
-
-    .. code-block:: python
-
-        {
-            "evaluation_per_turn": {
-                "violence": ["High", "Low"],
-                "violence_score": [7.0, 3.0],
-                "violence_reason": "Some reason",
-                "sexual": ["High", "Low"],
-                "sexual_score": [7.0, 3.0],
-                "sexual_reason": "Some reason",
-                "self_harm": ["High", "Low"],
-                "self_harm_score": [7.0, 3.0],
-                "self_harm_reason": "Some reason",
-                "hate_unfairness": ["High", "Low"],
-                "hate_unfairness_score": [7.0, 3.0],
-                "hate_unfairness_reason": "Some reason"
-            },
-            "violence": "Medium",
-            "violence_score": 5.0,
-            "sexual": "Medium",
-            "sexual_score": 5.0,
-            "self_harm": "Medium",
-            "self_harm_score": 5.0,
-            "hate_unfairness": "Medium",
-            "hate_unfairness_score": 5.0,
-        }
-    """
-
-    def __init__(self, project_scope: dict, eval_last_turn: bool = False, parallel: bool = True, credential=None):
-        self._async_evaluator = _AsyncContentSafetyChatEvaluator(project_scope, eval_last_turn, parallel, credential)
-
-    def __call__(self, *, conversation, **kwargs):
-        """
-        Evaluates content-safety metrics for "chat" scenario.
-
-        :keyword conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
-        :paramtype conversation: List[Dict]
-        :return: The scores for Chat scenario.
-        :rtype: dict
-        """
-        return async_run_allowing_running_loop(self._async_evaluator, conversation=conversation, **kwargs)
-
-    def _to_async(self):
-        return self._async_evaluator

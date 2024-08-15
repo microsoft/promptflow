@@ -25,10 +25,11 @@ class ProxyClient:
 
     def run(self, flow, data, column_mapping=None, **kwargs):
         flow_to_run = flow
-        if hasattr(flow, "_to_async"):
-            flow_to_run = flow._to_async()
 
         batch_use_async = self._should_batch_use_async(flow_to_run)
+        if batch_use_async and hasattr(flow, "_to_async"):
+            flow_to_run = flow._to_async()
+
         eval_future = self._thread_pool.submit(
             self._pf_client.run,
             flow_to_run,
