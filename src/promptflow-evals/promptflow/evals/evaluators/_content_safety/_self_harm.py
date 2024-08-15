@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from promptflow._utils.async_utils import async_run_allowing_running_loop
-from promptflow.evals.common.constants import EvaluationMetrics
+from promptflow.evals._common.constants import EvaluationMetrics
 
 try:
     from ._content_safety_base import ContentSafetyEvaluatorBase

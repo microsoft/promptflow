@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 from azure.identity import DefaultAzureCredential
 
-from promptflow.evals.common.constants import EvaluationMetrics, HarmSeverityLevel, RAIService
-from promptflow.evals.common.rai_service import (
+from promptflow.evals._common.constants import EvaluationMetrics, HarmSeverityLevel, RAIService
+from promptflow.evals._common.rai_service import (
     _get_service_discovery_url,
     ensure_service_availability,
     evaluate_with_rai_service,
@@ -103,8 +103,8 @@ class TestContentSafetyEvaluator:
         assert res == 100
 
     @patch("httpx.AsyncClient.get", return_value=httpx.Response(200, json={"result": "stuff"}))
-    @patch("promptflow.evals.common.constants.RAIService.TIMEOUT", 1)
-    @patch("promptflow.evals.common.constants.RAIService.SLEEP_TIME", 1.2)
+    @patch("promptflow.evals._common.constants.RAIService.TIMEOUT", 1)
+    @patch("promptflow.evals._common.constants.RAIService.SLEEP_TIME", 1.2)
     @pytest.mark.usefixtures("mock_token")
     @pytest.mark.asyncio
     async def test_fetch_result(self, client_mock, mock_token):
@@ -228,7 +228,7 @@ class TestContentSafetyEvaluator:
         return_value=httpx.Response(200, json={"properties": {"discoveryUrl": "https://www.url.com:123/thePath"}}),
     )
     @patch(
-        "promptflow.evals.common.rai_service._get_service_discovery_url",
+        "promptflow.evals._common.rai_service._get_service_discovery_url",
         return_value="https://www.url.com:123",
     )
     async def test_get_rai_svc_url(self, client_mock, discovery_mock):
@@ -246,27 +246,27 @@ class TestContentSafetyEvaluator:
 
     @pytest.mark.asyncio
     @patch(
-        "promptflow.evals.common.rai_service.fetch_or_reuse_token",
+        "promptflow.evals._common.rai_service.fetch_or_reuse_token",
         return_value="dummy-token",
     )
     @patch(
-        "promptflow.evals.common.rai_service.get_rai_svc_url",
+        "promptflow.evals._common.rai_service.get_rai_svc_url",
         return_value="www.rai_url.com",
     )
     @patch(
-        "promptflow.evals.common.rai_service.ensure_service_availability",
+        "promptflow.evals._common.rai_service.ensure_service_availability",
         return_value=None,
     )
     @patch(
-        "promptflow.evals.common.rai_service.submit_request",
+        "promptflow.evals._common.rai_service.submit_request",
         return_value="op_id",
     )
     @patch(
-        "promptflow.evals.common.rai_service.fetch_result",
+        "promptflow.evals._common.rai_service.fetch_result",
         return_value="response_object",
     )
     @patch(
-        "promptflow.evals.common.rai_service.parse_response",
+        "promptflow.evals._common.rai_service.parse_response",
         return_value="wow-that's-a-lot-of-patches",
     )
     @patch("azure.identity.DefaultAzureCredential")
