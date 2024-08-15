@@ -147,7 +147,7 @@ class TestMetricsUpload(object):
             caplog.clear()
             ev_run.log_artifact(tmp_path)
         self._assert_no_errors_for_module(caplog.records, EvalRun.__module__)
-        
+
     @pytest.mark.performance_test
     def test_e2e_run_target_fn(self, caplog, project_scope, questions_answers_file, monkeypatch):
         """Test evaluation run logging."""
