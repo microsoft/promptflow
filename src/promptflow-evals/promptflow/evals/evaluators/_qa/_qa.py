@@ -3,9 +3,10 @@
 # ---------------------------------------------------------
 
 from concurrent.futures import as_completed
+from typing import Union
 
 from promptflow._utils.async_utils import async_run_allowing_running_loop
-from promptflow.core import AzureOpenAIModelConfiguration
+from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 from .._coherence import CoherenceEvaluator
@@ -17,7 +18,9 @@ from .._similarity import SimilarityEvaluator
 
 
 class _AsyncQAEvaluator:
-    def __init__(self, model_config: AzureOpenAIModelConfiguration, parallel: bool = True):
+    def __init__(
+        self, model_config: Union[AzureOpenAIModelConfiguration, OpenAIModelConfiguration], parallel: bool = True
+    ):
         self._parallel = parallel
 
         self._evaluators = [
@@ -66,7 +69,8 @@ class QAEvaluator:
     Initialize a question-answer evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: ~promptflow.core.AzureOpenAIModelConfiguration
+    :type model_config: Union[~promptflow.core.AzureOpenAIModelConfiguration,
+        ~promptflow.core.OpenAIModelConfiguration]
     :return: A function that evaluates and generates metrics for "question-answering" scenario.
     :rtype: Callable
 
@@ -96,7 +100,9 @@ class QAEvaluator:
         }
     """
 
-    def __init__(self, model_config: AzureOpenAIModelConfiguration, parallel: bool = True):
+    def __init__(
+        self, model_config: Union[AzureOpenAIModelConfiguration, OpenAIModelConfiguration], parallel: bool = True
+    ):
         self._async_evaluator = _AsyncQAEvaluator(model_config, parallel)
 
     def __call__(self, *, question: str, answer: str, context: str, ground_truth: str, **kwargs):

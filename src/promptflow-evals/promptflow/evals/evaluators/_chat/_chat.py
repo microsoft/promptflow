@@ -4,12 +4,12 @@
 import json
 import logging
 from concurrent.futures import as_completed
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import numpy as np
 
 from promptflow._utils.async_utils import async_run_allowing_running_loop
-from promptflow.core import AzureOpenAIModelConfiguration
+from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 from .._coherence import CoherenceEvaluator
@@ -23,7 +23,10 @@ logger = logging.getLogger(__name__)
 
 class _AsyncChatEvaluator:
     def __init__(
-        self, model_config: AzureOpenAIModelConfiguration, eval_last_turn: bool = False, parallel: bool = True
+        self,
+        model_config: Union[AzureOpenAIModelConfiguration, OpenAIModelConfiguration],
+        eval_last_turn: bool = False,
+        parallel: bool = True,
     ):
         self._eval_last_turn = eval_last_turn
         self._parallel = parallel
@@ -263,7 +266,8 @@ class ChatEvaluator:
     Initialize a chat evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: ~promptflow.core.AzureOpenAIModelConfiguration
+    :type model_config: Union[~promptflow.core.AzureOpenAIModelConfiguration,
+        ~promptflow.core.OpenAIModelConfiguration]
     :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue,
         focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
     :type eval_last_turn: bool
@@ -310,7 +314,10 @@ class ChatEvaluator:
     """
 
     def __init__(
-        self, model_config: AzureOpenAIModelConfiguration, eval_last_turn: bool = False, parallel: bool = True
+        self,
+        model_config: Union[AzureOpenAIModelConfiguration, OpenAIModelConfiguration],
+        eval_last_turn: bool = False,
+        parallel: bool = True,
     ):
         self._async_evaluator = _AsyncChatEvaluator(model_config, eval_last_turn, parallel)
 

@@ -125,6 +125,41 @@ class TestEvaluate:
         assert row_result_df["outputs.f1_score.f1_score"][2] == 1
         assert result["studio_url"] is None
 
+    def test_evaluate_with_relative_data_path(self, model_config):
+        original_working_dir = os.getcwd()
+
+        try:
+            working_dir = os.path.dirname(__file__)
+            os.chdir(working_dir)
+
+            data_file = "data/evaluate_test_data.jsonl"
+            input_data = pd.read_json(data_file, lines=True)
+
+            groundedness_eval = GroundednessEvaluator(model_config)
+            fluency_eval = FluencyEvaluator(model_config)
+
+            # Run the evaluation
+            result = evaluate(
+                data=data_file,
+                evaluators={"grounded": groundedness_eval, "fluency": fluency_eval},
+            )
+
+            row_result_df = pd.DataFrame(result["rows"])
+            metrics = result["metrics"]
+
+            # Validate the results
+            assert result is not None
+            assert result["rows"] is not None
+            assert row_result_df.shape[0] == len(input_data)
+
+            assert "outputs.grounded.gpt_groundedness" in row_result_df.columns.to_list()
+            assert "outputs.fluency.gpt_fluency" in row_result_df.columns.to_list()
+
+            assert "grounded.gpt_groundedness" in metrics.keys()
+            assert "fluency.gpt_fluency" in metrics.keys()
+        finally:
+            os.chdir(original_working_dir)
+
     @pytest.mark.azuretest
     def test_evaluate_with_content_safety_evaluator(self, project_scope, data_file):
         input_data = pd.read_json(data_file, lines=True)
