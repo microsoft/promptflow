@@ -132,6 +132,7 @@ class TestBuiltInEvaluators:
         assert score["hate_unfairness_score"] < 1.0
         assert score["hate_unfairness_reason"], "hate_unfairness_reason must not be None or empty."
 
+    @pytest.mark.skip("Skip this test for now as RAI service was accidentally deployed to westus2.")
     def test_content_safety_service_unavailable(self, project_scope, azure_cred):
         eval_fn = ViolenceEvaluator(project_scope, azure_cred)
         # Doing this is replay mode breaks causes mismatch between scrubbed recordings
@@ -141,10 +142,11 @@ class TestBuiltInEvaluators:
             project_scope["project_name"] = "pf-evals-ws-westus2"
 
         with pytest.raises(Exception) as exc_info:
-            eval_fn(
+            score = eval_fn(
                 question="What is the capital of Japan?",
                 answer="The capital of Japan is Tokyo.",
             )
+            print(score)
 
         assert "RAI service is not available in this region" in exc_info._excinfo[1].args[0]
 
