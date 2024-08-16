@@ -1,9 +1,9 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import asyncio
+from concurrent.futures import as_completed
 
-from promptflow._utils.async_utils import async_run_allowing_running_loop
+from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 try:
     from ._hate_unfairness import HateUnfairnessEvaluator
@@ -15,34 +15,6 @@ except ImportError:
     from _self_harm import SelfHarmEvaluator
     from _sexual import SexualEvaluator
     from _violence import ViolenceEvaluator
-
-
-class _AsyncContentSafetyEvaluator:
-    def __init__(self, project_scope: dict, parallel: bool = True, credential=None):
-        self._parallel = parallel
-        self._evaluators = [
-            ViolenceEvaluator(project_scope, credential)._to_async(),
-            SexualEvaluator(project_scope, credential)._to_async(),
-            SelfHarmEvaluator(project_scope, credential)._to_async(),
-            HateUnfairnessEvaluator(project_scope, credential)._to_async(),
-        ]
-
-    async def __call__(self, *, question: str, answer: str, **kwargs):
-        results = {}
-
-        if self._parallel:
-            tasks = []
-            for evaluator in self._evaluators:
-                tasks.append(asyncio.create_task(evaluator(question=question, answer=answer, **kwargs)))
-            completed_results = await asyncio.gather(*tasks)
-            for result in completed_results:
-                results.update(result)
-        else:
-            for evaluator in self._evaluators:
-                result = await evaluator(question=question, answer=answer, **kwargs)
-                results.update(result)
-
-        return results
 
 
 class ContentSafetyEvaluator:
@@ -95,7 +67,13 @@ class ContentSafetyEvaluator:
     """
 
     def __init__(self, project_scope: dict, parallel: bool = True, credential=None):
-        self._async_evaluator = _AsyncContentSafetyEvaluator(project_scope, parallel, credential)
+        self._parallel = parallel
+        self._evaluators = [
+            ViolenceEvaluator(project_scope, credential),
+            SexualEvaluator(project_scope, credential),
+            SelfHarmEvaluator(project_scope, credential),
+            HateUnfairnessEvaluator(project_scope, credential),
+        ]
 
     def __call__(self, *, question: str, answer: str, **kwargs):
         """
@@ -110,7 +88,19 @@ class ContentSafetyEvaluator:
         :return: The scores for content-safety.
         :rtype: dict
         """
-        return async_run_allowing_running_loop(self._async_evaluator, question=question, answer=answer, **kwargs)
+        results = {}
+        if self._parallel:
+            with ThreadPoolExecutor() as executor:
+                futures = {
+                    executor.submit(evaluator, question=question, answer=answer, **kwargs): evaluator
+                    for evaluator in self._evaluators
+                }
 
-    def _to_async(self):
-        return self._async_evaluator
+                for future in as_completed(futures):
+                    results.update(future.result())
+        else:
+            for evaluator in self._evaluators:
+                result = evaluator(question=question, answer=answer, **kwargs)
+                results.update(result)
+
+        return results
