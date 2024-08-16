@@ -73,9 +73,7 @@ class RunStatus(enum.Enum):
     TERMINATED = 3
 
 
-class EvalRun(
-    contextlib.AbstractContextManager
-):  # pylint: disable=too-many-instance-attributes,docstring-missing-param
+class EvalRun(contextlib.AbstractContextManager):  # pylint: disable=too-many-instance-attributes
     """
     The simple singleton run class, used for accessing artifact store.
 
@@ -236,7 +234,7 @@ class EvalRun(
         self._start_run()
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_tb):  # pylint: disable=docstring-missing-param
+    def __exit__(self, exc_type, exc_value, exc_tb):
         """The context manager exit call."""
         self._end_run("FINISHED")
 

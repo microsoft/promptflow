@@ -3,7 +3,6 @@ py-version=3.9
 ignore-patterns=test_*,conftest,setup,.*_utils\.py
 ignore-paths=src\promptflow-evals\tests,src\promptflow-evals\samples,promptflow\evals\evaluate\_telemetry,promptflow\evals\evaluate\_batch_run_client\code_client.py,promptflow\evals\evaluate\_batch_run_client\proxy_client.py
 reports=no
-load-plugins=pylint_guidelines_checker
 
 [MESSAGES CONTROL]
 # For all codes, run 'pylint --list-msgs' or go to 'https://pylint.pycqa.org/en/latest/technical_reference/features.html'
@@ -13,7 +12,7 @@ load-plugins=pylint_guidelines_checker
 # Let's black deal with bad-continuation
 
 # Added disables from super-with-arguments
-disable=useless-object-inheritance,missing-timeout,missing-client-constructor-parameter-kwargs,logging-fstring-interpolation,locally-disabled,fixme,cyclic-import,unnecessary-lambda-assignment,client-method-missing-type-annotations,too-many-arguments,invalid-name,duplicate-code,too-few-public-methods,consider-using-f-string,super-with-arguments,redefined-builtin,import-outside-toplevel,client-suffix-needed,unnecessary-dunder-call,unnecessary-ellipsis,client-paging-methods-use-list,docstring-keyword-should-match-keyword-only,docstring-type-do-not-use-class,client-accepts-api-version-keyword,networking-import-outside-azure-core-transport,protected-access,missing-module-docstring,missing-client-constructor-parameter-credential
+disable=useless-object-inheritance,missing-timeout,logging-fstring-interpolation,locally-disabled,fixme,cyclic-import,unnecessary-lambda-assignment,too-many-arguments,invalid-name,duplicate-code,too-few-public-methods,consider-using-f-string,super-with-arguments,redefined-builtin,import-outside-toplevel,unnecessary-dunder-call,unnecessary-ellipsis,protected-access,missing-module-docstring
 
 [FORMAT]
 max-line-length=120
