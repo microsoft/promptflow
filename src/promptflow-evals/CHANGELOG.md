@@ -1,8 +1,13 @@
 # Release History
 
 ## v0.3.3 (Upcoming)
+### Features Added
+
 ### Bugs Fixed
 - Fixed evaluators to accept (non-Azure) Open AI Configs.
+
+### Improvements
+- Set the PF_EVALS_BATCH_USE_ASYNC environment variable to True by default to enable asynchronous batch run for async-enabled built-in evaluators, improving performance.
 
 ## v0.3.2 (2024-08-13)
 ### Features Added

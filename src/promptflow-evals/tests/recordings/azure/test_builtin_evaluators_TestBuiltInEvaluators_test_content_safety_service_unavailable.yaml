@@ -45,7 +45,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.027'
+      - '0.038'
     status:
       code: 200
       message: OK
@@ -81,7 +81,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.007'
+      - '0.004'
     status:
       code: 530
       message: <none>
