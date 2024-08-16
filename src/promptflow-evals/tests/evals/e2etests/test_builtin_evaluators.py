@@ -143,10 +143,11 @@ class TestBuiltInEvaluators:
             project_scope["project_name"] = "pf-evals-ws-westus2"
 
         with pytest.raises(Exception) as exc_info:
-            eval_fn(
+            score = eval_fn(
                 question="What is the capital of Japan?",
                 answer="The capital of Japan is Tokyo.",
             )
+            print(score)
 
         assert "RAI service is not available in this region" in exc_info._excinfo[1].args[0]
 
