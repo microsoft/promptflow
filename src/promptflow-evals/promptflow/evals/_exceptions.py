@@ -58,8 +58,8 @@ class PromptflowEvalsException(AzureError):
 
     :param message: A message describing the error. This is the error message the user will see.
     :type message: str
-    :param no_personal_data_message: The error message without any personal data. This will be pushed to telemetry logs.
-    :type no_personal_data_message: str
+    :param internal_message: The error message without any personal data. This will be pushed to telemetry logs.
+    :type internal_message: str
     :param target: The name of the element that caused the exception to be thrown.
     :type target: ~promptflow.evals._exceptions.ErrorTarget
     :param error_category: The error category, defaults to Unknown.
@@ -71,7 +71,7 @@ class PromptflowEvalsException(AzureError):
     def __init__(
         self,
         message: str,
-        no_personal_data_message: str,
+        internal_message: str,
         *args,
         target: ErrorTarget = ErrorTarget.UNKNOWN,
         category: ErrorCategory = ErrorCategory.UNKNOWN,
@@ -81,5 +81,5 @@ class PromptflowEvalsException(AzureError):
         self.category = category
         self.target = target
         self.blame = blame
-        self.no_personal_data_message = no_personal_data_message
+        self.internal_message = internal_message
         super().__init__(message, *args, **kwargs)
