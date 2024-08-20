@@ -4,17 +4,18 @@
 import asyncio
 import copy
 import json
-import logging
 import time
 import uuid
 from typing import Dict, List
 
 from aiohttp.web import HTTPException
-from aiohttp_retry import JitterRetry, RetryClient
+from aiohttp_retry import RetryClient
+from azure.core.pipeline.policies import AsyncRetryPolicy, RetryMode
 
+from promptflow.evals._http_utils import get_async_http_client
 from promptflow.evals._user_agent import USER_AGENT
 
-from .models import AsyncHTTPClientWithRetry, OpenAIChatCompletionsModel
+from .models import OpenAIChatCompletionsModel
 
 
 class SimulationRequestDTO:
@@ -189,43 +190,33 @@ class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
                     reason=f"Received unexpected HTTP status: {response.status} {await response.text()}"
                 )
 
-        retry_options = JitterRetry(  # set up retry configuration
-            statuses=[202],  # on which statuses to retry
-            attempts=7,
-            start_timeout=10,
-            max_timeout=180,
-            retry_all_server_errors=False,
+        retry_policy = AsyncRetryPolicy(  # set up retry configuration
+            retry_on_status_codes=[202],  # on which statuses to retry
+            retry_total=7,
+            retry_backoff_factor=10.0,
+            retry_backoff_max=180,
+            retry_mode=RetryMode.Exponential,
         )
 
-        exp_retry_client = AsyncHTTPClientWithRetry(
-            n_retry=None,
-            retry_timeout=None,
-            logger=logging.getLogger(),
-            retry_options=retry_options,
-        )
+        exp_retry_client = get_async_http_client().with_policies(retry_policy=retry_policy)
 
         # initial 10 seconds wait before attempting to fetch result
         await asyncio.sleep(10)
 
-        async with exp_retry_client.client as expsession:
-            async with expsession.get(url=self.result_url, headers=proxy_headers) as response:
-                if response.status == 200:
-                    response_data = await response.json()
-                    self.logger.info("Response: %s", response_data)
+        response = await exp_retry_client.get(self.result_url, headers=proxy_headers)
 
-                    # Copy the full response and return it to be saved in jsonl.
-                    full_response = copy.copy(response_data)
+        response.raise_for_status()
 
-                    time_taken = time.time() - time_start
+        response_data = response.json()
+        self.logger.info("Response: %s", response_data)
 
-                    # pylint: disable=unexpected-keyword-arg
-                    parsed_response = self._parse_response(  # type: ignore[call-arg]
-                        response_data, request_data=request_data
-                    )
-                else:
-                    raise HTTPException(
-                        reason=f"Received unexpected HTTP status: {response.status} {await response.text()}"
-                    )
+        # Copy the full response and return it to be saved in jsonl.
+        full_response = copy.copy(response_data)
+
+        time_taken = time.time() - time_start
+
+        # pylint: disable=unexpected-keyword-arg
+        parsed_response = self._parse_response(response_data, request_data=request_data)  # type: ignore[call-arg]
 
         return {
             "request": request_data,
