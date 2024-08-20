@@ -138,13 +138,16 @@ class TestBuiltInEvaluators:
         # and the actual request made.
         # Using not is_replay() because is_live doesn't apply to recording mode?
         if not is_replay():
+            # Warning, live testing fails due to unstable region.
+            # We need a use a new region.
             project_scope["project_name"] = "pf-evals-ws-westus2"
 
         with pytest.raises(Exception) as exc_info:
-            eval_fn(
+            score = eval_fn(
                 question="What is the capital of Japan?",
                 answer="The capital of Japan is Tokyo.",
             )
+            print(score)
 
         assert "RAI service is not available in this region" in exc_info._excinfo[1].args[0]
 
