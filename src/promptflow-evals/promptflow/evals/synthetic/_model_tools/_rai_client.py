@@ -6,8 +6,7 @@ import os
 from typing import Any, Dict
 from urllib.parse import urljoin, urlparse
 
-import requests
-
+from promptflow.evals._http_utils import get_http_client
 from promptflow.evals._user_agent import USER_AGENT
 
 from ._async_http_client import AsyncHTTPClientWithRetry
@@ -60,7 +59,8 @@ class RAIClient:
     def _get_service_discovery_url(self):
         bearer_token = self.token_manager.get_token()
         headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
-        response = requests.get(
+        http_client = get_http_client()
+        response = http_client.get(
             f"https://management.azure.com/subscriptions/{self.azure_ai_project['subscription_id']}/"
             f"resourceGroups/{self.azure_ai_project['resource_group_name']}/"
             f"providers/Microsoft.MachineLearningServices/workspaces/{self.azure_ai_project['project_name']}?"
