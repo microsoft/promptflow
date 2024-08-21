@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 from ._content_safety import ContentSafetyEvaluator
+from ._content_safety_base import ContentSafetyEvaluatorBase
 from ._content_safety_chat import ContentSafetyChatEvaluator
 from ._hate_unfairness import HateUnfairnessEvaluator
 from ._self_harm import SelfHarmEvaluator
@@ -16,4 +17,5 @@ __all__ = [
     "HateUnfairnessEvaluator",
     "ContentSafetyEvaluator",
     "ContentSafetyChatEvaluator",
+    "ContentSafetyEvaluatorBase",
 ]
