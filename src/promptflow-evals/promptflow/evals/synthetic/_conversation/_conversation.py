@@ -6,7 +6,7 @@ import asyncio
 import logging
 from typing import Callable, Dict, List, Tuple, Union
 
-from .._model_tools import RetryClient
+from ..._http_utils import AsyncHttpPipeline
 from . import ConversationBot, ConversationTurn
 
 
@@ -61,7 +61,7 @@ def is_closing_message_helper(response: str) -> bool:
 
 async def simulate_conversation(
     bots: List[ConversationBot],
-    session: RetryClient,
+    session: AsyncHttpPipeline,
     stopping_criteria: Callable[[str], bool] = is_closing_message,
     turn_limit: int = 10,
     history_limit: int = 5,
@@ -74,7 +74,7 @@ async def simulate_conversation(
     :param bots: List of ConversationBot instances participating in the conversation.
     :type bots: List[ConversationBot]
     :param session: The session to use for making API calls.
-    :type session: RetryClient
+    :type session: AsyncHttpPipeline
     :param stopping_criteria: A callable that determines when the conversation should stop.
     :type stopping_criteria: Callable[[str], bool]
     :param turn_limit: The maximum number of turns in the conversation. Defaults to 10.

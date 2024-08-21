@@ -12,9 +12,7 @@ from collections import deque
 from typing import Deque, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
-from aiohttp import TraceConfig
-from aiohttp.web import HTTPException
-from aiohttp_retry import RandomRetry, RetryClient
+from promptflow.evals._http_utils import AsyncHttpPipeline
 
 from ._identity_manager import APITokenManager
 
@@ -32,52 +30,6 @@ def get_model_class_from_url(endpoint_url: str):
         return OpenAICompletionsModel
     else:
         raise ValueError(f"Unknown API type for endpoint {endpoint_url}")
-
-
-# ===================== HTTP Retry ======================
-class AsyncHTTPClientWithRetry:
-    def __init__(self, n_retry, retry_timeout, logger, retry_options=None):
-        self.attempts = n_retry
-        self.logger = logger
-
-        # Set up async HTTP client with retry
-
-        trace_config = TraceConfig()  # set up request logging
-        trace_config.on_request_end.append(self.delete_auth_header)
-        # trace_config.on_request_start.append(self.on_request_start)
-        # trace_config.on_request_end.append(self.on_request_end)
-        if retry_options is None:
-            retry_options = RandomRetry(  # set up retry configuration
-                statuses=[104, 408, 409, 424, 429, 500, 502, 503, 504],  # on which statuses to retry
-                attempts=n_retry,
-                min_timeout=retry_timeout,
-                max_timeout=retry_timeout,
-            )
-
-        self.client = RetryClient(trace_configs=[trace_config], retry_options=retry_options)
-
-    async def on_request_start(self, session, trace_config_ctx, params):
-        current_attempt = trace_config_ctx.trace_request_ctx["current_attempt"]
-        self.logger.info("[ATTEMPT %s] Sending %s request to %s" % (current_attempt, params.method, params.url))
-
-    async def delete_auth_header(self, session, trace_config_ctx, params):
-        request_headers = dict(params.response.request_info.headers)
-        if "Authorization" in request_headers:
-            del request_headers["Authorization"]
-        if "api-key" in request_headers:
-            del request_headers["api-key"]
-
-    async def on_request_end(self, session, trace_config_ctx, params):
-        current_attempt = trace_config_ctx.trace_request_ctx["current_attempt"]
-        request_headers = dict(params.response.request_info.headers)
-        if "Authorization" in request_headers:
-            del request_headers["Authorization"]  # hide auth token from logs
-        if "api-key" in request_headers:
-            del request_headers["api-key"]
-        self.logger.info(
-            "[ATTEMPT %s] For %s request to %s, received response with status %s and request headers: %s"
-            % (current_attempt, params.method, params.url, params.response.status, request_headers)
-        )
 
 
 # ===========================================================
@@ -119,7 +71,7 @@ class LLMBase(ABC):
     async def get_completion(
         self,
         prompt: str,
-        session: RetryClient,
+        session: AsyncHttpPipeline,
         **request_params,
     ) -> dict:
         """
@@ -128,7 +80,7 @@ class LLMBase(ABC):
         Parameters
         ----------
         prompt: Prompt str to query model with.
-        session: aiohttp RetryClient object to use for the request.
+        session: AsyncHttpPipeline object to use for the request.
         **request_params: Additional parameters to pass to the request.
         """
         request_data = self.format_request_data(prompt, **request_params)
@@ -141,7 +93,7 @@ class LLMBase(ABC):
     async def get_all_completions(
         self,
         prompts: List[str],
-        session: RetryClient,
+        session: AsyncHttpPipeline,
         api_call_max_parallel_count: int,
         api_call_delay_seconds: float,
         request_error_rate_threshold: float,
@@ -152,7 +104,7 @@ class LLMBase(ABC):
     @abstractmethod
     async def request_api(
         self,
-        session: RetryClient,
+        session: AsyncHttpPipeline,
         request_data: dict,
     ) -> dict:
         pass
@@ -161,7 +113,7 @@ class LLMBase(ABC):
     async def get_conversation_completion(
         self,
         messages: List[dict],
-        session: RetryClient,
+        session: AsyncHttpPipeline,
         role: str,
         **request_params,
     ) -> dict:
@@ -172,7 +124,7 @@ class LLMBase(ABC):
         self,
         request_datas: List[dict],
         output_collector: List,
-        session: RetryClient,
+        session: AsyncHttpPipeline,
         api_call_delay_seconds: float,
         request_error_rate_threshold: float,
     ) -> None:
@@ -315,7 +267,7 @@ class OpenAICompletionsModel(LLMBase):
     async def get_conversation_completion(
         self,
         messages: List[dict],
-        session: RetryClient,
+        session: AsyncHttpPipeline,
         role: str = "assistant",
         **request_params,
     ) -> dict:
@@ -326,7 +278,7 @@ class OpenAICompletionsModel(LLMBase):
         ----------
         messages: List of messages to query the model with.
         Expected format: [{"role": "user", "content": "Hello!"}, ...]
-        session: aiohttp RetryClient object to query the model with.
+        session: AsyncHttpPipeline object to query the model with.
         role: Role of the user sending the message.
         request_params: Additional parameters to pass to the model.
         """
@@ -345,7 +297,7 @@ class OpenAICompletionsModel(LLMBase):
     async def get_all_completions(  # type: ignore[override]
         self,
         prompts: List[Dict[str, str]],
-        session: RetryClient,
+        session: AsyncHttpPipeline,
         api_call_max_parallel_count: int = 1,
         api_call_delay_seconds: float = 0.1,
         request_error_rate_threshold: float = 0.5,
@@ -357,7 +309,7 @@ class OpenAICompletionsModel(LLMBase):
         Parameters
         ----------
         prompts: List of prompts to query the model with.
-        session: aiohttp RetryClient to use for the request.
+        session: AsyncHttpPipeline to use for the request.
         api_call_max_parallel_count: Number of parallel requests to make to the API.
         api_call_delay_seconds: Number of seconds to wait between API requests.
         request_error_rate_threshold: Maximum error rate allowed before raising an error.
@@ -406,7 +358,7 @@ class OpenAICompletionsModel(LLMBase):
         self,
         request_datas: List[dict],
         output_collector: List,
-        session: RetryClient,
+        session: AsyncHttpPipeline,
         api_call_delay_seconds: float = 0.1,
         request_error_rate_threshold: float = 0.5,
     ) -> None:
@@ -461,7 +413,7 @@ class OpenAICompletionsModel(LLMBase):
 
     async def request_api(
         self,
-        session: RetryClient,
+        session: AsyncHttpPipeline,
         request_data: dict,
     ) -> dict:
         """
@@ -503,21 +455,21 @@ class OpenAICompletionsModel(LLMBase):
 
         time_start = time.time()
         full_response = None
-        async with session.post(url=self.endpoint_url, headers=headers, json=request_data, params=params) as response:
-            if response.status == 200:
-                response_data = await response.json()
-                self.logger.info(f"Response: {response_data}")
 
-                # Copy the full response and return it to be saved in jsonl.
-                full_response = copy.copy(response_data)
+        response = await session.post(url=self.endpoint_url, headers=headers, json=request_data, params=params)
 
-                time_taken = time.time() - time_start
+        response.raise_for_status()
 
-                parsed_response = self._parse_response(response_data, request_data=request_data)
-            else:
-                raise HTTPException(
-                    reason=f"Received unexpected HTTP status: {response.status} {await response.text()}"
-                )
+        response_data = response.json()
+
+        self.logger.info(f"Response: {response_data}")
+
+        # Copy the full response and return it to be saved in jsonl.
+        full_response = copy.copy(response_data)
+
+        time_taken = time.time() - time_start
+
+        parsed_response = self._parse_response(response_data, request_data=request_data)
 
         return {
             "request": request_data,
@@ -561,7 +513,7 @@ class OpenAIChatCompletionsModel(OpenAICompletionsModel):
     async def get_conversation_completion(
         self,
         messages: List[dict],
-        session: RetryClient,
+        session: AsyncHttpPipeline,
         role: str = "assistant",
         **request_params,
     ) -> dict:
@@ -572,7 +524,7 @@ class OpenAIChatCompletionsModel(OpenAICompletionsModel):
         ----------
         messages: List of messages to query the model with.
         Expected format: [{"role": "user", "content": "Hello!"}, ...]
-        session: aiohttp RetryClient object to query the model with.
+        session: AsyncHttpPipeline object to query the model with.
         role: Not used for this model, since it is a chat model.
         request_params: Additional parameters to pass to the model.
         """
@@ -588,7 +540,7 @@ class OpenAIChatCompletionsModel(OpenAICompletionsModel):
     async def get_completion(
         self,
         prompt: str,
-        session: RetryClient,
+        session: AsyncHttpPipeline,
         **request_params,
     ) -> dict:
         """
@@ -597,7 +549,7 @@ class OpenAIChatCompletionsModel(OpenAICompletionsModel):
         Parameters
         ----------
         prompt: Prompt str to query model with.
-        session: aiohttp RetryClient object to use for the request.
+        session: AsyncHttpPipeline object to use for the request.
         **request_params: Additional parameters to pass to the request.
         """
         messages = [{"role": "system", "content": prompt}]
@@ -611,7 +563,7 @@ class OpenAIChatCompletionsModel(OpenAICompletionsModel):
     async def get_all_completions(
         self,
         prompts: List[str],  # type: ignore[override]
-        session: RetryClient,
+        session: AsyncHttpPipeline,
         api_call_max_parallel_count: int = 1,
         api_call_delay_seconds: float = 0.1,
         request_error_rate_threshold: float = 0.5,
