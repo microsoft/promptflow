@@ -9,7 +9,6 @@ from azure.identity import ClientSecretCredential, DefaultAzureCredential
 CONNECTION_FILE_NAME = "connections.json"
 CONNECTION_TPL_FILE_PATH = Path(".") / "src/promptflow" / "dev-connections.json.example"
 
-
 def get_secret_client(
     tenant_id: str, client_id: str, client_secret: str
 ) -> SecretClient:
