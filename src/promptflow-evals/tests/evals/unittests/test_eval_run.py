@@ -44,13 +44,7 @@ class TestEvalRun:
             mock_response.text = "Mock error"
         else:
             mock_response.json.return_value = {
-                "run": {
-                    "info": {
-                        "run_id": str(uuid4()),
-                        "experiment_id": str(uuid4()),
-                        "run_name": str(uuid4())
-                    }
-                }
+                "run": {"info": {"run_id": str(uuid4()), "experiment_id": str(uuid4()), "run_name": str(uuid4())}}
             }
         return mock_response
 
@@ -58,7 +52,7 @@ class TestEvalRun:
         """Get the mock end run response."""
         mock_response = MagicMock()
         mock_response.status_code = status
-        mock_response.text = 'Everything good' if status == 200 else 'Everything bad'
+        mock_response.text = "Everything good" if status == 200 else "Everything bad"
         return mock_response
 
     @pytest.mark.parametrize(
@@ -69,10 +63,7 @@ class TestEvalRun:
         mock_session = MagicMock()
         mock_session.request.return_value = self._get_mock_create_resonse()
         with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
-            with EvalRun(
-                run_name=None,
-                **TestEvalRun._MOCK_CREDS
-            ) as run:
+            with EvalRun(run_name=None, **TestEvalRun._MOCK_CREDS) as run:
                 if should_raise:
                     with pytest.raises(ValueError) as cm:
                         run._end_run(status)
@@ -108,8 +99,7 @@ class TestEvalRun:
     def test_end_logs_if_fails(self, token_mock, caplog):
         """Test that if the terminal status setting was failed, it is logged."""
         mock_session = MagicMock()
-        mock_session.request.side_effect = [self._get_mock_create_resonse(),
-                                            self._get_mock_end_response(500)]
+        mock_session.request.side_effect = [self._get_mock_create_resonse(), self._get_mock_end_response(500)]
         with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
             logger = logging.getLogger(EvalRun.__module__)
             # All loggers, having promptflow. prefix will have "promptflow" logger
@@ -187,16 +177,15 @@ class TestEvalRun:
             ml_client=MagicMock(),
         ) as run:
             pass
-        assert run.info.run_id == mock_response.json.return_value['run']['info']['run_id']
-        assert run.info.experiment_id == mock_response.json.return_value[
-            'run']['info']['experiment_id']
-        assert run.info.run_name == mock_response.json.return_value['run']['info']["run_name"]
+        assert run.info.run_id == mock_response.json.return_value["run"]["info"]["run_id"]
+        assert run.info.experiment_id == mock_response.json.return_value["run"]["info"]["experiment_id"]
+        assert run.info.run_name == mock_response.json.return_value["run"]["info"]["run_name"]
 
     @patch("promptflow.evals.evaluate._eval_run.requests.Session")
     def test_run_with_name(self, mock_session_cls, token_mock):
         """Test that the run name is not the same as id if it is given."""
         mock_response = self._get_mock_create_resonse()
-        mock_response.json.return_value['run']['info']['run_name'] = 'test'
+        mock_response.json.return_value["run"]["info"]["run_name"] = "test"
         mock_session = MagicMock()
         mock_session.request.return_value = mock_response
         mock_session_cls.return_value = mock_session
@@ -209,10 +198,9 @@ class TestEvalRun:
             ml_client=MagicMock(),
         ) as run:
             pass
-        assert run.info.run_id == mock_response.json.return_value['run']['info']['run_id']
-        assert run.info.experiment_id == mock_response.json.return_value[
-            'run']['info']['experiment_id']
-        assert run.info.run_name == 'test'
+        assert run.info.run_id == mock_response.json.return_value["run"]["info"]["run_id"]
+        assert run.info.experiment_id == mock_response.json.return_value["run"]["info"]["experiment_id"]
+        assert run.info.run_name == "test"
         assert run.info.run_name != run.info.run_id
 
     @patch("promptflow.evals.evaluate._eval_run.requests.Session")
@@ -222,10 +210,7 @@ class TestEvalRun:
         mock_session = MagicMock()
         mock_session.request.return_value = mock_response
         mock_session_cls.return_value = mock_session
-        with EvalRun(
-            run_name="test",
-            **TestEvalRun._MOCK_CREDS
-        ) as run:
+        with EvalRun(run_name="test", **TestEvalRun._MOCK_CREDS) as run:
             pass
         assert run.get_run_history_uri() == (
             "https://region.api.azureml.ms/history/v1.0/subscriptions"
@@ -264,7 +249,7 @@ class TestEvalRun:
         mock_session.request.side_effect = [
             self._get_mock_create_resonse(),
             mock_response,
-            self._get_mock_end_response()
+            self._get_mock_end_response(),
         ]
         with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
             logger = logging.getLogger(EvalRun.__module__)
@@ -272,18 +257,15 @@ class TestEvalRun:
             # as a parent. This logger does not propagate the logs and cannot be
             # captured by caplog. Here we will skip this logger to capture logs.
             logger.parent = logging.root
-            with EvalRun(
-                run_name="test",
-                **TestEvalRun._MOCK_CREDS
-            ) as run:
+            with EvalRun(run_name="test", **TestEvalRun._MOCK_CREDS) as run:
                 fn = getattr(run, log_function)
-                if log_function == 'log_artifact':
-                    with open(os.path.join(tmp_path, EvalRun.EVALUATION_ARTIFACT), 'w') as fp:
-                        fp.write('42')
-                    kwargs = {'artifact_folder': tmp_path}
+                if log_function == "log_artifact":
+                    with open(os.path.join(tmp_path, EvalRun.EVALUATION_ARTIFACT), "w") as fp:
+                        fp.write("42")
+                    kwargs = {"artifact_folder": tmp_path}
                 else:
-                    kwargs = {'key': 'f1', 'value': 0.5}
-                with patch('promptflow.evals.evaluate._eval_run.BlobServiceClient', return_value=MagicMock()):
+                    kwargs = {"key": "f1", "value": 0.5}
+                with patch("promptflow.evals.evaluate._eval_run.BlobServiceClient", return_value=MagicMock()):
                     fn(**kwargs)
         assert len(caplog.records) == 1
         assert mock_response.text in caplog.records[0].message
@@ -311,10 +293,7 @@ class TestEvalRun:
         mock_session = MagicMock()
         mock_session.request.return_value = self._get_mock_create_resonse()
         with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
-            with EvalRun(
-                run_name="test",
-                **TestEvalRun._MOCK_CREDS
-            ) as run:
+            with EvalRun(run_name="test", **TestEvalRun._MOCK_CREDS) as run:
                 logger = logging.getLogger(EvalRun.__module__)
                 # All loggers, having promptflow. prefix will have "promptflow" logger
                 # as a parent. This logger does not propagate the logs and cannot be
@@ -322,7 +301,7 @@ class TestEvalRun:
                 logger.parent = logging.root
                 artifact_folder = tmp_path if dir_exists else "wrong_path_567"
                 if not dir_empty:
-                    with open(os.path.join(tmp_path, "test.txt"), 'w') as fp:
+                    with open(os.path.join(tmp_path, "test.txt"), "w") as fp:
                         fp.write("42")
                 run.log_artifact(artifact_folder)
             assert len(caplog.records) == 1
@@ -355,51 +334,50 @@ class TestEvalRun:
         with EvalRun(
             run_name=None,
             tracking_uri=None,
-            subscription_id='mock',
-            group_name='mock',
-            workspace_name='mock',
-            ml_client=MagicMock()
+            subscription_id="mock",
+            group_name="mock",
+            workspace_name="mock",
+            ml_client=MagicMock(),
         ) as run:
             assert len(caplog.records) == 1
             assert "The results will be saved locally, but will not be logged to Azure." in caplog.records[0].message
-            with patch('promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry') as mock_request:
-                run.log_artifact('mock_dir')
-                run.log_metric('foo', 42)
-                run.write_properties_to_run_history({'foo': 'bar'})
+            with patch("promptflow.evals.evaluate._eval_run.EvalRun.request_with_retry") as mock_request:
+                run.log_artifact("mock_dir")
+                run.log_metric("foo", 42)
+                run.write_properties_to_run_history({"foo": "bar"})
             mock_request.assert_not_called()
 
-    @pytest.mark.parametrize('status_code,pf_run', [
-        (401, False),
-        (200, False),
-        (401, True),
-        (200, True),
-    ])
+    @pytest.mark.parametrize(
+        "status_code,pf_run",
+        [
+            (401, False),
+            (200, False),
+            (401, True),
+            (200, True),
+        ],
+    )
     def test_lifecycle(self, token_mock, status_code, pf_run):
         """Test the run statuses throughout its life cycle."""
         pf_run_mock = None
         if pf_run:
             pf_run_mock = MagicMock()
-            pf_run_mock.name = 'mock_pf_run'
-            pf_run_mock._experiment_name = 'mock_pf_experiment'
+            pf_run_mock.name = "mock_pf_run"
+            pf_run_mock._experiment_name = "mock_pf_experiment"
         mock_session = MagicMock()
         mock_session.request.return_value = self._get_mock_create_resonse(status_code)
         with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
-            run = EvalRun(
-                run_name="test",
-                **TestEvalRun._MOCK_CREDS,
-                promptflow_run=pf_run_mock
-            )
-            assert run.status == RunStatus.NOT_STARTED, f'Get {run.status}, expected {RunStatus.NOT_STARTED}'
+            run = EvalRun(run_name="test", **TestEvalRun._MOCK_CREDS, promptflow_run=pf_run_mock)
+            assert run.status == RunStatus.NOT_STARTED, f"Get {run.status}, expected {RunStatus.NOT_STARTED}"
             run._start_run()
             if status_code == 200 or pf_run:
-                assert run.status == RunStatus.STARTED, f'Get {run.status}, expected {RunStatus.STARTED}'
+                assert run.status == RunStatus.STARTED, f"Get {run.status}, expected {RunStatus.STARTED}"
             else:
-                assert run.status == RunStatus.BROKEN, f'Get {run.status}, expected {RunStatus.BROKEN}'
+                assert run.status == RunStatus.BROKEN, f"Get {run.status}, expected {RunStatus.BROKEN}"
             run._end_run("FINISHED")
             if status_code == 200 or pf_run:
-                assert run.status == RunStatus.TERMINATED, f'Get {run.status}, expected {RunStatus.TERMINATED}'
+                assert run.status == RunStatus.TERMINATED, f"Get {run.status}, expected {RunStatus.TERMINATED}"
             else:
-                assert run.status == RunStatus.BROKEN, f'Get {run.status}, expected {RunStatus.BROKEN}'
+                assert run.status == RunStatus.BROKEN, f"Get {run.status}, expected {RunStatus.BROKEN}"
 
     def test_local_lifecycle(self, token_mock):
         """Test that the local run have correct statuses."""
@@ -411,33 +389,26 @@ class TestEvalRun:
             workspace_name="mock",
             ml_client=MagicMock(),
         )
-        assert run.status == RunStatus.NOT_STARTED, f'Get {run.status}, expected {RunStatus.NOT_STARTED}'
+        assert run.status == RunStatus.NOT_STARTED, f"Get {run.status}, expected {RunStatus.NOT_STARTED}"
         run._start_run()
-        assert run.status == RunStatus.BROKEN, f'Get {run.status}, expected {RunStatus.BROKEN}'
+        assert run.status == RunStatus.BROKEN, f"Get {run.status}, expected {RunStatus.BROKEN}"
         run._end_run("FINISHED")
-        assert run.status == RunStatus.BROKEN, f'Get {run.status}, expected {RunStatus.BROKEN}'
+        assert run.status == RunStatus.BROKEN, f"Get {run.status}, expected {RunStatus.BROKEN}"
 
-    @pytest.mark.parametrize('status_code', [200, 401])
+    @pytest.mark.parametrize("status_code", [200, 401])
     def test_write_properties(self, token_mock, caplog, status_code):
         """Test writing properties to the evaluate run."""
         mock_write = MagicMock()
         mock_write.status_code = status_code
-        mock_write.text = 'Mock error'
+        mock_write.text = "Mock error"
         mock_session = MagicMock()
-        mock_session.request.side_effect = [
-            self._get_mock_create_resonse(),
-            mock_write,
-            self._get_mock_end_response()
-        ]
+        mock_session.request.side_effect = [self._get_mock_create_resonse(), mock_write, self._get_mock_end_response()]
         with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
-            with EvalRun(
-                run_name="test",
-                **TestEvalRun._MOCK_CREDS
-            ) as run:
-                run.write_properties_to_run_history({'foo': 'bar'})
+            with EvalRun(run_name="test", **TestEvalRun._MOCK_CREDS) as run:
+                run.write_properties_to_run_history({"foo": "bar"})
         if status_code != 200:
             assert len(caplog.records) == 1
-            assert 'Fail writing properties' in caplog.records[0].message
+            assert "Fail writing properties" in caplog.records[0].message
             assert mock_write.text in caplog.records[0].message
         else:
             assert len(caplog.records) == 0
@@ -452,24 +423,24 @@ class TestEvalRun:
         with EvalRun(
             run_name=None,
             tracking_uri=None,
-            subscription_id='mock',
-            group_name='mock',
-            workspace_name='mock',
-            ml_client=MagicMock()
+            subscription_id="mock",
+            group_name="mock",
+            workspace_name="mock",
+            ml_client=MagicMock(),
         ) as run:
-            run.write_properties_to_run_history({'foo': 'bar'})
+            run.write_properties_to_run_history({"foo": "bar"})
         assert len(caplog.records) == 3
         assert "tracking_uri was not provided," in caplog.records[0].message
         assert "Unable to write properties due to Run status=RunStatus.BROKEN." in caplog.records[1].message
         assert "Unable to stop run due to Run status=RunStatus.BROKEN." in caplog.records[2].message
 
     @pytest.mark.parametrize(
-        'function_literal,args,expected_action',
+        "function_literal,args,expected_action",
         [
-            ('write_properties_to_run_history', ({'foo': 'bar'}), 'write properties'),
-            ('log_metric', ('foo', 42), 'log metric'),
-            ('log_artifact', ('mock_folder',), 'log artifact')
-        ]
+            ("write_properties_to_run_history", ({"foo": "bar"}), "write properties"),
+            ("log_metric", ("foo", 42), "log metric"),
+            ("log_artifact", ("mock_folder",), "log artifact"),
+        ],
     )
     def test_logs_if_not_started(self, token_mock, caplog, function_literal, args, expected_action):
         """Test that all public functions are raising exception if run is not started."""
@@ -478,32 +449,24 @@ class TestEvalRun:
         # as a parent. This logger does not propagate the logs and cannot be
         # captured by caplog. Here we will skip this logger to capture logs.
         logger.parent = logging.root
-        run = EvalRun(
-            run_name=None,
-            **TestEvalRun._MOCK_CREDS
-        )
+        run = EvalRun(run_name=None, **TestEvalRun._MOCK_CREDS)
         getattr(run, function_literal)(*args)
         assert len(caplog.records) == 1
         assert expected_action in caplog.records[0].message, caplog.records[0].message
-        assert f"Unable to {expected_action} due to Run status=RunStatus.NOT_STARTED" in caplog.records[
-            0].message, caplog.records[0].message
+        assert (
+            f"Unable to {expected_action} due to Run status=RunStatus.NOT_STARTED" in caplog.records[0].message
+        ), caplog.records[0].message
 
-    @pytest.mark.parametrize(
-        'status',
-        [RunStatus.STARTED, RunStatus.BROKEN, RunStatus.TERMINATED]
-    )
+    @pytest.mark.parametrize("status", [RunStatus.STARTED, RunStatus.BROKEN, RunStatus.TERMINATED])
     def test_starting_started_run(self, token_mock, status):
         """Test exception if the run was already started"""
-        run = EvalRun(
-            run_name=None,
-            **TestEvalRun._MOCK_CREDS
-        )
+        run = EvalRun(run_name=None, **TestEvalRun._MOCK_CREDS)
         mock_session = MagicMock()
         mock_session.request.return_value = self._get_mock_create_resonse(500 if status == RunStatus.BROKEN else 200)
         with patch("promptflow.evals.evaluate._eval_run.requests.Session", return_value=mock_session):
             run._start_run()
             if status == RunStatus.TERMINATED:
-                run._end_run('FINISHED')
+                run._end_run("FINISHED")
         with pytest.raises(RuntimeError) as cm:
             run._start_run()
         assert f"Unable to start run due to Run status={status}" in cm.value.args[0], cm.value.args[0]
