@@ -8,11 +8,10 @@ import time
 import uuid
 from typing import Dict, List
 
-from aiohttp.web import HTTPException
-from aiohttp_retry import RetryClient
+from azure.core.exceptions import HttpResponseError
 from azure.core.pipeline.policies import AsyncRetryPolicy, RetryMode
 
-from promptflow.evals._http_utils import get_async_http_client
+from promptflow.evals._http_utils import AsyncHttpPipeline, get_async_http_client
 from promptflow.evals._user_agent import USER_AGENT
 
 from .models import OpenAIChatCompletionsModel
@@ -100,7 +99,7 @@ class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
     async def get_conversation_completion(
         self,
         messages: List[Dict],
-        session: RetryClient,
+        session: AsyncHttpPipeline,
         role: str = "assistant",  # pylint: disable=unused-argument
         **request_params,
     ) -> dict:
@@ -110,8 +109,8 @@ class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
         :param messages: List of messages to query the model with.
             Expected format: [{"role": "user", "content": "Hello!"}, ...]
         :type messages: List[Dict]
-        :param session: aiohttp RetryClient object to query the model with.
-        :type session: ~promptflow.evals.synthetic._model_tools.RetryClient
+        :param session: AsyncHttpPipeline object to query the model with.
+        :type session: ~promptflow.evals._http_utils.AsyncHttpPipeline
         :param role: The role of the user sending the message. This parameter is not used in this method;
             however, it must be included to match the method signature of the parent class. Defaults to "assistant".
         :type role: str
@@ -131,14 +130,14 @@ class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
 
     async def request_api(
         self,
-        session: RetryClient,
+        session: AsyncHttpPipeline,
         request_data: dict,
     ) -> dict:
         """
         Request the model with a body of data.
 
         :param session: HTTPS Session for invoking the endpoint.
-        :type session: RetryClient
+        :type session: AsyncHttpPipeline
         :param request_data: Prompt dictionary to query the model with. (Pass {"prompt": prompt} instead of prompt.)
         :type request_data: Dict[str, Any]
         :return: A body of data resulting from the model query.
@@ -179,16 +178,15 @@ class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
         time_start = time.time()
         full_response = None
 
-        async with session.post(
-            url=self.endpoint_url, headers=proxy_headers, json=sim_request_dto.to_dict()
-        ) as response:
-            if response.status == 202:
-                response = await response.json()
-                self.result_url = response["location"]
-            else:
-                raise HTTPException(
-                    reason=f"Received unexpected HTTP status: {response.status} {await response.text()}"
-                )
+        response = await session.post(url=self.endpoint_url, headers=proxy_headers, json=sim_request_dto.to_dict())
+
+        if response.status_code != 202:
+            raise HttpResponseError(
+                message=f"Received unexpected HTTP status: {response.status} {await response.text()}", response=response
+            )
+
+        response = response.json()
+        self.result_url = response["location"]
 
         retry_policy = AsyncRetryPolicy(  # set up retry configuration
             retry_on_status_codes=[202],  # on which statuses to retry
