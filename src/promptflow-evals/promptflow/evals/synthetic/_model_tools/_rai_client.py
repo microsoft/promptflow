@@ -60,7 +60,7 @@ class RAIClient:
         bearer_token = self.token_manager.get_token()
         headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
         http_client = get_http_client()
-        response = http_client.get(
+        response = http_client.get(  # pylint: disable=too-many-function-args,unexpected-keyword-arg
             f"https://management.azure.com/subscriptions/{self.azure_ai_project['subscription_id']}/"
             f"resourceGroups/{self.azure_ai_project['resource_group_name']}/"
             f"providers/Microsoft.MachineLearningServices/workspaces/{self.azure_ai_project['project_name']}?"
@@ -116,7 +116,7 @@ class RAIClient:
         }
 
         session = self._create_async_client()
-        response = await session.get(url=url, headers=headers)
+        response = await session.get(url=url, headers=headers)  # pylint: disable=unexpected-keyword-arg
 
         if response.status_code == 200:
             return response.json()

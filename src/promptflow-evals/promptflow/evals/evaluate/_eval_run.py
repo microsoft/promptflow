@@ -25,7 +25,7 @@ LOGGER = logging.getLogger(__name__)
 # Handle optional import. The azure libraries are only present if
 # promptflow-azure is installed.
 try:
-    from azure.ai.ml.entities._credentials import AccountKeyConfiguration
+    from azure.ai.ml.entities._credentials import AccountKeyConfiguration  # pylint: disable=ungrouped-imports
     from azure.ai.ml.entities._datastore.datastore import Datastore
     from azure.storage.blob import BlobServiceClient
 except (ModuleNotFoundError, ImportError):
