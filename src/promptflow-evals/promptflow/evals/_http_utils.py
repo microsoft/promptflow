@@ -21,8 +21,8 @@ from azure.core.pipeline.policies import (
     UserAgentPolicy,
 )
 from azure.core.pipeline.transport import (  # pylint: disable=non-abstract-transport-import,no-name-in-module
-    AioHttpTransport,
     AsyncHttpTransport,
+    AsyncioRequestsTransport,
     HttpTransport,
     RequestsTransport,
 )
@@ -291,10 +291,10 @@ class AsyncHttpPipeline(AsyncPipeline):
         config.polling_interval = kwargs.get("polling_interval", 30)
 
         super().__init__(
-            # AioHttpTransport normally should not be imported outside of azure.core, since transports
+            # AsyncioRequestsTransport normally should not be imported outside of azure.core, since transports
             # are meant to be user configurable.
-            # AioHttpTransport is only used in this file as the default transport when not user specified.
-            transport=transport or AioHttpTransport(**kwargs),
+            # AsyncioRequestsTransport is only used in this file as the default transport when not user specified.
+            transport=transport or AsyncioRequestsTransport(**kwargs),
             policies=[
                 config.headers_policy,
                 config.user_agent_policy,
