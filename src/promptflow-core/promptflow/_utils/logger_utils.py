@@ -400,7 +400,6 @@ class LoggerFactory:
         logger.propagate = False
         # Use env var at first, then use verbosity
         verbosity = get_pf_logging_level(default=None) or verbosity
-        # Set default logger level to debug, we are using handler level to control log by default
         logger.setLevel(verbosity)
         if not LoggerFactory._find_handler(logger, logging.StreamHandler):
             LoggerFactory._add_handler(logger, verbosity, target_stdout)
