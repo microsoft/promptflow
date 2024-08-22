@@ -26,7 +26,7 @@ from azure.core.pipeline.transport import (  # pylint: disable=non-abstract-tran
     HttpTransport,
     RequestsTransport,
 )
-from azure.core.rest import HttpRequest, HttpResponse
+from azure.core.rest import AsyncHttpResponse, HttpRequest, HttpResponse
 from azure.core.rest._rest_py3 import ContentType, FilesType, ParamsType
 from typing_extensions import Self
 
@@ -91,7 +91,7 @@ def _async_request_fn(f: Callable[["AsyncHttpPipeline"], Awaitable[None]]):
         data: Optional[Dict[str, Any]] = None,
         files: Optional[FilesType] = None,
         **kwargs,
-    ) -> HttpResponse:
+    ) -> AsyncHttpResponse:
         return await self.request(
             f.__name__.upper(),
             url,
@@ -333,7 +333,7 @@ class AsyncHttpPipeline(AsyncPipeline):
         data: Optional[Dict[str, Any]] = None,
         files: Optional[FilesType] = None,
         **kwargs,
-    ) -> HttpResponse:
+    ) -> AsyncHttpResponse:
 
         request = HttpRequest(
             method,

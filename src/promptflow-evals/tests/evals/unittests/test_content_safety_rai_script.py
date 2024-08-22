@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 from azure.core.exceptions import HttpResponseError
-from azure.core.rest import HttpRequest, HttpResponse
+from azure.core.rest import AsyncHttpResponse, HttpRequest
 from azure.identity import DefaultAzureCredential
 
 from promptflow.evals._common.constants import EvaluationMetrics, HarmSeverityLevel, RAIService
@@ -29,7 +29,7 @@ def data_file():
     return os.path.join(data_path, "evaluate_test_data.jsonl")
 
 
-class MockHttpResponse(HttpResponse):
+class MockAsyncHttpResponse(AsyncHttpResponse):
     """A mocked implementation of azure.core.rest.HttpResponse."""
 
     def __init__(
@@ -91,13 +91,13 @@ class MockHttpResponse(HttpResponse):
         if self.status_code >= 400:
             raise HttpResponseError(response=self)
 
-    def close(self) -> None:
+    async def close(self) -> None:
         pass
 
-    def __enter__(self) -> object:
+    async def __aenter__(self) -> object:
         raise NotImplementedError()
 
-    def __exit__(self, *args) -> None:
+    async def __aexit__(self, *args) -> None:
         raise NotImplementedError()
 
     @property
@@ -108,13 +108,13 @@ class MockHttpResponse(HttpResponse):
     def content(self) -> bytes:
         raise NotImplementedError()
 
-    def read(self) -> bytes:
+    async def read(self) -> bytes:
         raise NotImplementedError()
 
-    def iter_bytes(self, **kwargs) -> Iterator[bytes]:
+    async def iter_bytes(self, **kwargs) -> Iterator[bytes]:
         raise NotImplementedError()
 
-    def iter_raw(self, **kwargs) -> Iterator[bytes]:
+    async def iter_raw(self, **kwargs) -> Iterator[bytes]:
         raise NotImplementedError()
 
 
@@ -135,13 +135,13 @@ class TestContentSafetyEvaluator:
         ensure_service_availability()"""
 
     @pytest.mark.asyncio
-    @patch("promptflow.evals._http_utils.AsyncHttpPipeline.get", return_value=MockHttpResponse(200, json={}))
+    @patch("promptflow.evals._http_utils.AsyncHttpPipeline.get", return_value=MockAsyncHttpResponse(200, json={}))
     async def test_ensure_service_availability(self, client_mock):
         _ = await ensure_service_availability("dummy_url", "dummy_token")
         assert client_mock._mock_await_count == 1
 
     @pytest.mark.asyncio
-    @patch("promptflow.evals._http_utils.AsyncHttpPipeline.get", return_value=MockHttpResponse(9001, json={}))
+    @patch("promptflow.evals._http_utils.AsyncHttpPipeline.get", return_value=MockAsyncHttpResponse(9001, json={}))
     async def test_ensure_service_availability_service_unavailable(self, client_mock):
         with pytest.raises(Exception) as exc_info:
             _ = await ensure_service_availability("dummy_url", "dummy_token")
@@ -149,7 +149,7 @@ class TestContentSafetyEvaluator:
         assert client_mock._mock_await_count == 1
 
     @pytest.mark.asyncio
-    @patch("promptflow.evals._http_utils.AsyncHttpPipeline.get", return_value=MockHttpResponse(200, json={}))
+    @patch("promptflow.evals._http_utils.AsyncHttpPipeline.get", return_value=MockAsyncHttpResponse(200, json={}))
     async def test_ensure_service_availability_exception_capability_unavailable(self, client_mock):
         with pytest.raises(Exception) as exc_info:
             _ = await ensure_service_availability("dummy_url", "dummy_token", capability="does not exist")
@@ -159,7 +159,7 @@ class TestContentSafetyEvaluator:
     @pytest.mark.asyncio
     @patch(
         "promptflow.evals._http_utils.AsyncHttpPipeline.post",
-        return_value=MockHttpResponse(
+        return_value=MockAsyncHttpResponse(
             202,
             json={"location": "this/is/the/dummy-operation-id"},
         ),
@@ -177,7 +177,7 @@ class TestContentSafetyEvaluator:
     @pytest.mark.asyncio
     @patch(
         "promptflow.evals._http_utils.AsyncHttpPipeline.post",
-        return_value=MockHttpResponse(
+        return_value=MockAsyncHttpResponse(
             404,
             json={"location": "this/is/the/dummy-operation-id"},
             content_type="application/json",
@@ -212,7 +212,7 @@ class TestContentSafetyEvaluator:
 
     @patch(
         "promptflow.evals._http_utils.AsyncHttpPipeline.get",
-        return_value=MockHttpResponse(200, json={"result": "stuff"}),
+        return_value=MockAsyncHttpResponse(200, json={"result": "stuff"}),
     )
     @patch("promptflow.evals._common.constants.RAIService.TIMEOUT", 1)
     @patch("promptflow.evals._common.constants.RAIService.SLEEP_TIME", 1.2)
@@ -231,7 +231,7 @@ class TestContentSafetyEvaluator:
 
     @patch(
         "promptflow.evals._http_utils.AsyncHttpPipeline.get",
-        return_value=MockHttpResponse(404, json={"result": "stuff"}),
+        return_value=MockAsyncHttpResponse(404, json={"result": "stuff"}),
     )
     @patch("promptflow.evals._common.constants.RAIService.TIMEOUT", 1)
     @patch("promptflow.evals._common.constants.RAIService.SLEEP_TIME", 1.2)
@@ -321,7 +321,9 @@ class TestContentSafetyEvaluator:
     @pytest.mark.asyncio
     @patch(
         "promptflow.evals._http_utils.AsyncHttpPipeline.get",
-        return_value=MockHttpResponse(200, json={"properties": {"discoveryUrl": "https://www.url.com:123/thePath"}}),
+        return_value=MockAsyncHttpResponse(
+            200, json={"properties": {"discoveryUrl": "https://www.url.com:123/thePath"}}
+        ),
     )
     async def test_get_service_discovery_url(self, client_mock):
 
@@ -338,7 +340,9 @@ class TestContentSafetyEvaluator:
     @pytest.mark.asyncio
     @patch(
         "promptflow.evals._http_utils.AsyncHttpPipeline.get",
-        return_value=MockHttpResponse(201, json={"properties": {"discoveryUrl": "https://www.url.com:123/thePath"}}),
+        return_value=MockAsyncHttpResponse(
+            201, json={"properties": {"discoveryUrl": "https://www.url.com:123/thePath"}}
+        ),
     )
     async def test_get_service_discovery_url_exception(self, client_mock):
         token = "fake-token"
@@ -355,7 +359,9 @@ class TestContentSafetyEvaluator:
     @pytest.mark.asyncio
     @patch(
         "promptflow.evals._http_utils.AsyncHttpPipeline.get",
-        return_value=MockHttpResponse(200, json={"properties": {"discoveryUrl": "https://www.url.com:123/thePath"}}),
+        return_value=MockAsyncHttpResponse(
+            200, json={"properties": {"discoveryUrl": "https://www.url.com:123/thePath"}}
+        ),
     )
     @patch(
         "promptflow.evals._common.rai_service._get_service_discovery_url",
