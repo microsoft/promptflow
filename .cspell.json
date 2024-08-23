@@ -245,7 +245,10 @@
     "locustio",
     "euap",
     "rcfile",
-    "pylintrc"
+    "pylintrc",
+    "gleu",
+    "Gleu",
+    "GLEU"
   ],
   "flagWords": [
     "Prompt Flow"
