@@ -55,6 +55,9 @@ class EvaluationMetrics:
 
 
 class _InternalEvaluationMetrics:
-    """Evaluation metrics that are not publicly supported."""
+    """Evaluation metrics that are not publicly supported.
+    These metrics are experimental and subject to potential change or migration to the main
+    enum over time.
+    """
 
-    ECI = "election_critical_information"
+    ECI = "eci"

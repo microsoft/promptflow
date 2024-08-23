@@ -91,7 +91,6 @@ def generate_payload(normalized_user_text: str, metric: str) -> Dict:
         include_metric = False
     elif metric == _InternalEvaluationMetrics.ECI:
         task = _InternalTasks.ECI
-        task = "election critical information"
         include_metric = False
     return (
         {
