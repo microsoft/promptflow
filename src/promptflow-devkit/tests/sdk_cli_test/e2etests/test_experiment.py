@@ -217,6 +217,29 @@ class TestExperiment:
         assert len(exp.node_runs["main"]) == 3
         assert len(exp.node_runs["echo"]) == 2
 
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_start_with_command_injection(self):
+        template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
+        # Load template and create experiment
+        template = load_common(ExperimentTemplate, source=template_path)
+        experiment = Experiment.from_template(template)
+        client = PFClient()
+        exp = client._experiments.create_or_update(experiment)
+
+        # Test start experiment with injection command
+        injection_command = ";bad command;"
+        with pytest.raises(ExperimentValueError) as error:
+            client._experiments.start(exp, nodes=[injection_command])
+        assert "Invalid character found" in str(error.value)
+
+        with pytest.raises(ExperimentValueError):
+            client._experiments.start(exp, from_nodes=[injection_command])
+        assert "Invalid character found" in str(error.value)
+
+        with pytest.raises(ExperimentValueError):
+            client._experiments.start(exp, session=injection_command)
+        assert "Invalid character found" in str(error.value)
+
     @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     def test_cancel_experiment(self):
         template_path = EXP_ROOT / "command-node-exp-template" / "basic-command.exp.yaml"
