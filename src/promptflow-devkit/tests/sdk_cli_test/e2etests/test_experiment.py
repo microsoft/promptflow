@@ -229,7 +229,7 @@ class TestExperiment:
         # Test start experiment with injection command
         injection_command = ";bad command;"
         with pytest.raises(ExperimentValueError) as error:
-            client._experiments.start(exp, node=[injection_command])
+            client._experiments.start(exp, nodes=[injection_command])
         assert "Invalid character found" in str(error.value)
 
         with pytest.raises(ExperimentValueError):
