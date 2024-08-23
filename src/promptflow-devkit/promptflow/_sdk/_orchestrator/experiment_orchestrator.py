@@ -6,6 +6,7 @@ import copy
 import json
 import os
 import platform
+import re
 import signal
 import subprocess
 import sys
@@ -414,6 +415,14 @@ class ExperimentOrchestrator:
         :return: Experiment info.
         :rtype: ~promptflow.entities.Experiment
         """
+        def _params_inject_validation(params, param_name):
+            # Verify that the command is injected in the parameters.
+            # parameters can only consist of numeric, alphabetic parameters, strikethrough and dash.
+            pattern = r'^[a-zA-Z0-9 _\-]*$'
+            for item in params:
+                if not bool(re.match(pattern, item)):
+                    raise ExperimentValueError(f"Invalid character found in the parameter {params} of {param_name}.")
+
         # Setup file handler
         file_handler, index = _set_up_experiment_log_handler(experiment_path=self.experiment._output_dir, index=attempt)
         logger.addHandler(file_handler._stream_handler)
@@ -423,10 +432,13 @@ class ExperimentOrchestrator:
         executable_path = executable_path or sys.executable
         args = [executable_path, __file__, "start", "--experiment", self.experiment.name]
         if nodes:
+            _params_inject_validation(nodes, "nodes")
             args = args + ["--nodes"] + nodes
         if from_nodes:
+            _params_inject_validation(from_nodes, "from-nodes")
             args = args + ["--from-nodes"] + from_nodes
         if kwargs.get("session"):
+            _params_inject_validation(kwargs.get("session"), "session")
             args = args + ["--session", kwargs.get("session")]
         args = args + ["--attempt", str(index)]
         # Start an orchestrator process using detach mode
