@@ -42,7 +42,8 @@ class _AsyncProtectedMaterialsEvaluator:
 
 class ProtectedMaterialsEvaluator:
     """
-    Initialize a protected materials evaluator for protected materials score.
+    Initialize a protected materials evaluator to detect whether protected material
+    is present in your AI system's response. Outputs True or False with AI-generated reasoning.
 
     :param project_scope: The scope of the Azure AI project.
         It contains subscription id, resource group, and project name.

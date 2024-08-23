@@ -89,8 +89,9 @@ def generate_payload(normalized_user_text: str, metric: str) -> Dict:
     if metric == EvaluationMetrics.PROTECTED_MATERIAL:
         task = Tasks.PROTECTED_MATERIAL
         include_metric = False
-    elif metric == _InternalEvaluationMetrics.ELECTION_CRITICAL_INFORMATION:
-        task = _InternalTasks.ELECTION_CRITICAL_INFORMATION
+    elif metric == _InternalEvaluationMetrics.ECI:
+        task = _InternalTasks.ECI
+        task = "election critical information"
         include_metric = False
     return (
         {
@@ -191,7 +192,7 @@ def parse_response(  # pylint: disable=too-many-branches,too-many-statements
     :rtype: List[List[Dict]]
     """
 
-    if metric_name in {EvaluationMetrics.PROTECTED_MATERIAL, _InternalEvaluationMetrics.ELECTION_CRITICAL_INFORMATION}:
+    if metric_name in {EvaluationMetrics.PROTECTED_MATERIAL, _InternalEvaluationMetrics.ECI}:
         if not batch_response or len(batch_response[0]) == 0 or metric_name not in batch_response[0]:
             return {}
         response = batch_response[0][metric_name]

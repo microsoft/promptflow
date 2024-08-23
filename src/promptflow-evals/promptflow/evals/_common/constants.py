@@ -35,9 +35,11 @@ class Tasks:
 
 
 class _InternalTasks:
-    """Defines types of annotation tasks that are supported for internal use."""
+    """Defines types of annotation tasks that are supported for internal use. Such tasks are
+    experimental and subject to potential change or migration to the main Evaluation Metrics
+    enum over time."""
 
-    ELECTION_CRITICAL_INFORMATION = "election critical information"
+    ECI = "eci"
 
 
 class EvaluationMetrics:
@@ -55,4 +57,4 @@ class EvaluationMetrics:
 class _InternalEvaluationMetrics:
     """Evaluation metrics that are not publicly supported."""
 
-    ELECTION_CRITICAL_INFORMATION = "election_critical_information"
+    ECI = "election_critical_information"

@@ -15,8 +15,8 @@ CONTENT_HARM_TEMPLATES_COLLECTION_KEY = set(
         "adv_rewrite",
         "adv_content_gen_ungrounded",
         "adv_content_gen_grounded",
-        "adv_content_protected_material",  # TODO make sure this is correct according to the backend.
-        "adv_content_election_critical_information",  # TODO make sure this is correct according to the backend.
+        "adv_content_protected_material",
+        "adv_content_politics",
     ]
 )
 

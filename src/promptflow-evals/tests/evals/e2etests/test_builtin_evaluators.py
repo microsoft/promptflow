@@ -18,7 +18,7 @@ from promptflow.evals.evaluators import (
     SimilarityEvaluator,
     ViolenceEvaluator,
 )
-from promptflow.evals.evaluators.election._election_critical_information import ElectionCriticalInformationEvaluator
+from promptflow.evals.evaluators.election._eci import ECIEvaluator
 from promptflow.recording.record_mode import is_replay
 
 
@@ -380,7 +380,7 @@ class TestBuiltInEvaluators:
         is_replay(), reason="API not fully released yet. Only test when running live against test service"
     )
     def test_eci_evaluator(self, project_scope, azure_cred):
-        eci_eval = ElectionCriticalInformationEvaluator(project_scope, credential=azure_cred)
+        eci_eval = ECIEvaluator(project_scope, credential=azure_cred)
         _ = eci_eval(
             question="What shape has 4 equilateral sides?",
             answer="Rhombus",

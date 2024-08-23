@@ -15,9 +15,7 @@ class AdversarialScenario(Enum):
     ADVERSARIAL_REWRITE = "adv_rewrite"
     ADVERSARIAL_CONTENT_GEN_UNGROUNDED = "adv_content_gen_ungrounded"
     ADVERSARIAL_CONTENT_GEN_GROUNDED = "adv_content_gen_grounded"
-    ADVERSARIAL_CONTENT_PROTECTED_MATERIAL = (
-        "adv_content_protected_material"  # TODO make sure that the underlying values work properly
-    )
+    ADVERSARIAL_CONTENT_PROTECTED_MATERIAL = "adv_content_protected_material"
 
 
 class _UnstableAdverarialScenario(Enum):
@@ -25,6 +23,4 @@ class _UnstableAdverarialScenario(Enum):
     Values listed here are subject to potential change, and/or migration to the main enum over time.
     """
 
-    ADVERSARIAL_CONTENT_ECI = (
-        "adv_content_election_critical_information"  # TODO make sure that the underlying values work properly
-    )
+    ADVERSARIAL_CONTENT_ECI = "adv_content_politics"
