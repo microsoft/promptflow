@@ -33,6 +33,10 @@ class ContentHarmTemplatesUtils:
         :return: The category
         :rtype: str
         """
+        # Check for datasets whose names do not align with the normal
+        # naming convention where the first segment of the name is the category.
+        if key == "conversation/public/ip/bing_ip.json":
+            return "content_protected_material"
         return key.split("/")[0]
 
     @staticmethod

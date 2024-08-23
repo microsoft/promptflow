@@ -12,7 +12,7 @@ from azure.identity import DefaultAzureCredential
 from tqdm import tqdm
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
-from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario
+from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario, _UnstableAdverarialScenario
 
 from ._conversation import CallbackConversationBot, ConversationBot, ConversationRole
 from ._conversation._conversation import simulate_conversation
@@ -189,7 +189,10 @@ class AdversarialSimulator:
             max_conversation_turns = 2
         else:
             max_conversation_turns = max_conversation_turns * 2
-        if scenario not in AdversarialScenario.__members__.values():
+        if not (
+            scenario in AdversarialScenario.__members__.values()
+            or scenario in _UnstableAdverarialScenario.__members__.values()
+        ):
             raise ValueError("Invalid adversarial scenario")
         self._ensure_service_dependencies()
         templates = await self.adversarial_template_handler._get_content_harm_template_collections(scenario.value)

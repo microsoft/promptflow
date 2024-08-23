@@ -20,9 +20,11 @@ class AdversarialScenario(Enum):
     )
 
 
-class _PrivateAdverarialScenario(Enum):
-    """Adversarial scenario types that we haven't published, but still want available for internal use"""
+class _UnstableAdverarialScenario(Enum):
+    """Adversarial scenario types that we haven't published, but still want available for internal use
+    Values listed here are subject to potential change, and/or migration to the main enum over time.
+    """
 
-    ADVERSARIAL_CONTENT_ELECTION_CRITICAL_INFORMATION = (
+    ADVERSARIAL_CONTENT_ECI = (
         "adv_content_election_critical_information"  # TODO make sure that the underlying values work properly
     )
