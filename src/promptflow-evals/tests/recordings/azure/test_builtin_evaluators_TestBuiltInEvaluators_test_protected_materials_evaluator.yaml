@@ -44,7 +44,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.021'
+      - '0.022'
     http_version: HTTP/1.1
     status_code: 200
 - request:
@@ -79,7 +79,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.107'
+      - '0.011'
     http_version: HTTP/1.1
     status_code: 200
 - request:
@@ -103,7 +103,7 @@ interactions:
     method: POST
     uri: https://int.api.azureml-test.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/submitannotation
   response:
-    content: '{"location": "https://int.api.azureml-test.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/e489ffce-e594-445f-a42f-ec49100d3b7b",
+    content: '{"location": "https://int.api.azureml-test.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/993982c9-6fec-4309-aee4-9201603f765d",
       "operationResult": null}'
     headers:
       connection:
@@ -113,13 +113,13 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       location:
-      - https://int.api.azureml-test.ms/raisvc/v1.0/subscriptions/b17253fa-f327-42d6-9686-f3e553e24763/resourceGroups/promptflow-evals-ci/providers/Microsoft.MachineLearningServices/workspaces/pf-evals-ws-useuap/operations/e489ffce-e594-445f-a42f-ec49100d3b7b
+      - https://int.api.azureml-test.ms/raisvc/v1.0/subscriptions/b17253fa-f327-42d6-9686-f3e553e24763/resourceGroups/promptflow-evals-ci/providers/Microsoft.MachineLearningServices/workspaces/pf-evals-ws-useuap/operations/993982c9-6fec-4309-aee4-9201603f765d
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.068'
+      - '0.046'
     http_version: HTTP/1.1
     status_code: 202
 - request:
@@ -138,7 +138,7 @@ interactions:
       user-agent:
       - promptflow-evals/0.1.0.dev0
     method: GET
-    uri: https://int.api.azureml-test.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/e489ffce-e594-445f-a42f-ec49100d3b7b
+    uri: https://int.api.azureml-test.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/993982c9-6fec-4309-aee4-9201603f765d
   response:
     content: ''
     headers:
@@ -151,7 +151,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.047'
+      - '0.019'
     http_version: HTTP/1.1
     status_code: 202
 - request:
@@ -170,7 +170,7 @@ interactions:
       user-agent:
       - promptflow-evals/0.1.0.dev0
     method: GET
-    uri: https://int.api.azureml-test.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/e489ffce-e594-445f-a42f-ec49100d3b7b
+    uri: https://int.api.azureml-test.ms/raisvc/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/operations/993982c9-6fec-4309-aee4-9201603f765d
   response:
     content: '[{"protected_material": "{\"label\":false,\"reasoning\":\"Protected
       material was not found in the user text.\",\"version\":\"0.0\"}"}]'
@@ -186,7 +186,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.013'
+      - '0.017'
     http_version: HTTP/1.1
     status_code: 200
 version: 1
