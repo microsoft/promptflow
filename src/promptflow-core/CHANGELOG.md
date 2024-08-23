@@ -1,5 +1,9 @@
 # promptflow-core package
 
+## v1.16.0 (Upcoming)
+### Bugs fixed
+- Fix promptflow serving app logged inputs out with default logging level.
+
 ## v1.15.0 (2024.08.15)
 
 ### Bugs fixed
