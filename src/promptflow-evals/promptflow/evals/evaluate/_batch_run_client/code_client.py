@@ -38,7 +38,7 @@ class CodeRun:
                 if self.aggregated_metrics is not None
                 else None
             )
-        except Exception as ex:
+        except Exception as ex:  # pylint: disable=broad-exception-caught
             LOGGER.debug(f"Error calculating metrics for evaluator {self.evaluator_name}, failed with error {str(ex)}")
             aggregated_metrics = None
 
@@ -107,7 +107,7 @@ class CodeClient:
                 aggr_func = getattr(evaluator, "__aggregate__")
                 aggregated_output = aggr_func(aggregate_input)
                 return aggregated_output
-        except Exception as ex:
+        except Exception as ex:  # pylint: disable=broad-exception-caught
             LOGGER.warning(
                 f"Error calculating aggregations for evaluator {run.evaluator_name}," f" failed with error {str(ex)}"
             )
@@ -118,8 +118,10 @@ class CodeClient:
         if not isinstance(input_df, pd.DataFrame):
             try:
                 json_data = load_jsonl(data)
-            except json.JSONDecodeError:
-                raise ValueError(f"Failed to parse data as JSON: {data}. Please provide a valid json lines data.")
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    f"Failed to parse data as JSON: {data}. Please provide a valid json lines data."
+                ) from exc
 
             input_df = pd.DataFrame(json_data)
         eval_future = self._thread_pool.submit(self._calculate_metric, flow, input_df, column_mapping, evaluator_name)
@@ -137,7 +139,7 @@ class CodeClient:
             aggregated_metrics = run.get_aggregated_metrics()
             print("Aggregated metrics")
             print(aggregated_metrics)
-        except Exception as ex:
+        except Exception as ex:  # pylint: disable=broad-exception-caught
             LOGGER.debug(f"Error calculating metrics for evaluator {run.evaluator_name}, failed with error {str(ex)}")
             return None
         return aggregated_metrics

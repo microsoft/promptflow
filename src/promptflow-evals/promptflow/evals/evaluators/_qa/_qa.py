@@ -3,8 +3,9 @@
 # ---------------------------------------------------------
 
 from concurrent.futures import as_completed
+from typing import Union
 
-from promptflow.core import AzureOpenAIModelConfiguration
+from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 from .._coherence import CoherenceEvaluator
@@ -20,9 +21,10 @@ class QAEvaluator:
     Initialize a question-answer evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: AzureOpenAIModelConfiguration
+    :type model_config: Union[~promptflow.core.AzureOpenAIModelConfiguration,
+        ~promptflow.core.OpenAIModelConfiguration]
     :return: A function that evaluates and generates metrics for "question-answering" scenario.
-    :rtype: function
+    :rtype: Callable
 
     **Usage**
 
@@ -50,7 +52,9 @@ class QAEvaluator:
         }
     """
 
-    def __init__(self, model_config: AzureOpenAIModelConfiguration, parallel: bool = True):
+    def __init__(
+        self, model_config: Union[AzureOpenAIModelConfiguration, OpenAIModelConfiguration], parallel: bool = True
+    ):
         self._parallel = parallel
 
         self._evaluators = [
@@ -66,23 +70,22 @@ class QAEvaluator:
         """
         Evaluates question-answering scenario.
 
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :param context: The context to be evaluated.
-        :type context: str
-        :param ground_truth: The ground truth to be evaluated.
-        :type ground_truth: str
-        :param parallel: Whether to evaluate in parallel. Defaults to True.
-        :type parallel: bool
+        :keyword question: The question to be evaluated.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
+        :keyword context: The context to be evaluated.
+        :paramtype context: str
+        :keyword ground_truth: The ground truth to be evaluated.
+        :paramtype ground_truth: str
+        :keyword parallel: Whether to evaluate in parallel. Defaults to True.
+        :paramtype parallel: bool
         :return: The scores for QA scenario.
         :rtype: dict
         """
         results = {}
         if self._parallel:
             with ThreadPoolExecutor() as executor:
-                # Create a future for each evaluator
                 futures = {
                     executor.submit(
                         evaluator,
@@ -100,8 +103,9 @@ class QAEvaluator:
                     results.update(future.result())
         else:
             for evaluator in self._evaluators:
-                results.update(
-                    evaluator(question=question, answer=answer, context=context, ground_truth=ground_truth, **kwargs)
+                result = evaluator(
+                    question=question, answer=answer, context=context, ground_truth=ground_truth, **kwargs
                 )
+                results.update(result)
 
         return results

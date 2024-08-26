@@ -1,0 +1,45 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  answer:
+    type: string
+outputs:
+  summary:
+    type: string
+    reference: ${summarize_text_content.output}
+nodes:
+- name: summarize_text_content
+  use_variants: true
+node_variants:
+  summarize_text_content:
+    default_variant_id: variant_0
+    variants:
+      variant_0:
+        node:
+          type: llm
+          source:
+            type: code
+            path: summarize_text_content.jinja2
+          inputs:
+            deployment_name: gpt-35-turbo
+            model: gpt-3.5-turbo
+            max_tokens: 128
+            temperature: 0.2
+            text: ${inputs.answer}
+          connection: open_ai_connection
+          api: chat
+      variant_1:
+        node:
+          type: llm
+          source:
+            type: code
+            path: summarize_text_content__variant_1.jinja2
+          inputs:
+            deployment_name: gpt-35-turbo
+            model: gpt-3.5-turbo
+            max_tokens: 256
+            temperature: 0.3
+            text: ${inputs.answer}
+          connection: open_ai_connection
+          api: chat

@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 import logging
 import os
-from typing import Any
+from typing import Any, Dict
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -11,6 +11,7 @@ import requests
 from promptflow.evals._user_agent import USER_AGENT
 
 from ._async_http_client import AsyncHTTPClientWithRetry
+from ._identity_manager import APITokenManager
 
 api_url = None
 if "RAI_SVC_URL" in os.environ:
@@ -20,7 +21,15 @@ if "RAI_SVC_URL" in os.environ:
 
 
 class RAIClient:
-    def __init__(self, azure_ai_project: dict, token_manager: Any) -> None:
+    """Client for the Responsible AI Service
+
+    :param azure_ai_project: The Azure AI project
+    :type azure_ai_project: Dict
+    :param token_manager: The token manager
+    :type token_manage: ~promptflow.evals.synthetic._model_tools._identity_manager.APITokenManager
+    """
+
+    def __init__(self, azure_ai_project: Dict, token_manager: APITokenManager) -> None:
         self.azure_ai_project = azure_ai_project
         self.token_manager = token_manager
 
@@ -60,26 +69,43 @@ class RAIClient:
             timeout=5,
         )
         if response.status_code != 200:
-            raise Exception("Failed to retrieve the discovery service URL")
+            raise Exception("Failed to retrieve the discovery service URL")  # pylint: disable=broad-exception-raised
         base_url = urlparse(response.json()["properties"]["discoveryUrl"])
         return f"{base_url.scheme}://{base_url.netloc}"
 
-    def _create_async_client(self):
+    def _create_async_client(self) -> AsyncHTTPClientWithRetry:
+        """Create an async http client with retry mechanism
+
+        Number of retries is set to 6, and the timeout is set to 5 seconds.
+
+        :return: The async http client
+        :rtype: ~promptflow.evals.synthetic._model_tools._async_http_client.AsyncHTTPClientWithRetry
+        """
         return AsyncHTTPClientWithRetry(n_retry=6, retry_timeout=5, logger=logging.getLogger())
 
     async def get_contentharm_parameters(self) -> Any:
+        """Get the content harm parameters, if they exist"""
         if self.contentharm_parameters is None:
             self.contentharm_parameters = await self.get(self.parameter_json_endpoint)
 
         return self.contentharm_parameters
 
     async def get_jailbreaks_dataset(self) -> Any:
+        "Get the jailbreaks dataset, if exists"
         if self.jailbreaks_dataset is None:
             self.jailbreaks_dataset = await self.get(self.jailbreaks_json_endpoint)
 
         return self.jailbreaks_dataset
 
     async def get(self, url: str) -> Any:
+        """Make a GET request to the given url
+
+        :param url: The url
+        :type url: str
+        :raises ValueError: If the Azure safety evaluation service is not available in the current region
+        :return: The response
+        :rtype: Any
+        """
         token = self.token_manager.get_token()
         headers = {
             "Authorization": f"Bearer {token}",

@@ -1,15 +1,28 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from promptflow._utils.async_utils import async_run_allowing_running_loop
+from promptflow.evals._common.constants import EvaluationMetrics
+
 try:
-    from .common.constants import EvaluationMetrics
-    from ._content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
+    from ._content_safety_base import ContentSafetyEvaluatorBase
 except ImportError:
-    from common.constants import EvaluationMetrics
-    from _content_safety_sub_evaluator_base import ContentSafetySubEvaluatorBase
+    from _content_safety_base import ContentSafetyEvaluatorBase
 
 
-class SexualEvaluator(ContentSafetySubEvaluatorBase):
+class _AsyncSexualEvaluator(ContentSafetyEvaluatorBase):
+    def __init__(self, project_scope: dict, credential=None):
+        super().__init__(
+            metric=EvaluationMetrics.SEXUAL,
+            project_scope=project_scope,
+            credential=credential,
+        )
+
+    async def __call__(self, *, question: str, answer: str, **kwargs):
+        return await super().__call__(question=question, answer=answer, **kwargs)
+
+
+class SexualEvaluator:
     """
     Initialize a sexual evaluator for sexual score.
 
@@ -17,7 +30,7 @@ class SexualEvaluator(ContentSafetySubEvaluatorBase):
         It contains subscription id, resource group, and project name.
     :type project_scope: dict
     :param credential: The credential for connecting to Azure AI project.
-    :type credential: TokenCredential
+    :type credential: ~azure.core.credentials.TokenCredential
 
     **Usage**
 
@@ -43,21 +56,20 @@ class SexualEvaluator(ContentSafetySubEvaluatorBase):
     """
 
     def __init__(self, project_scope: dict, credential=None):
-        super().__init__(
-            metric=EvaluationMetrics.SEXUAL,
-            project_scope=project_scope,
-            credential=credential,
-        )
+        self._async_evaluator = _AsyncSexualEvaluator(project_scope, credential)
 
     def __call__(self, *, question: str, answer: str, **kwargs):
         """
         Evaluates sexual content.
 
-        :param question: The question to be evaluated.
-        :type question: str
-        :param answer: The answer to be evaluated.
-        :type answer: str
+        :keyword question: The question to be evaluated.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated.
+        :paramtype answer: str
         :return: The sexual score.
         :rtype: dict
         """
-        return super().__call__(question=question, answer=answer, **kwargs)
+        return async_run_allowing_running_loop(self._async_evaluator, question=question, answer=answer, **kwargs)
+
+    def _to_async(self):
+        return self._async_evaluator

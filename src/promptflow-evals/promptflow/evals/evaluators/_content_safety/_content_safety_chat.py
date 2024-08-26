@@ -2,10 +2,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import as_completed
 from typing import Dict, List
 
 import numpy as np
+
+from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 try:
     from ._hate_unfairness import HateUnfairnessEvaluator
@@ -17,7 +19,6 @@ except ImportError:
     from _self_harm import SelfHarmEvaluator
     from _sexual import SexualEvaluator
     from _violence import ViolenceEvaluator
-
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +37,9 @@ class ContentSafetyChatEvaluator:
         Default is True.
     :type parallel: bool
     :param credential: The credential for connecting to Azure AI project.
-    :type credential: TokenCredential
+    :type credential: ~azure.core.credentials.TokenCredential
     :return: A function that evaluates and generates metrics for "chat" scenario.
-    :rtype: function
+    :rtype: Callable
 
     **Usage**
 
@@ -95,8 +96,8 @@ class ContentSafetyChatEvaluator:
         """
         Evaluates content-safety metrics for "chat" scenario.
 
-        :param conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
-        :type conversation: List[Dict]
+        :keyword conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
+        :paramtype conversation: List[Dict]
         :return: The scores for Chat scenario.
         :rtype: dict
         """
@@ -126,6 +127,8 @@ class ContentSafetyChatEvaluator:
 
             if self._parallel:
                 # Parallel execution
+                # Use a thread pool for parallel execution in the composite evaluator,
+                # as it's ~20% faster than asyncio tasks based on tests.
                 with ThreadPoolExecutor() as executor:
                     future_to_evaluator = {
                         executor.submit(self._evaluate_turn, turn_num, questions, answers, evaluator): evaluator
@@ -154,7 +157,7 @@ class ContentSafetyChatEvaluator:
             score = evaluator(question=question, answer=answer)
 
             return score
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(
                 f"Evaluator {evaluator.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}"
             )
@@ -209,8 +212,7 @@ class ContentSafetyChatEvaluator:
             one_based_turn_num = turn_num + 1
 
             if not isinstance(turn, dict):
-                raise ValueError(
-                    f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
+                raise ValueError(f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
 
             if "role" not in turn or "content" not in turn:
                 raise ValueError(
@@ -245,7 +247,7 @@ class ContentSafetyChatEvaluator:
             return np.nan
 
         for harm_level, harm_score_range in HARM_SEVERITY_LEVEL_MAPPING.items():
-            if harm_score >= harm_score_range[0] and harm_score <= harm_score_range[1]:
+            if harm_score_range[0] <= harm_score <= harm_score_range[1]:
                 return harm_level
 
         return np.nan

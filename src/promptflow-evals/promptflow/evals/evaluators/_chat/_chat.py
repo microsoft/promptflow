@@ -1,15 +1,14 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
 import json
 import logging
 from concurrent.futures import as_completed
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import numpy as np
 
-from promptflow.core import AzureOpenAIModelConfiguration
+from promptflow.core import AzureOpenAIModelConfiguration, OpenAIModelConfiguration
 from promptflow.tracing import ThreadPoolExecutorWithContext as ThreadPoolExecutor
 
 from .._coherence import CoherenceEvaluator
@@ -26,7 +25,8 @@ class ChatEvaluator:
     Initialize a chat evaluator configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: AzureOpenAIModelConfiguration
+    :type model_config: Union[~promptflow.core.AzureOpenAIModelConfiguration,
+        ~promptflow.core.OpenAIModelConfiguration]
     :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue,
         focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
     :type eval_last_turn: bool
@@ -34,7 +34,7 @@ class ChatEvaluator:
         Default is True.
     :type parallel: bool
     :return: A function that evaluates and generates metrics for "chat" scenario.
-    :rtype: function
+    :rtype: Callable
 
     **Usage**
 
@@ -73,7 +73,10 @@ class ChatEvaluator:
     """
 
     def __init__(
-        self, model_config: AzureOpenAIModelConfiguration, eval_last_turn: bool = False, parallel: bool = True
+        self,
+        model_config: Union[AzureOpenAIModelConfiguration, OpenAIModelConfiguration],
+        eval_last_turn: bool = False,
+        parallel: bool = True,
     ):
         self._eval_last_turn = eval_last_turn
         self._parallel = parallel
@@ -96,13 +99,12 @@ class ChatEvaluator:
         """
         Evaluates chat scenario.
 
-        :param conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
+        :keyword conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
             "context" key is optional for assistant's turn and should have "citations" key with list of citations.
-        :type conversation: List[Dict]
+        :paramtype conversation: List[Dict]
         :return: The scores for Chat scenario.
         :rtype: dict
         """
-
         self._validate_conversation(conversation)
 
         # Extract questions, answers and contexts from conversation
@@ -162,7 +164,8 @@ class ChatEvaluator:
             else:
                 # Sequential execution
                 for evaluator in selected_evaluators:
-                    result = self._evaluate_turn(turn_num, questions, answers, contexts, evaluator)
+                    async_evaluator = evaluator._to_async()
+                    result = self._evaluate_turn(turn_num, questions, answers, contexts, async_evaluator)
                     current_turn_result.update(result)
 
             per_turn_results.append(current_turn_result)
@@ -197,7 +200,7 @@ class ChatEvaluator:
             score = evaluator(question=question, answer=answer, context=context)
 
             return score
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(
                 f"Evaluator {evaluator.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}"
             )
@@ -243,8 +246,7 @@ class ChatEvaluator:
             one_based_turn_num = turn_num + 1
 
             if not isinstance(turn, dict):
-                raise ValueError(
-                    f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
+                raise ValueError(f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
 
             if "role" not in turn or "content" not in turn:
                 raise ValueError(

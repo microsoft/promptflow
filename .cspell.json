@@ -246,7 +246,9 @@
     "euap",
     "Rerank",
     "rerank",
-    "reranker"
+    "reranker",
+    "rcfile",
+    "pylintrc"
   ],
   "flagWords": [
     "Prompt Flow"
