@@ -68,10 +68,8 @@ class ProtectedMaterialsEvaluator:
     .. code-block:: python
 
         {
-            TODO replace with example IP eval output
-            "violence": "High",
-            "violence_score": 6.5,
-            "violence_reason": "Some reason"
+            "label": "False",
+            "reasoning": "This question does not contain any protected material."
         }
     """
 

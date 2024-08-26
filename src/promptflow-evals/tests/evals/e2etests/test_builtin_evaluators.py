@@ -18,7 +18,7 @@ from promptflow.evals.evaluators import (
     SimilarityEvaluator,
     ViolenceEvaluator,
 )
-from promptflow.evals.evaluators.election._eci import ECIEvaluator
+from promptflow.evals.evaluators._eci._eci import ECIEvaluator
 from promptflow.recording.record_mode import is_replay
 
 

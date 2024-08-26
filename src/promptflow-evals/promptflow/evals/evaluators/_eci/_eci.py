@@ -63,9 +63,8 @@ class ECIEvaluator:
     .. code-block:: python
 
         {
-            "hate_unfairness": "High",
-            "hate_unfairness_score": 6.5,
-            "hate_unfairness_reason": "Some reason"
+            "label": "False",
+            "reasoning": "Some reason."
         }
     """
 
