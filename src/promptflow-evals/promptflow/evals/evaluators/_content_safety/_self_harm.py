@@ -2,13 +2,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from promptflow._utils.async_utils import async_run_allowing_running_loop
+from promptflow.evals._common.constants import EvaluationMetrics
 
 try:
-    from .common import ContentSafetyEvaluatorBase
-    from .common.constants import EvaluationMetrics
+    from ._content_safety_base import ContentSafetyEvaluatorBase
 except ImportError:
-    from common import ContentSafetyEvaluatorBase
-    from common.constants import EvaluationMetrics
+    from _content_safety_base import ContentSafetyEvaluatorBase
 
 
 class _AsyncSelfHarmEvaluator(ContentSafetyEvaluatorBase):
