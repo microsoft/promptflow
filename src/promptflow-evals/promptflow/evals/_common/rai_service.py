@@ -15,7 +15,14 @@ import numpy as np
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
 
-from .constants import CommonConstants, EvaluationMetrics, RAIService, Tasks, _InternalEvaluationMetrics, _InternalTasks
+from .constants import (
+    CommonConstants,
+    EvaluationMetrics,
+    RAIService,
+    Tasks,
+    _InternalAnnotationTasks,
+    _InternalEvaluationMetrics,
+)
 from .utils import get_harm_severity_level
 
 try:
@@ -90,7 +97,7 @@ def generate_payload(normalized_user_text: str, metric: str) -> Dict:
         task = Tasks.PROTECTED_MATERIAL
         include_metric = False
     elif metric == _InternalEvaluationMetrics.ECI:
-        task = _InternalTasks.ECI
+        task = _InternalAnnotationTasks.ECI
         include_metric = False
     return (
         {

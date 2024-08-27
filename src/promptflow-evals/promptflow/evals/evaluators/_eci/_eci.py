@@ -45,6 +45,8 @@ class ECIEvaluator:
     :type project_scope: dict
     :param credential: The credential for connecting to Azure AI project.
     :type credential: ~azure.core.credentials.TokenCredential
+    :return: Whether or not ECI was found in the response without a disclaimer, with AI-generated reasoning
+    :rtype: Dict[str, str]
 
     **Usage**
 

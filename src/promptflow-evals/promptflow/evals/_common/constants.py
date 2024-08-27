@@ -34,7 +34,7 @@ class Tasks:
     PROTECTED_MATERIAL = "protected material"
 
 
-class _InternalTasks:
+class _InternalAnnotationTasks:
     """Defines types of annotation tasks that are supported for internal use. Such tasks are
     experimental and subject to potential change or migration to the main Evaluation Metrics
     enum over time."""

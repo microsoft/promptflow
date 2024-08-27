@@ -104,7 +104,7 @@ class AdversarialSimulator:
     async def __call__(
         self,
         *,
-        # Note: the scenario input also accepts inputs from _PrivateAdverarialScenario, but that's
+        # Note: the scenario input also accepts inputs from _PrivateAdversarialScenario, but that's
         # not stated since those values are nominally for internal use only.
         scenario: AdversarialScenario,
         target: Callable,

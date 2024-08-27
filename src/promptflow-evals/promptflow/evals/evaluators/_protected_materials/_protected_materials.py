@@ -50,6 +50,8 @@ class ProtectedMaterialsEvaluator:
     :type project_scope: dict
     :param credential: The credential for connecting to Azure AI project.
     :type credential: ~azure.core.credentials.TokenCredential
+    :return: Whether or not protected material was found in the response, with AI-generated reasoning.
+    :rtype: Dict[str, str]
 
     **Usage**
 
