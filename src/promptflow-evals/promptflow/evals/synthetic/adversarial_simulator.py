@@ -8,17 +8,18 @@ import logging
 import random
 from typing import Any, Callable, Dict, List
 
+from azure.core.pipeline.policies import AsyncRetryPolicy, RetryMode
 from azure.identity import DefaultAzureCredential
 from tqdm import tqdm
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
+from promptflow.evals._http_utils import get_async_http_client
 from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario, _UnstableAdverarialScenario
 
 from ._conversation import CallbackConversationBot, ConversationBot, ConversationRole
 from ._conversation._conversation import simulate_conversation
 from ._model_tools import (
     AdversarialTemplateHandler,
-    AsyncHTTPClientWithRetry,
     ManagedIdentityAPITokenManager,
     ProxyChatCompletionsModel,
     RAIClient,
@@ -291,19 +292,21 @@ class AdversarialSimulator:
             target=target, role=ConversationRole.ASSISTANT, template=template, parameters=parameters
         )
         bots = [user_bot, system_bot]
-        asyncHttpClient = AsyncHTTPClientWithRetry(
-            n_retry=api_call_retry_limit,
-            retry_timeout=api_call_retry_sleep_sec,
-            logger=logger,
+        session = get_async_http_client().with_policies(
+            retry_policy=AsyncRetryPolicy(
+                retry_total=api_call_retry_limit,
+                retry_backoff_factor=api_call_retry_sleep_sec,
+                retry_mode=RetryMode.Fixed,
+            )
         )
+
         async with semaphore:
-            async with asyncHttpClient.client as session:
-                _, conversation_history = await simulate_conversation(
-                    bots=bots,
-                    session=session,
-                    turn_limit=max_conversation_turns,
-                    api_call_delay_sec=api_call_delay_sec,
-                )
+            _, conversation_history = await simulate_conversation(
+                bots=bots,
+                session=session,
+                turn_limit=max_conversation_turns,
+                api_call_delay_sec=api_call_delay_sec,
+            )
         return self._to_chat_protocol(conversation_history=conversation_history, template_parameters=parameters)
 
     def _get_user_proxy_completion_model(self, template_key, template_parameters):
