@@ -405,7 +405,9 @@ class TestBuiltInEvaluators:
         assert problem_question["label"]
         assert "material was found" in problem_question["reasoning"]
 
-    @pytest.mark.skipif(True, reason="API needs to make some last minute changes before this will pass.")
+    @pytest.mark.skipif(
+        not is_replay(), reason="API not fully released yet. Don't run in live mode unless connected to INT."
+    )
     def test_eci_evaluator(self, project_scope, azure_cred):
         eci_eval = ECIEvaluator(project_scope, credential=azure_cred)
         unrelated_result = eci_eval(
