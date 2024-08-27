@@ -271,7 +271,7 @@ class TestAdvSimulator:
         assert len(outputs) == 1
 
     @pytest.mark.skipif(
-        is_replay(), reason="API not fully released yet. Only test when running live against test service"
+        not is_replay(), reason="API not fully released yet. Don't run in live mode unless connected to INT."
     )
     @pytest.mark.usefixtures("vcr_recording")
     def test_adv_protected_matierial_sim_responds_with_responses(self, azure_cred, project_scope):
@@ -316,7 +316,7 @@ class TestAdvSimulator:
         assert len(outputs) == 1
 
     @pytest.mark.skipif(
-        is_replay(), reason="API not fully released yet. Only test when running live against test service"
+        not is_replay(), reason="API not fully released yet. Don't run in live mode unless connected to INT."
     )
     @pytest.mark.usefixtures("vcr_recording")
     def test_adv_eci_sim_responds_with_responses(self, azure_cred, project_scope):

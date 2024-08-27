@@ -16,7 +16,7 @@ CONTENT_HARM_TEMPLATES_COLLECTION_KEY = set(
         "adv_content_gen_ungrounded",
         "adv_content_gen_grounded",
         "adv_content_protected_material",
-        "adv_content_politics",
+        "adv_politics",
     ]
 )
 
