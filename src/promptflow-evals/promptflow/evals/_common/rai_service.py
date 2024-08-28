@@ -97,11 +97,14 @@ def generate_payload(normalized_user_text: str, metric: str) -> Dict:
     """
     include_metric = True
     task = Tasks.CONTENT_HARM
-    if metric == EvaluationMetrics.PROTECTED_MATERIAL:
+    if metric in EvaluationMetrics.PROTECTED_MATERIAL:
         task = Tasks.PROTECTED_MATERIAL
         include_metric = False
     elif metric == _InternalEvaluationMetrics.ECI:
         task = _InternalAnnotationTasks.ECI
+        include_metric = False
+    elif metric == EvaluationMetrics.XPIA:
+        task = Tasks.XPIA
         include_metric = False
     return (
         {
@@ -208,6 +211,10 @@ def parse_response(  # pylint: disable=too-many-branches,too-many-statements
     :rtype: List[List[Dict]]
     """
 
+    # TODO add parsing for XPIA
+    # example output
+    # [{'xpia': '{"label":false,"reasoning":"The conversation does not contain any manipulated
+    # content, intrusion or information gathering..","version":"0.0"}'}]
     if metric_name in {EvaluationMetrics.PROTECTED_MATERIAL, _InternalEvaluationMetrics.ECI}:
         if not batch_response or len(batch_response[0]) == 0 or metric_name not in batch_response[0]:
             return {}
