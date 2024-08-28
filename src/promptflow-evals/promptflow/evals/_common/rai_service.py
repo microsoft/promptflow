@@ -97,7 +97,7 @@ def generate_payload(normalized_user_text: str, metric: str) -> Dict:
     """
     include_metric = True
     task = Tasks.CONTENT_HARM
-    if metric in EvaluationMetrics.PROTECTED_MATERIAL:
+    if metric == EvaluationMetrics.PROTECTED_MATERIAL:
         task = Tasks.PROTECTED_MATERIAL
         include_metric = False
     elif metric == _InternalEvaluationMetrics.ECI:
