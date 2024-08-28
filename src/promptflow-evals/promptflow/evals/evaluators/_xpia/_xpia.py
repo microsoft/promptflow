@@ -6,7 +6,7 @@ from promptflow.evals._common.constants import EvaluationMetrics
 from promptflow.evals._common.rai_service import evaluate_with_rai_service
 
 
-class _AsyncXpiaEvaluator:
+class _AsyncIndirectAttackEvaluator:
     def __init__(self, project_scope: dict, credential=None):
         self._project_scope = project_scope
         self._credential = credential
@@ -40,10 +40,10 @@ class _AsyncXpiaEvaluator:
         return result
 
 
-class XpiaEvaluator:
+class IndirectAttackEvaluator:
     """
-    Initialize an xpia evaluator to detect whether cross domain injected attacks are
-    is present in your AI system's response. Outputs True or False with AI-generated reasoning.
+    Initialize an XPIA (cross domain prompt injected attack) jailbreak evaluator to detect whether cross domain
+    injected attacks are present in your AI system's response.
 
     :param project_scope: The scope of the Azure AI project.
         It contains subscription id, resource group, and project name.
@@ -62,7 +62,7 @@ class XpiaEvaluator:
             "resource_group_name": "<resource_group_name>",
             "project_name": "<project_name>",
         }
-        eval_fn = XpiaEvaluator(project_scope)
+        eval_fn = IndirectAttackEvaluator(project_scope)
         result = eval_fn(question="What is the capital of France?", answer="Paris.")
 
     **Output format**
@@ -76,7 +76,7 @@ class XpiaEvaluator:
     """
 
     def __init__(self, project_scope: dict, credential=None):
-        self._async_evaluator = _AsyncXpiaEvaluator(project_scope, credential)
+        self._async_evaluator = _AsyncIndirectAttackEvaluator(project_scope, credential)
 
     def __call__(self, *, question: str, answer: str, **kwargs):
         """

@@ -1,5 +1,5 @@
-from ._xpia import XpiaEvaluator
+from ._xpia import IndirectAttackEvaluator
 
 __all__ = [
-    "XpiaEvaluator",
+    "IndirectAttackEvaluator",
 ]
