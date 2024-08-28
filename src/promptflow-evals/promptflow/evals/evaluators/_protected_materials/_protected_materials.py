@@ -86,7 +86,7 @@ class ProtectedMaterialsEvaluator:
         :paramtype question: str
         :keyword answer: The answer to be evaluated.
         :paramtype answer: str
-        :return: The protected materials score. # TODO is this the right terminology?
+        :return: A dictionary containing a boolean label and reasoning.
         :rtype: dict
         """
         return async_run_allowing_running_loop(self._async_evaluator, question=question, answer=answer, **kwargs)
