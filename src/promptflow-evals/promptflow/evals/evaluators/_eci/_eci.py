@@ -65,8 +65,8 @@ class ECIEvaluator:
     .. code-block:: python
 
         {
-            "label": "False",
-            "reasoning": "Some reason."
+            "ECI_score": "False",
+            "ECI_reasoning": "Some reason."
         }
     """
 

@@ -70,8 +70,8 @@ class ProtectedMaterialsEvaluator:
     .. code-block:: python
 
         {
-            "label": "False",
-            "reasoning": "This question does not contain any protected material."
+            "protected_material_score": "False",
+            "protected_material_reasoning": "This question does not contain any protected material."
         }
     """
 
