@@ -55,6 +55,7 @@ class RAIClient:
         self.parameter_json_endpoint = urljoin(self.api_url, "simulation/template/parameters")
         self.jailbreaks_json_endpoint = urljoin(self.api_url, "simulation/jailbreak")
         self.simulation_submit_endpoint = urljoin(self.api_url, "simulation/chat/completions/submit")
+        self.xpia_jailbreaks_json_endpoint = urljoin(self.api_url, "simulation/jailbreak/xpia")
 
     def _get_service_discovery_url(self):
         bearer_token = self.token_manager.get_token()
@@ -92,10 +93,13 @@ class RAIClient:
 
         return self.contentharm_parameters
 
-    async def get_jailbreaks_dataset(self) -> Any:
+    async def get_jailbreaks_dataset(self, xpia: bool = False) -> Any:
         "Get the jailbreaks dataset, if exists"
         if self.jailbreaks_dataset is None:
-            self.jailbreaks_dataset = await self.get(self.jailbreaks_json_endpoint)
+            if xpia:
+                self.jailbreaks_dataset = await self.get(self.xpia_jailbreaks_json_endpoint)
+            else:
+                self.jailbreaks_dataset = await self.get(self.jailbreaks_json_endpoint)
 
         return self.jailbreaks_dataset
 
