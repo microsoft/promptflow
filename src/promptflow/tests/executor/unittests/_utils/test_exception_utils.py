@@ -44,6 +44,13 @@ def raise_tool_execution_error():
         raise ToolExecutionError(node_name="MyTool") from e
 
 
+def raise_self_chaining_error():
+    try:
+        raise ValueError("self chaining error")
+    except Exception as e:
+        raise e from e
+
+
 def raise_exception_with_object():
     raise PromptflowException(message_format="{inner_exception}", inner_exception=Exception("exception message"))
 
@@ -789,6 +796,19 @@ class TestExceptions:
             "referenceCode": "Unknown",
             "code": "SystemError",
             "innerError": None,
+        }
+
+    def test_self_chaining_error():
+        with pytest.raises(ValueError) as e:
+            raise_self_chaining_error()
+        result = ExceptionPresenter.create(e.value).to_dict()
+
+        assert result == {
+            "message": "self chaining error",
+            "messageFormat": "",
+            "messageParameters": {},
+            "code": "SystemError",
+            "innerError": {"code": "ValueError", "innerError": None},
         }
 
     @pytest.mark.parametrize("include_debug_info", [True, False])

@@ -186,7 +186,7 @@ class ExceptionPresenter:
         inner_exception: dict = None
         stack_trace = TRACEBACK_MESSAGE + "".join(format_tb(ex.__traceback__))
 
-        if ex.__cause__ is not None:
+        if ex.__cause__ is not None and ex.__cause__ is not ex:
             inner_exception = self.build_debug_info(ex.__cause__)
             stack_trace = CAUSE_MESSAGE + stack_trace
 
