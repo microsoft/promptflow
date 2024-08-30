@@ -62,6 +62,8 @@ class IndirectAttackSimulator:
     """
 
     def __init__(self, *, azure_ai_project: Dict[str, Any], credential=None):
+        """Constructor."""
+        # check if azure_ai_project has the keys: subscription_id, resource_group_name, project_name, credential
         if not all(key in azure_ai_project for key in ["subscription_id", "resource_group_name", "project_name"]):
             raise ValueError(
                 "azure_ai_project must contain keys: subscription_id, resource_group_name and project_name"
