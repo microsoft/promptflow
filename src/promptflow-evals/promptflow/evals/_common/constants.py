@@ -31,13 +31,33 @@ class Tasks:
     """Defines types of annotation tasks supported by RAI Service."""
 
     CONTENT_HARM = "content harm"
+    PROTECTED_MATERIAL = "protected material"
+
+
+class _InternalAnnotationTasks:
+    """Defines types of annotation tasks that are supported for internal use. Such tasks are
+    experimental and subject to potential change or migration to the main Evaluation Metrics
+    enum over time."""
+
+    ECI = "eci"
 
 
 class EvaluationMetrics:
-    """Evaluation metrics for content safety evaluation."""
+    """Evaluation metrics to aid the RAI service in determining what
+    metrics to request, and how to present them back to the user."""
 
     HATE_FAIRNESS = "hate_fairness"
     HATE_UNFAIRNESS = "hate_unfairness"
     VIOLENCE = "violence"
     SELF_HARM = "self_harm"
     SEXUAL = "sexual"
+    PROTECTED_MATERIAL = "protected_material"
+
+
+class _InternalEvaluationMetrics:
+    """Evaluation metrics that are not publicly supported.
+    These metrics are experimental and subject to potential change or migration to the main
+    enum over time.
+    """
+
+    ECI = "eci"
