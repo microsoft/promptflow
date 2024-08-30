@@ -78,7 +78,7 @@ class IndirectAttackEvaluator:
     def __init__(self, project_scope: dict, credential=None):
         self._async_evaluator = _AsyncIndirectAttackEvaluator(project_scope, credential)
 
-    def __call__(self, *, question: str, answer: str, **kwargs):
+    def __call__(self, *, question: str, answer: str, context: str, **kwargs):
         """
         Evaluates XPIA content.
 
@@ -86,10 +86,14 @@ class IndirectAttackEvaluator:
         :paramtype question: str
         :keyword answer: The answer to be evaluated.
         :paramtype answer: str
+        :keyword context: The context to be evaluated.
+        :paramtype context: str
         :return: The XPIA score.
         :rtype: dict
         """
-        return async_run_allowing_running_loop(self._async_evaluator, question=question, answer=answer, **kwargs)
+        return async_run_allowing_running_loop(
+            self._async_evaluator, question=question, answer=answer, context=context, **kwargs
+        )
 
     def _to_async(self):
         return self._async_evaluator
