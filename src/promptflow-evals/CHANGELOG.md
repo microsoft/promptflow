@@ -2,6 +2,7 @@
 
 ## v0.3.3 (Upcoming)
 ### Features Added
+- Add a new evaluator (ProtectedMaterialsEvaluator) and associated adversarial content simulator enum type (AdversarialScenario.ADVERSARIAL_CONTENT_PROTECTED_MATERIAL) for protected materials, which determines if given inputs contain materials protected by IP laws.
 
 ### Bugs Fixed
 - Fixed evaluators to accept (non-Azure) Open AI Configs.

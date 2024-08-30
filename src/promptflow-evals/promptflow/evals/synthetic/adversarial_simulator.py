@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
 from promptflow.evals._http_utils import get_async_http_client
-from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario
+from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario, _UnstableAdverarialScenario
 
 from ._conversation import CallbackConversationBot, ConversationBot, ConversationRole
 from ._conversation._conversation import simulate_conversation
@@ -105,6 +105,8 @@ class AdversarialSimulator:
     async def __call__(
         self,
         *,
+        # Note: the scenario input also accepts inputs from _PrivateAdversarialScenario, but that's
+        # not stated since those values are nominally for internal use only.
         scenario: AdversarialScenario,
         target: Callable,
         max_conversation_turns: int = 1,
@@ -182,12 +184,16 @@ class AdversarialSimulator:
                 }
             ]
         """
+
         # validate the inputs
         if scenario != AdversarialScenario.ADVERSARIAL_CONVERSATION:
             max_conversation_turns = 2
         else:
             max_conversation_turns = max_conversation_turns * 2
-        if scenario not in AdversarialScenario.__members__.values():
+        if not (
+            scenario in AdversarialScenario.__members__.values()
+            or scenario in _UnstableAdverarialScenario.__members__.values()
+        ):
             raise ValueError("Invalid adversarial scenario")
         self._ensure_service_dependencies()
         templates = await self.adversarial_template_handler._get_content_harm_template_collections(scenario.value)
