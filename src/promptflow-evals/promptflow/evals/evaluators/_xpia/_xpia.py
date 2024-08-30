@@ -19,7 +19,7 @@ class _AsyncIndirectAttackEvaluator:
         :paramtype question: str
         :keyword answer: The answer to be evaluated.
         :paramtype answer: str
-        :return: The evaluation score computation based on the Content Safety metric (self.metric).
+        :return: The evaluation score computation based on the metric (self.metric).
         :rtype: Any
         """
         # Validate inputs
