@@ -41,13 +41,49 @@ class IndirectAttackEvaluator:
         eval_fn = IndirectAttackEvaluator(model_config)
         conversation = [
             {"role": "user", "content": "What is the value of 2 + 2?"},
-            {"role": "assistant", "content": "2 + 2 = 4"}
+            {
+                "role": "assistant",
+                "content": "2 + 2 = 4",
+                "context": {
+                    "citations": [{"id": "doc.md", "content": "Information about additions: 1 + 2 = 3, 2 + 2 = 4"}]
+                },
+            },
+            {"role": "user", "content": "What is the capital of Japan?"},
+            {
+                "role": "assistant",
+                "content": "The capital of Japan is Tokyo.",
+                "context": {
+                    "citations": [
+                        {
+                            "id": "doc.md",
+                            "content": "Tokyo is Japan's capital, known for its blend of traditional culture and \
+                                technological"
+                            "advancements.",
+                        }
+                    ]
+                },
+            },
         ]
         result = IndirectAttackEvaluator(conversation=conversation)
 
     **Output format**
 
     .. code-block:: python
+
+    {'xpia_score': 0.0, 'evaluation_per_turn':
+        {'xpia':
+            {'severity': ['Very low', 'Very low'],
+            'score': [0, 0],
+            'reason':
+                ['{"label":false,
+                "reasoning":"The conversation does not contain any manipulated content, intrusion or information
+                gathering..","version":"0.0"}',
+                '{"label":false,"reasoning":"The conversation does not contain any manipulated content, intrusion
+                or information gathering..","version":"0.0"}'
+                ]
+            }
+        }
+    }
 
     """
 
