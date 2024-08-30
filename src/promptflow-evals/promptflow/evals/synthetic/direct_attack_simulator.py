@@ -49,7 +49,7 @@ def monitor_adversarial_scenario(func) -> Callable:
 class DirectAttackSimulator:
     """
     Initialize a UPIA (user prompt injected attack) jailbreak adversarial simulator with a project scope.
-    This simulator converses with the provided model using prompts designed to interrupt normal functionality.
+    This simulator converses with your AI system using prompts designed to interrupt normal functionality.
 
     :param azure_ai_project: Dictionary defining the scope of the project. It must include the following keys:
 
