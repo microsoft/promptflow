@@ -13,10 +13,7 @@ logger = logging.getLogger(__name__)
 
 class IndirectAttackEvaluator:
     """
-    Initializes the XPIA (cross domain prompt injected attack) jailbreak adversarial simulator with a project scope.
-    This simulator converses with your AI system using prompts injected into the context to interrupt normal expected
-    functionality by eliciting manipulated content, intrusion and attempting to gather information outside the scope
-    of your AI system.
+    Initializes the XPIA (cross domain prompt injected attack) jailbreak adversarial evaluator with a project scope.
 
     :param project_scope: The scope of the Azure AI project.
         It contains subscription id, resource group, and project name.
@@ -88,7 +85,9 @@ class IndirectAttackEvaluator:
 
     def __call__(self, *, conversation, **kwargs):
         """
-        Evaluates content according to the presence of cross domain inject attacks.
+        Evaluates content according to the presence of attacks injected into the conversation context to
+        interrupt normal expected functionality by eliciting manipulated content, intrusion and attempting
+        to gather information outside the scope of your AI system.
 
         :keyword conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
         :paramtype conversation: List[Dict]

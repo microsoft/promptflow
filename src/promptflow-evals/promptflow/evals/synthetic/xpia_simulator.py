@@ -104,14 +104,12 @@ class IndirectAttackSimulator:
         concurrent_async_task: int = 3,
     ):
         """
-        Executes the adversarial simulation and XPIA (cross domain prompt injected attack) jailbreak adversarial
-        simulation against a specified target function asynchronously.
+        Initializes the XPIA (cross domain prompt injected attack) jailbreak adversarial simulator with a project scope.
+        This simulator converses with your AI system using prompts injected into the context to interrupt normal
+        expected functionality by eliciting manipulated content, intrusion and attempting to gather information outside
+        the scope of your AI system.
 
         :keyword scenario: Enum value specifying the adversarial scenario used for generating inputs.
-         example:
-
-         - :py:const:`promptflow.evals.synthetic.adversarial_scenario.AdversarialScenario.ADVERSARIAL_QA`
-         - :py:const:`promptflow.evals.synthetic.adversarial_scenario.AdversarialScenario.ADVERSARIAL_CONVERSATION`
         :paramtype scenario: promptflow.evals.synthetic.adversarial_scenario.AdversarialScenario
         :keyword target: The target function to simulate adversarial inputs against.
             This function should be asynchronous and accept a dictionary representing the adversarial input.
