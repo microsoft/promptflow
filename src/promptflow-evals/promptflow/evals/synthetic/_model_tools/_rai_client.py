@@ -93,13 +93,15 @@ class RAIClient:
 
         return self.contentharm_parameters
 
-    async def get_jailbreaks_dataset(self, xpia: bool = False) -> Any:
+    async def get_jailbreaks_dataset(self, type: str) -> Any:
         "Get the jailbreaks dataset, if exists"
         if self.jailbreaks_dataset is None:
-            if xpia:
+            if type == "xpia":
                 self.jailbreaks_dataset = await self.get(self.xpia_jailbreaks_json_endpoint)
-            else:
+            elif type == "upia":
                 self.jailbreaks_dataset = await self.get(self.jailbreaks_json_endpoint)
+            else:
+                raise ValueError("Invalid type, please provide either 'xpia' or 'upia'")
 
         return self.jailbreaks_dataset
 

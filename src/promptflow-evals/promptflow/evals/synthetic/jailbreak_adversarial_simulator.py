@@ -196,7 +196,6 @@ class JailbreakAdversarialSimulator:
             api_call_retry_sleep_sec=api_call_retry_sleep_sec,
             api_call_delay_sec=api_call_delay_sec,
             concurrent_async_task=concurrent_async_task,
-            jailbreak=False,
         )
         jb_sim = AdversarialSimulator(azure_ai_project=self.azure_ai_project, credential=self.credential)
         jb_sim_results = await jb_sim(
@@ -208,6 +207,6 @@ class JailbreakAdversarialSimulator:
             api_call_retry_sleep_sec=api_call_retry_sleep_sec,
             api_call_delay_sec=api_call_delay_sec,
             concurrent_async_task=concurrent_async_task,
-            jailbreak=True,
+            _jailbreak_type="upia",
         )
         return {"jailbreak": jb_sim_results, "regular": regular_sim_results}

@@ -6,7 +6,7 @@ import asyncio
 import functools
 import logging
 import random
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from azure.core.pipeline.policies import AsyncRetryPolicy, RetryMode
 from azure.identity import DefaultAzureCredential
@@ -115,8 +115,7 @@ class AdversarialSimulator:
         api_call_retry_sleep_sec: int = 1,
         api_call_delay_sec: int = 0,
         concurrent_async_task: int = 3,
-        jailbreak: bool = False,
-        xpia: bool = False,
+        _jailbreak_type: Optional[str] = None,
     ):
         """
         Executes the adversarial simulation against a specified target function asynchronously.
@@ -148,12 +147,6 @@ class AdversarialSimulator:
         :keyword concurrent_async_task: The number of asynchronous tasks to run concurrently during the simulation.
             Defaults to 3.
         :paramtype concurrent_async_task: int
-        :keyword jailbreak: If set to True, allows breaking out of the conversation flow defined by the scenario.
-            Defaults to False.
-        :paramtype jailbreak: bool
-        :keyword xpia: If set to True and jailbreak set to True, the XPIA jailbreak dataset will be used for
-            jailbreak prompts. Defaults to False.
-        :paramtype xpia: bool
         :return: A list of dictionaries, each representing a simulated conversation. Each dictionary contains:
 
          - 'template_parameters': A dictionary with parameters used in the conversation template,
@@ -215,17 +208,17 @@ class AdversarialSimulator:
                 total_tasks,
             )
         total_tasks = min(total_tasks, max_simulation_results)
-        if jailbreak:
-            jailbreak_dataset = await self.rai_client.get_jailbreaks_dataset(xpia=xpia)
+        if _jailbreak_type:
+            jailbreak_dataset = await self.rai_client.get_jailbreaks_dataset(type=_jailbreak_type)
         progress_bar = tqdm(
             total=total_tasks,
-            desc="generating jailbreak simulations" if jailbreak else "generating simulations",
+            desc="generating jailbreak simulations" if _jailbreak_type else "generating simulations",
             ncols=100,
             unit="simulations",
         )
         for template in templates:
             for parameter in template.template_parameters:
-                if jailbreak:
+                if _jailbreak_type:
                     parameter = self._join_conversation_starter(parameter, random.choice(jailbreak_dataset))
                 tasks.append(
                     asyncio.create_task(

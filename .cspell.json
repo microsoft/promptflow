@@ -243,6 +243,8 @@
     "azureopenaimodelconfiguration",
     "openaimodelconfiguration",
     "usecwd",
+    "upia",
+    "xpia",
     "locustio",
     "euap",
     "rcfile",
