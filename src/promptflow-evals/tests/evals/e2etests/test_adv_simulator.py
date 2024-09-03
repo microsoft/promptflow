@@ -223,7 +223,7 @@ class TestAdvSimulator:
                 api_call_retry_sleep_sec=1,
                 api_call_delay_sec=30,
                 concurrent_async_task=1,
-                jailbreak=True,
+                _jailbreak_type="upia",
             )
         )
         assert len(outputs) == 1
@@ -265,7 +265,7 @@ class TestAdvSimulator:
                 api_call_retry_sleep_sec=1,
                 api_call_delay_sec=30,
                 concurrent_async_task=1,
-                jailbreak=True,
+                _jailbreak_type="upia",
             )
         )
         assert len(outputs) == 1
@@ -310,7 +310,6 @@ class TestAdvSimulator:
                 api_call_retry_sleep_sec=1,
                 api_call_delay_sec=30,
                 concurrent_async_task=1,
-                jailbreak=False,
             )
         )
         assert len(outputs) == 1
@@ -356,7 +355,6 @@ class TestAdvSimulator:
                 api_call_retry_sleep_sec=1,
                 api_call_delay_sec=30,
                 concurrent_async_task=1,
-                jailbreak=False,
             )
         )
         assert len(outputs) == 1
