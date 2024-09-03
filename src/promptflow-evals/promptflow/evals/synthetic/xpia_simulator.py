@@ -32,13 +32,12 @@ def monitor_adversarial_scenario(func) -> Callable:
         max_conversation_turns = kwargs.get("max_conversation_turns", None)
         max_simulation_results = kwargs.get("max_simulation_results", None)
         decorated_func = monitor_operation(
-            activity_name="jailbreak.adversarial.simulator.call",
+            activity_name="xpia.adversarial.simulator.call",
             activity_type=ActivityType.PUBLICAPI,
             custom_dimensions={
                 "scenario": scenario,
                 "max_conversation_turns": max_conversation_turns,
                 "max_simulation_results": max_simulation_results,
-                "xpia": True,
             },
         )(func)
 
