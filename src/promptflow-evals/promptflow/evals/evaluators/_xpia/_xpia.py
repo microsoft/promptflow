@@ -27,7 +27,7 @@ class IndirectAttackEvaluator:
     :param credential: The credential for connecting to Azure AI project.
     :type credential: ~azure.core.credentials.TokenCredential
     :return: A function that evaluates and generates metrics for XPIA chat scenario. Metrics include the overall
-        evaluation label for the conversation, as well as per-turn evaluation labels and reasoning.
+        evaluation label for the conversation or Q/A pair, as well as per-turn evaluation labels and reasoning.
     :rtype: Callable
 
     **Usage**
@@ -62,7 +62,7 @@ class IndirectAttackEvaluator:
         ]
         result = eval_fn(conversation=conversation)
 
-    **Output format**
+    **Output format for conversation**
 
     .. code-block:: python
 
@@ -77,13 +77,23 @@ class IndirectAttackEvaluator:
                 }
         }
 
+    **Output format for question-answer pair**
+
+    .. code-block:: python
+
+        {
+            'label': False,
+            'reasoning': 'The conversation does not contain any manipulated content, intrusion or
+                          information gathering..'
+        }
+
     """
 
     def __init__(self, project_scope: dict, eval_last_turn: bool = False, credential=None):
         self._evaluator = _IndirectAttackEvaluator(project_scope, credential)
         self._eval_last_turn = eval_last_turn
 
-    def __call__(self, *, conversation, **kwargs):
+    def __call__(self, *, conversation: List[Dict] = None, question: str = None, answer: str = None, **kwargs):
         """
         Evaluates content according to the presence of attacks injected into the conversation context to
         interrupt normal expected functionality by eliciting manipulated content, intrusion and attempting
@@ -91,40 +101,46 @@ class IndirectAttackEvaluator:
 
         :keyword conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
         :paramtype conversation: List[Dict]
+        :keyword question: The question to be evaluated. Mutually exclusive with 'conversation'.
+        :paramtype question: str
+        :keyword answer: The answer to be evaluated. Mutually exclusive with 'conversation'.
+        :paramtype answer: str
         :return: The scores for chat scenario.
         :rtype: dict
         """
-        self._validate_conversation(conversation)
+        if conversation:
+            self._validate_conversation(conversation)
 
-        # Extract questions, answers from conversation
-        questions = []
-        answers = []
+            # Extract questions, answers from conversation
+            questions = []
+            answers = []
 
-        if self._eval_last_turn:
-            # Process only the last two turns if _eval_last_turn is True
-            conversation_slice = conversation[-2:] if len(conversation) >= 2 else conversation
-        else:
-            conversation_slice = conversation
+            if self._eval_last_turn:
+                # Process only the last two turns if _eval_last_turn is True
+                conversation_slice = conversation[-2:] if len(conversation) >= 2 else conversation
+            else:
+                conversation_slice = conversation
 
-        for each_turn in conversation_slice:
-            role = each_turn["role"]
-            if role == "user":
-                questions.append(each_turn["content"])
-            elif role == "assistant":
-                answers.append(each_turn["content"])
+            for each_turn in conversation_slice:
+                role = each_turn["role"]
+                if role == "user":
+                    questions.append(each_turn["content"])
+                elif role == "assistant":
+                    answers.append(each_turn["content"])
 
-        # Evaluate each turn
-        per_turn_results = []
-        for turn_num in range(len(questions)):
-            current_turn_result = {}
+            # Evaluate each turn
+            per_turn_results = []
+            for turn_num in range(len(questions)):
+                current_turn_result = {}
 
-            result = self._evaluate_turn(turn_num, questions, answers, self._evaluator)
-            current_turn_result.update(result)
+                result = self._evaluate_turn(turn_num, questions, answers, self._evaluator)
+                current_turn_result.update(result)
 
-            per_turn_results.append(current_turn_result)
+                per_turn_results.append(current_turn_result)
 
-        aggregated = self._aggregate_results(per_turn_results)
-        return aggregated
+            aggregated = self._aggregate_results(per_turn_results)
+            return aggregated
+        return self._evaluator(question=question, answer=answer, **kwargs)
 
     def _evaluate_turn(self, turn_num, questions, answers, evaluator):
         try:

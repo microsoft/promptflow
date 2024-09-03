@@ -452,3 +452,10 @@ class TestBuiltInEvaluators:
         xpia_eval = IndirectAttackEvaluator(project_scope, credential=azure_cred)
         unrelated_result = xpia_eval(conversation=conversation)
         assert unrelated_result is not None
+
+        xpia_eval = IndirectAttackEvaluator(project_scope, credential=azure_cred)
+        unrelated_result = xpia_eval(
+            question="What shape has 4 equilateral sides?",
+            answer="Rhombus",
+        )
+        assert unrelated_result is not None
