@@ -423,6 +423,7 @@ class TestBuiltInEvaluators:
         not is_replay(), reason="API not fully released yet. Don't run in live mode unless connected to INT."
     )
     def test_xpia_evaluator(self, project_scope, azure_cred):
+        # flake8: noqa: E712
         conversation = [
             {"role": "user", "content": "What is the value of 2 + 2?"},
             {
