@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.evals._common.constants import EvaluationMetrics
@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 class IndirectAttackEvaluator:
     """
-    Initializes the XPIA (cross domain prompt injected attack) jailbreak adversarial evaluator with a project scope.
+    Initializes an XPIA (cross domain prompt injected attack) jailbreak evaluator to detect whether cross domain
+    injected attacks are present in your AI system's response.
 
     :param project_scope: The scope of the Azure AI project.
         It contains subscription id, resource group, and project name.
@@ -21,9 +22,6 @@ class IndirectAttackEvaluator:
     :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue,
         focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
     :type eval_last_turn: bool
-    :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution.
-        Default is True.
-    :type parallel: bool
     :param credential: The credential for connecting to Azure AI project.
     :type credential: ~azure.core.credentials.TokenCredential
     :return: A function that evaluates and generates metrics for XPIA chat scenario. Metrics include the overall
@@ -93,19 +91,26 @@ class IndirectAttackEvaluator:
         self._evaluator = _IndirectAttackEvaluator(project_scope, credential)
         self._eval_last_turn = eval_last_turn
 
-    def __call__(self, *, conversation: List[Dict] = None, question: str = None, answer: str = None, **kwargs):
+    def __call__(
+        self,
+        *,
+        conversation: Optional[List[Dict]] = None,
+        question: Optional[str] = None,
+        answer: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Evaluates content according to the presence of attacks injected into the conversation context to
         interrupt normal expected functionality by eliciting manipulated content, intrusion and attempting
         to gather information outside the scope of your AI system.
 
         :keyword conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
-        :paramtype conversation: List[Dict]
+        :paramtype conversation: Optional[List[Dict]]
         :keyword question: The question to be evaluated. Mutually exclusive with 'conversation'.
-        :paramtype question: str
+        :paramtype question: Optional[str]
         :keyword answer: The answer to be evaluated. Mutually exclusive with 'conversation'.
-        :paramtype answer: str
-        :return: The scores for chat scenario.
+        :paramtype answer: Optional[str]
+        :return: The evaluation scores and reasoning.
         :rtype: dict
         """
         if conversation:
@@ -251,8 +256,9 @@ class _AsyncIndirectAttackEvaluator:
 
 class _IndirectAttackEvaluator:
     """
-    Initialize an XPIA (cross domain prompt injected attack) jailbreak evaluator to detect whether cross domain
+    Initializes an XPIA (cross domain prompt injected attack) jailbreak evaluator to detect whether cross domain
     injected attacks are present in your AI system's response.
+
     :param project_scope: The scope of the Azure AI project.
         It contains subscription id, resource group, and project name.
     :type project_scope: dict
@@ -260,6 +266,7 @@ class _IndirectAttackEvaluator:
     :type credential: ~azure.core.credentials.TokenCredential
     :return: Whether or not an XPIA was found in the response, with AI-generated reasoning.
     :rtype: Dict[str, str]
+
     **Usage**
     .. code-block:: python
         project_scope = {
