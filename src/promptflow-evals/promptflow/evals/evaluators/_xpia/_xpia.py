@@ -94,7 +94,7 @@ class IndirectAttackEvaluator:
     def __call__(
         self,
         *,
-        conversation: Optional[List[Dict]] = None,
+        conversation=None,
         question: Optional[str] = None,
         answer: Optional[str] = None,
         **kwargs,
