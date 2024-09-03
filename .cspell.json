@@ -244,6 +244,9 @@
     "usecwd",
     "locustio",
     "euap",
+    "Rerank",
+    "rerank",
+    "reranker",
     "rcfile",
     "pylintrc"
   ],
