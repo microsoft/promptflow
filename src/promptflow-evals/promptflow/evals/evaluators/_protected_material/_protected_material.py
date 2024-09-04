@@ -6,7 +6,7 @@ from promptflow.evals._common.constants import EvaluationMetrics
 from promptflow.evals._common.rai_service import evaluate_with_rai_service
 
 
-class _AsyncProtectedMaterialsEvaluator:
+class _AsyncProtectedmaterialEvaluator:
     def __init__(self, project_scope: dict, credential=None):
         self._project_scope = project_scope
         self._credential = credential
@@ -40,7 +40,7 @@ class _AsyncProtectedMaterialsEvaluator:
         return result
 
 
-class ProtectedMaterialsEvaluator:
+class ProtectedmaterialEvaluator:
     """
     Initialize a protected materials evaluator to detect whether protected material
     is present in your AI system's response. Outputs True or False with AI-generated reasoning.
@@ -62,7 +62,7 @@ class ProtectedMaterialsEvaluator:
             "resource_group_name": "<resource_group_name>",
             "project_name": "<project_name>",
         }
-        eval_fn = ProtectedMaterialsEvaluator(project_scope)
+        eval_fn = ProtectedmaterialEvaluator(project_scope)
         result = eval_fn(question="What is the capital of France?", answer="Paris.")
 
     **Output format**
@@ -76,7 +76,7 @@ class ProtectedMaterialsEvaluator:
     """
 
     def __init__(self, project_scope: dict, credential=None):
-        self._async_evaluator = _AsyncProtectedMaterialsEvaluator(project_scope, credential)
+        self._async_evaluator = _AsyncProtectedmaterialEvaluator(project_scope, credential)
 
     def __call__(self, *, question: str, answer: str, **kwargs):
         """
