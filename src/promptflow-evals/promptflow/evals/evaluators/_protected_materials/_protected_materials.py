@@ -19,7 +19,7 @@ class _AsyncProtectedMaterialsEvaluator:
         :paramtype question: str
         :keyword answer: The answer to be evaluated.
         :paramtype answer: str
-        :return: The evaluation score computation based on the Content Safety metric (self.metric).
+        :return: The evaluation result computation based on the Content Safety metric (self.metric).
         :rtype: Any
         """
         # Validate inputs
@@ -70,7 +70,7 @@ class ProtectedMaterialsEvaluator:
     .. code-block:: python
 
         {
-            "protected_material_score": "False",
+            "protected_material_label": "False",
             "protected_material_reasoning": "This question does not contain any protected material."
         }
     """

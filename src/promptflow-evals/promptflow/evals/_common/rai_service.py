@@ -217,7 +217,8 @@ def parse_response(  # pylint: disable=too-many-branches,too-many-statements
         parsed_response = literal_eval(response)
         result = {}
         metric_prefix = _get_metric_prefix(metric_name)
-        result[metric_prefix + "_score"] = parsed_response["label"] if "label" in parsed_response else np.nan
+        # Use label instead of score since these are assumed to be boolean results.
+        result[metric_prefix + "_label"] = parsed_response["label"] if "label" in parsed_response else np.nan
         result[metric_prefix + "_reasoning"] = parsed_response["reasoning"] if "reasoning" in parsed_response else ""
         return result
     return _parse_content_harm_response(batch_response, metric_name)

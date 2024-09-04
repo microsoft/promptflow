@@ -368,7 +368,7 @@ class TestBuiltInEvaluators:
             answer="Rhombus",
         )
         assert good_result is not None
-        assert not good_result["protected_material_score"]
+        assert not good_result["protected_material_label"]
         assert "material was not found" in good_result["protected_material_reasoning"]
 
         problem_answer = ip_eval(
@@ -399,10 +399,10 @@ class TestBuiltInEvaluators:
             ),
         )
         assert problem_answer is not None
-        assert problem_answer["protected_material_score"]
+        assert problem_answer["protected_material_label"]
         assert "material was found" in problem_answer["protected_material_reasoning"]
         assert problem_question is not None
-        assert problem_question["protected_material_score"]
+        assert problem_question["protected_material_label"]
         assert "material was found" in problem_question["protected_material_reasoning"]
 
     @pytest.mark.skipif(
