@@ -211,10 +211,6 @@ def parse_response(  # pylint: disable=too-many-branches,too-many-statements
     :rtype: List[List[Dict]]
     """
 
-    # TODO add parsing for XPIA
-    # example output
-    # [{'xpia': '{"label":false,"reasoning":"The conversation does not contain any manipulated
-    # content, intrusion or information gathering..","version":"0.0"}'}]
     if metric_name in {EvaluationMetrics.PROTECTED_MATERIAL, _InternalEvaluationMetrics.ECI}:
         if not batch_response or len(batch_response[0]) == 0 or metric_name not in batch_response[0]:
             return {}
