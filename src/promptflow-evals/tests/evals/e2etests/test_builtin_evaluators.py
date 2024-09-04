@@ -11,7 +11,7 @@ from promptflow.evals.evaluators import (
     GroundednessEvaluator,
     HateUnfairnessEvaluator,
     IndirectAttackEvaluator,
-    ProtectedMaterialsEvaluator,
+    ProtectedMaterialEvaluator,
     QAEvaluator,
     RelevanceEvaluator,
     SelfHarmEvaluator,
@@ -362,8 +362,8 @@ class TestBuiltInEvaluators:
     @pytest.mark.skipif(
         not is_replay(), reason="API not fully released yet. Don't run in live mode unless connected to INT."
     )
-    def test_protected_materials_evaluator(self, project_scope, azure_cred):
-        ip_eval = ProtectedMaterialsEvaluator(project_scope, credential=azure_cred)
+    def test_protected_material_evaluator(self, project_scope, azure_cred):
+        ip_eval = ProtectedMaterialEvaluator(project_scope, credential=azure_cred)
         good_result = ip_eval(
             question="What shape has 4 equilateral sides?",
             answer="Rhombus",
