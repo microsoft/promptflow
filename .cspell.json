@@ -244,6 +244,8 @@
     "azureopenaimodelconfiguration",
     "openaimodelconfiguration",
     "usecwd",
+    "upia",
+    "xpia",
     "locustio",
     "euap",
     "Rerank",

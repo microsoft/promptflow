@@ -210,8 +210,8 @@ def parse_response(  # pylint: disable=too-many-branches,too-many-statements
     :return: The parsed annotation result.
     :rtype: List[List[Dict]]
     """
-    # non-numeric metrics
-    if metric_name in {EvaluationMetrics.PROTECTED_MATERIAL, _InternalEvaluationMetrics.ECI}:
+
+    if metric_name in {EvaluationMetrics.PROTECTED_MATERIAL, _InternalEvaluationMetrics.ECI, EvaluationMetrics.XPIA}:
         if not batch_response or len(batch_response[0]) == 0 or metric_name not in batch_response[0]:
             return {}
         response = batch_response[0][metric_name]
