@@ -6,7 +6,7 @@ import asyncio
 import functools
 import logging
 import random
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from azure.core.pipeline.policies import AsyncRetryPolicy, RetryMode
 from azure.identity import DefaultAzureCredential
@@ -116,6 +116,8 @@ class AdversarialSimulator:
         api_call_delay_sec: int = 0,
         concurrent_async_task: int = 3,
         jailbreak: bool = False,
+        randomize_order: bool = True,
+        randomization_seed: Optional[int] = None,
     ):
         """
         Executes the adversarial simulation against a specified target function asynchronously.
@@ -150,6 +152,11 @@ class AdversarialSimulator:
         :keyword jailbreak: If set to True, allows breaking out of the conversation flow defined by the scenario.
             Defaults to False.
         :paramtype jailbreak: bool
+        :keyword randomize_order: Whether or not the order of the prompts should be randomized. Defaults to True.
+        :paramtype randomize_order: bool
+        :keyword randomization_seed: The seed used to randomize prompt selection. If unset, the system's
+            default seed is used. Defaults to None.
+        :paramtype randomization_seed: Optional[int]
         :return: A list of dictionaries, each representing a simulated conversation. Each dictionary contains:
 
          - 'template_parameters': A dictionary with parameters used in the conversation template,
@@ -220,7 +227,16 @@ class AdversarialSimulator:
             unit="simulations",
         )
         for template in templates:
-            for parameter in template.template_parameters:
+            parameter_order = list(range(len(template.template_parameters)))
+            if randomize_order:
+                # The template parameter lists are persistent across sim runs within a session,
+                # So randomize a the selection instead of the parameter list directly,
+                # or a potentially large deep copy.
+                if randomization_seed is not None:
+                    random.seed(randomization_seed)
+                random.shuffle(parameter_order)
+            for index in parameter_order:
+                parameter = template.template_parameters[index].copy()
                 if jailbreak:
                     parameter = self._join_conversation_starter(parameter, random.choice(jailbreak_dataset))
                 tasks.append(
