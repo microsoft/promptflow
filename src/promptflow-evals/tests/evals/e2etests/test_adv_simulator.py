@@ -348,7 +348,7 @@ class TestAdvSimulator:
 
         outputs = asyncio.run(
             simulator(
-                scenario=_UnstableAdverarialScenario.ADVERSARIAL_CONTENT_ECI,
+                scenario=_UnstableAdverarialScenario.ECI,
                 max_conversation_turns=1,
                 max_simulation_results=1,
                 target=callback,
