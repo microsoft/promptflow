@@ -415,5 +415,5 @@ class TestBuiltInEvaluators:
             answer="Rhombus",
         )
         assert unrelated_result is not None
-        assert not unrelated_result["ECI_score"]
+        assert not unrelated_result["ECI_label"]
         assert "geometry question" in unrelated_result["ECI_reasoning"]
