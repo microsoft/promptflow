@@ -1,5 +1,5 @@
-from ._protected_material import ProtectedmaterialEvaluator
+from ._protected_material import ProtectedMaterialEvaluator
 
 __all__ = [
-    "ProtectedmaterialEvaluator",
+    "ProtectedMaterialEvaluator",
 ]
