@@ -514,7 +514,7 @@ class TestAdvSimulator:
     @pytest.mark.usefixtures("vcr_recording")
     def test_jailbreak_sim_order_randomness(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
-        from promptflow.evals.synthetic import AdversarialScenario, JailbreakAdversarialSimulator
+        from promptflow.evals.synthetic import AdversarialScenario, DirectAttackSimulator
 
         azure_ai_project = {
             "subscription_id": project_scope["subscription_id"],
@@ -536,7 +536,7 @@ class TestAdvSimulator:
                 "context": context,
             }
 
-        simulator = JailbreakAdversarialSimulator(azure_ai_project=azure_ai_project, credential=azure_cred)
+        simulator = DirectAttackSimulator(azure_ai_project=azure_ai_project, credential=azure_cred)
 
         outputs1 = asyncio.run(
             simulator(
