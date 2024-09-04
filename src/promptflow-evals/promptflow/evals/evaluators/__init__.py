@@ -15,7 +15,7 @@ from ._content_safety import (
 from ._f1_score import F1ScoreEvaluator
 from ._fluency import FluencyEvaluator
 from ._groundedness import GroundednessEvaluator
-from ._protected_materials import ProtectedMaterialsEvaluator
+from ._protected_material import ProtectedMaterialEvaluator
 from ._qa import QAEvaluator
 from ._relevance import RelevanceEvaluator
 from ._similarity import SimilarityEvaluator
@@ -35,5 +35,5 @@ __all__ = [
     "HateUnfairnessEvaluator",
     "ContentSafetyEvaluator",
     "ContentSafetyChatEvaluator",
-    "ProtectedMaterialsEvaluator",
+    "ProtectedMaterialEvaluator",
 ]
