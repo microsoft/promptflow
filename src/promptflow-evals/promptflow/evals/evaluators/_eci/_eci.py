@@ -65,8 +65,8 @@ class ECIEvaluator:
     .. code-block:: python
 
         {
-            "label": "False",
-            "reasoning": "Some reason."
+            "ECI_label": "False",
+            "ECI_reasoning": "Some reason."
         }
     """
 
@@ -81,7 +81,7 @@ class ECIEvaluator:
         :paramtype question: str
         :keyword answer: The answer to be evaluated.
         :paramtype answer: str
-        :return: The ECI score.
+        :return: The ECI result.
         :rtype: dict
         """
         return async_run_allowing_running_loop(self._async_evaluator, question=question, answer=answer, **kwargs)

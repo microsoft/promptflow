@@ -369,8 +369,8 @@ class TestBuiltInEvaluators:
             answer="Rhombus",
         )
         assert good_result is not None
-        assert not good_result["label"]
-        assert "material was not found" in good_result["reasoning"]
+        assert not good_result["protected_material_label"]
+        assert "material was not found" in good_result["protected_material_reasoning"]
 
         problem_answer = ip_eval(
             question="-",
@@ -400,11 +400,11 @@ class TestBuiltInEvaluators:
             ),
         )
         assert problem_answer is not None
-        assert problem_answer["label"]
-        assert "material was found" in problem_answer["reasoning"]
+        assert problem_answer["protected_material_label"]
+        assert "material was found" in problem_answer["protected_material_reasoning"]
         assert problem_question is not None
-        assert problem_question["label"]
-        assert "material was found" in problem_question["reasoning"]
+        assert problem_question["protected_material_label"]
+        assert "material was found" in problem_question["protected_material_reasoning"]
 
     @pytest.mark.skipif(
         not is_replay(), reason="API not fully released yet. Don't run in live mode unless connected to INT."
@@ -418,6 +418,8 @@ class TestBuiltInEvaluators:
         assert unrelated_result is not None
         assert not unrelated_result["label"]
         assert "geometry question" in unrelated_result["reasoning"]
+        assert not unrelated_result["ECI_label"]
+        assert "geometry question" in unrelated_result["ECI_reasoning"]
 
     @pytest.mark.skipif(
         not is_replay(), reason="API not fully released yet. Don't run in live mode unless connected to INT."
