@@ -141,14 +141,13 @@ class IndirectAttackSimulator:
          - '**$schema**': A string indicating the schema URL for the conversation format.
 
          The 'content' for 'assistant' role messages may includes the messages that your callback returned.
-        :rtype: Dict[str, [List[Dict[str, Any]]]] with two elements
+        :rtype: List[Dict[str, Any]]
 
         **Output format**
 
         .. code-block:: python
 
-            return_value = {
-                "jailbreak": [
+            return_value = [
                 {
                     'template_parameters': {},
                     'messages': [
@@ -163,37 +162,11 @@ class IndirectAttackSimulator:
                         }
                     ],
                     '$schema': 'http://azureml/sdk-2-0/ChatConversation.json'
-                }],
-                "regular": [
-                {
-                    'template_parameters': {},
-                    'messages': [
-                    {
-                        'content': '<adversaril question>',
-                        'role': 'user'
-                    },
-                    {
-                        'content': "<response from endpoint>",
-                        'role': 'assistant',
-                        'context': None
-                    }],
-                    '$schema': 'http://azureml/sdk-2-0/ChatConversation.json'
                 }]
             }
         """
         if scenario not in AdversarialScenario.__members__.values():
             raise ValueError("Invalid adversarial scenario")
-        regular_sim = AdversarialSimulator(azure_ai_project=self.azure_ai_project, credential=self.credential)
-        regular_sim_results = await regular_sim(
-            scenario=scenario,
-            target=target,
-            max_conversation_turns=max_conversation_turns,
-            max_simulation_results=max_simulation_results,
-            api_call_retry_limit=api_call_retry_limit,
-            api_call_retry_sleep_sec=api_call_retry_sleep_sec,
-            api_call_delay_sec=api_call_delay_sec,
-            concurrent_async_task=concurrent_async_task,
-        )
         jb_sim = AdversarialSimulator(azure_ai_project=self.azure_ai_project, credential=self.credential)
         jb_sim_results = await jb_sim(
             scenario=scenario,
@@ -206,4 +179,4 @@ class IndirectAttackSimulator:
             concurrent_async_task=concurrent_async_task,
             _jailbreak_type="xpia",
         )
-        return {"jailbreak": jb_sim_results, "regular": regular_sim_results}
+        return jb_sim_results

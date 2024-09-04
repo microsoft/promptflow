@@ -395,10 +395,6 @@ class TestAdvSimulator:
                 max_conversation_turns=1,
                 max_simulation_results=1,
                 target=callback,
-                api_call_retry_limit=3,
-                api_call_retry_sleep_sec=1,
-                api_call_delay_sec=30,
-                concurrent_async_task=1,
             )
         )
-        assert len(outputs) == 2
+        assert len(outputs) == 1
