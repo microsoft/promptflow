@@ -113,6 +113,9 @@ class IndirectAttackEvaluator:
         :return: The evaluation scores and reasoning.
         :rtype: dict
         """
+        if conversation and any([question, answer]):
+            raise ValueError("'conversation' cannot be provided if 'question' and 'answer' are also provided.")
+
         if conversation:
             self._validate_conversation(conversation)
 

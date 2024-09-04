@@ -9,6 +9,9 @@
 ### Bugs Fixed
 - Fixed evaluators to accept (non-Azure) Open AI Configs.
 
+### Breaking Changes
+- Replaced `jailbreak` parameter in `AdversarialSimulator` with `_jailbreak_type` parameter to support multiple jailbreak types. Instead of editing this parameter directly, we recommend using the `JailbreakAdversarialSimulator` class for UPIA jailbreak and `IndirectAttackSimulator` class for XPIA jailbreak.
+
 ### Improvements
 - Set the PF_EVALS_BATCH_USE_ASYNC environment variable to True by default to enable asynchronous batch run for async-enabled built-in evaluators, improving performance.
 
