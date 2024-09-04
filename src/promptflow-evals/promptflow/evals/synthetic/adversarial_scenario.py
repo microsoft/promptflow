@@ -23,4 +23,4 @@ class _UnstableAdverarialScenario(Enum):
     Values listed here are subject to potential change, and/or migration to the main enum over time.
     """
 
-    ADVERSARIAL_CONTENT_ECI = "adv_politics"
+    ECI = "adv_politics"
