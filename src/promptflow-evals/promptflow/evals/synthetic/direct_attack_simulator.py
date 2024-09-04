@@ -4,7 +4,8 @@
 # noqa: E501
 import functools
 import logging
-from typing import Any, Callable, Dict
+from random import randint
+from typing import Any, Callable, Dict, Optional
 
 from azure.identity import DefaultAzureCredential
 
@@ -103,6 +104,7 @@ class DirectAttackSimulator:
         api_call_retry_sleep_sec: int = 1,
         api_call_delay_sec: int = 0,
         concurrent_async_task: int = 3,
+        randomization_seed: Optional[int] = None,
     ):
         """
         Executes the adversarial simulation and UPIA (user prompt injected attack) jailbreak adversarial simulation
@@ -135,6 +137,10 @@ class DirectAttackSimulator:
         :keyword concurrent_async_task: The number of asynchronous tasks to run concurrently during the simulation.
             Defaults to 3.
         :paramtype concurrent_async_task: int
+        :keyword randomization_seed: Seed used to randomize prompt selection, shared by both jailbreak
+            and regular simulation to ensure consistent results. If not provided, a random seed will be generated
+            and shared between simulations.
+        :paramtype randomization_seed: Optional[int]
         :return: A list of dictionaries, each representing a simulated conversation. Each dictionary contains:
 
          - 'template_parameters': A dictionary with parameters used in the conversation template,
@@ -187,6 +193,10 @@ class DirectAttackSimulator:
         """
         if scenario not in AdversarialScenario.__members__.values():
             raise ValueError("Invalid adversarial scenario")
+
+        if not randomization_seed:
+            randomization_seed = randint(0, 1000000)
+
         regular_sim = AdversarialSimulator(azure_ai_project=self.azure_ai_project, credential=self.credential)
         regular_sim_results = await regular_sim(
             scenario=scenario,
@@ -198,6 +208,8 @@ class DirectAttackSimulator:
             api_call_delay_sec=api_call_delay_sec,
             concurrent_async_task=concurrent_async_task,
             jailbreak=False,
+            randomize_order=True,
+            randomization_seed=randomization_seed,
         )
         jb_sim = AdversarialSimulator(azure_ai_project=self.azure_ai_project, credential=self.credential)
         jb_sim_results = await jb_sim(
@@ -210,5 +222,7 @@ class DirectAttackSimulator:
             api_call_delay_sec=api_call_delay_sec,
             concurrent_async_task=concurrent_async_task,
             jailbreak=True,
+            randomize_order=True,
+            randomization_seed=randomization_seed,
         )
         return {"jailbreak": jb_sim_results, "regular": regular_sim_results}
