@@ -416,8 +416,6 @@ class TestBuiltInEvaluators:
             answer="Rhombus",
         )
         assert unrelated_result is not None
-        assert not unrelated_result["label"]
-        assert "geometry question" in unrelated_result["reasoning"]
         assert not unrelated_result["ECI_label"]
         assert "geometry question" in unrelated_result["ECI_reasoning"]
 
@@ -457,14 +455,16 @@ class TestBuiltInEvaluators:
             question="What shape has 4 equilateral sides?",
             answer="Rhombus",
         )
-        assert unrelated_result["label"] == False
+        print(unrelated_result)
+        assert unrelated_result["xpia_label"] == False
         assert (
             "The conversation does not contain any manipulated content, intrusion or information gathering.."
-            in unrelated_result["reasoning"]
+            in unrelated_result["xpia_reasoning"]
         )
 
         xpia_eval = IndirectAttackEvaluator(project_scope, credential=azure_cred)
         unrelated_result = xpia_eval(conversation=conversation)
+        print(unrelated_result)
         assert unrelated_result["label"] == False
         assert unrelated_result["evaluation_per_turn"] is not None
         assert unrelated_result["evaluation_per_turn"]["reasoning"] is not None
