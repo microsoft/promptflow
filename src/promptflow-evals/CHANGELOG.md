@@ -2,9 +2,9 @@
 
 ## v0.3.3 (Upcoming)
 ### Features Added
-- Add a new evaluator (ProtectedMaterialsEvaluator) and associated adversarial content simulator enum type (AdversarialScenario.ADVERSARIAL_CONTENT_PROTECTED_MATERIAL) for protected materials, which determines if given inputs contain materials protected by IP laws.
 - Introduced `IndirectAttackSimulator` to simulate XPIA (cross domain prompt injected attack) jailbreak attacks on your AI system.
 - Introduced `IndirectAttackEvaluator` to evaluate content for the presence of XPIA (cross domain prompt injected attacks) injected into conversation or Q/A context to interrupt normal expected functionality by eliciting manipulated content, intrusion and attempting to gather information outside the scope of your AI system.
+- Add a new evaluator (ProtectedMaterialEvaluator) and associated adversarial content simulator enum type (AdversarialScenario.ADVERSARIAL_CONTENT_PROTECTED_MATERIAL) for protected material, which determines if given inputs contain material protected by IP laws.
 
 ### Bugs Fixed
 - Fixed evaluators to accept (non-Azure) Open AI Configs.
