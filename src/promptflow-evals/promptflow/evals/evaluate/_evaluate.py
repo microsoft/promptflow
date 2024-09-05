@@ -29,7 +29,10 @@ from ._utils import (
 )
 
 
-def _aggregate_content_safety_metrics(df: pd.DataFrame, evaluators: Dict[str, Type]) -> Tuple[list[str], dict[str, float]]:
+# pylint: disable=line-too-long
+def _aggregate_content_safety_metrics(
+    df: pd.DataFrame, evaluators: Dict[str, Type]
+) -> Tuple[list[str], dict[str, float]]:
     """Find and aggregate defect rates for content safety metrics. Returns both a list
     of columns that were used to calculate defect rates and the defect rates themselves.
 
