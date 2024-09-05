@@ -102,7 +102,7 @@ def _aggregate_label_defect_metrics(df) -> tuple[list[str], dict[str, float]]:
         defect_rate_name = col.replace("_label", "_defect_rate")
         col_with_boolean_values = pd.to_numeric(label_df[col], errors="coerce")
         defect_rates[defect_rate_name] = round(
-            np.sum(col_with_boolean_values >= 0.5) / col_with_boolean_values.count(),
+            np.sum(col_with_boolean_values) / col_with_boolean_values.count(),
             2,
         )
     return label_cols, defect_rates
