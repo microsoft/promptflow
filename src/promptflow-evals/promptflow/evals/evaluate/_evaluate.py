@@ -79,7 +79,7 @@ def _aggregate_content_safety_metrics(
     return content_safety_cols, defect_rates
 
 
-def _aggregate_label_defect_metrics(df: pd.DataFrame) -> Tuple[list[str], Dict[str, float]]:
+def _aggregate_label_defect_metrics(df: pd.DataFrame) -> Tuple[List[str], Dict[str, float]]:
     """Find and aggregate defect rates for label-based metrics. Returns both a list
     of columns that were used to calculate defect rates and the defect rates themselves.
 
