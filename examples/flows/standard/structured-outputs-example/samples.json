@@ -1,0 +1,37 @@
+{
+  "calibration_mark": {
+	"calibration_mark": "H7-987",
+	"laboratory_nr": "E-K-29318-02-01",
+	"date": "2017-07"
+  },
+  "ILAC_logo_available": true,
+  "subject_of_calibration": "Einzelgewicht, 50 kg / Single weight, 50 kg",
+  "manufacturer": null,
+  "typ_modell": null,
+  "fabrikcat_serial_nr": "3392 / 67345",
+  "date_of_calibration": "12.07.2017",
+  "number_of_pages_cover": 4,
+  "number_of_pages_header_footer": 4,
+  "signature_required": true,
+  "signature_handwritten": true,
+  "name_inspector": "Anna Schmidt",
+  "place_of_calibration": {
+	"name": "Kalibrierlaboratorium MEYER",
+	"street": "Beethovenstr.",
+	"house_nr": "12",
+	"zip_code": "70839",
+	"city": "Stuttgart",
+	"country": "Deutschland (Germany)"
+  },
+  "conformity_details": {
+	"are_within_tolerances": "yes",
+	"details": {
+	  "nominal_value": "50 kg",
+	  "marking": "3392",
+	  "conventional_mass": "50 kg + 800 mg",
+	  "conventional_mass_before_adjustment": "50 kg - 4700 mg",
+	  "uncertainty_k2": "900 mg"
+	}
+  },
+  "conformity_total": true
+}

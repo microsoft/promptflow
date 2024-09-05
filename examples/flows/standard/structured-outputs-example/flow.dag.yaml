@@ -1,0 +1,46 @@
+id: template_standard_flow
+name: Template Standard Flow
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  instruction:
+    type: string
+    is_chat_input: false
+    default: Generate a test JSON object which follows the given example. Invent all
+      the details similar to the one given in the example, with similar but
+      unidentical values.
+  format:
+    type: string
+    default: 'Format: {   "calibration_mark": {     "calibration_mark":
+      "G6-143",     "laboratory_nr": "D-K-19408-01-00",     "date":
+      "2016-09"   },   "ILAC_logo available": "yes",   "subject_of_calibration":
+      "Einzelgewicht, 30 kg / Single weight, 30 kg",   "manufacturer":
+      "-",   "typ_modell": "-",   "fabrikcat_serial_nr": "2281 /
+      54563",   "date_of_calibration": "05.09.2016",   "number_of_pages_cover":
+      "3",   "number_of_pages_header_footer": "3",   "signature_required":
+      "yes",   "signature_handwritten": "yes",   "name_inspector": "Dieter
+      Mathea",   "place_of_calibration": {     "name": "Kalibrierlaboratorium
+      KERN",     "street": "Gottlieb-Daimler Str.",     "house_nr":
+      "7",     "zip_code": "70794",     "city": "Filderstadt",     "country":
+      "Deutschland (Germany)"   },   "conformity_details":
+      {     "are_within_tolerances": "yes",     "details":
+      {       "nominal_value": "30 kg",       "marking":
+      "2281",       "conventional_mass": "30 kg + 590
+      mg",       "conventional_mass_before_adjustment": "30 kg - 5360
+      mg",       "uncertainty_k2": "800 mg"     }   },   "conformity_total":
+      "yes" }'
+    is_chat_input: false
+outputs:
+  output:
+    type: string
+    reference: ${generate_structured.output}
+nodes:
+- name: generate_structured
+  type: python
+  source:
+    type: code
+    path: generate_structured.py
+  inputs:
+    format: ${inputs.format}
+    instruction: ${inputs.instruction}
+  use_variants: false

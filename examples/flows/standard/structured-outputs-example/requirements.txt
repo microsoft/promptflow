@@ -1,0 +1,3 @@
+pydantic
+openai
+azure-ai-ml
