@@ -36,6 +36,6 @@ __all__ = [
     "HateUnfairnessEvaluator",
     "ContentSafetyEvaluator",
     "ContentSafetyChatEvaluator",
-    "ProtectedMaterialEvaluator",
     "IndirectAttackEvaluator",
+    "ProtectedMaterialEvaluator",
 ]

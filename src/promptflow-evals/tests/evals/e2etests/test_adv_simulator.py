@@ -436,7 +436,7 @@ class TestAdvSimulator:
                 api_call_retry_sleep_sec=1,
                 api_call_delay_sec=30,
                 concurrent_async_task=1,
-                _jailbreak_type='upia',
+                _jailbreak_type="upia",
                 randomization_seed=1,
             )
         )
@@ -451,7 +451,7 @@ class TestAdvSimulator:
                 api_call_retry_sleep_sec=1,
                 api_call_delay_sec=30,
                 concurrent_async_task=1,
-                _jailbreak_type='upia',
+                _jailbreak_type="upia",
                 randomization_seed=1,
             )
         )
@@ -466,7 +466,7 @@ class TestAdvSimulator:
                 api_call_retry_sleep_sec=1,
                 api_call_delay_sec=30,
                 concurrent_async_task=1,
-                _jailbreak_type='upia',
+                _jailbreak_type="upia",
                 randomization_seed=2,
             )
         )

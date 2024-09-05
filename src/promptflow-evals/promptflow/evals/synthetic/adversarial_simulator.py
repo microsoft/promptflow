@@ -115,9 +115,9 @@ class AdversarialSimulator:
         api_call_retry_sleep_sec: int = 1,
         api_call_delay_sec: int = 0,
         concurrent_async_task: int = 3,
+        _jailbreak_type: Optional[str] = None,
         randomize_order: bool = True,
         randomization_seed: Optional[int] = None,
-        _jailbreak_type: Optional[str] = None,
     ):
         """
         Executes the adversarial simulation against a specified target function asynchronously.
@@ -234,7 +234,8 @@ class AdversarialSimulator:
                 random.shuffle(parameter_order)
             for index in parameter_order:
                 parameter = template.template_parameters[index].copy()
-                if _jailbreak_type:
+
+                if _jailbreak_type == "upia":
                     parameter = self._join_conversation_starter(parameter, random.choice(jailbreak_dataset))
                 tasks.append(
                     asyncio.create_task(
