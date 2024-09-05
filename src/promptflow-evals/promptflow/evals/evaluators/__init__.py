@@ -18,6 +18,7 @@ from ._fluency import FluencyEvaluator
 from ._gleu import GleuScoreEvaluator
 from ._groundedness import GroundednessEvaluator
 from ._meteor import MeteorScoreEvaluator
+from ._protected_material import ProtectedMaterialEvaluator
 from ._qa import QAEvaluator
 from ._relevance import RelevanceEvaluator
 from ._rouge import RougeScoreEvaluator, RougeType
@@ -43,4 +44,5 @@ __all__ = [
     "MeteorScoreEvaluator",
     "RougeScoreEvaluator",
     "RougeType",
+    "ProtectedMaterialEvaluator",
 ]
