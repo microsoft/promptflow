@@ -54,5 +54,5 @@ def nltk_tokenize(text: str) -> List[str]:
 
     if is_latin_or_numeric:
         return cast(List[str], nltk.word_tokenize(text))
-    else:
-        return list(NISTTokenizer().international_tokenize(text))
+
+    return list(NISTTokenizer().international_tokenize(text))
