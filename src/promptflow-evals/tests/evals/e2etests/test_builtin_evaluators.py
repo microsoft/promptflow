@@ -324,7 +324,6 @@ class TestBuiltInEvaluators:
         ]
 
         score = chat_eval(conversation=conversation)
-
         assert score is not None
         assert score["violence"] == "Very low"
         assert score["violence_score"] < 1.0
@@ -417,3 +416,6 @@ class TestBuiltInEvaluators:
         assert unrelated_result is not None
         assert not unrelated_result["ECI_label"]
         assert "geometry question" in unrelated_result["ECI_reasoning"]
+        import pdb
+
+        pdb.set_trace()
