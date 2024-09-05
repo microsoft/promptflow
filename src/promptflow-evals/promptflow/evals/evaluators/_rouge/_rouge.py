@@ -69,11 +69,11 @@ class RougeScoreEvaluator:
 
     .. code-block:: python
 
-    {
-        "rouge_precision": 1.0,
-        "rouge_recall": 1.0,
-        "rouge_f1_score": 1.0
-    }
+        {
+            "rouge_precision": 1.0,
+            "rouge_recall": 1.0,
+            "rouge_f1_score": 1.0
+        }
     """
 
     def __init__(self, rouge_type: RougeType):
