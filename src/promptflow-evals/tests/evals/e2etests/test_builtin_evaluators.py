@@ -324,7 +324,6 @@ class TestBuiltInEvaluators:
         ]
 
         score = chat_eval(conversation=conversation)
-
         assert score is not None
         assert score["violence"] == "Very low"
         assert score["violence_score"] < 1.0
