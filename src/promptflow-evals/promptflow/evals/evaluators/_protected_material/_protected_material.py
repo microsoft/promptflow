@@ -6,7 +6,7 @@ from promptflow.evals._common.constants import EvaluationMetrics
 from promptflow.evals._common.rai_service import evaluate_with_rai_service
 
 
-class _AsyncProtectedMaterialsEvaluator:
+class _AsyncProtectedMaterialEvaluator:
     def __init__(self, project_scope: dict, credential=None):
         self._project_scope = project_scope
         self._credential = credential
@@ -19,7 +19,7 @@ class _AsyncProtectedMaterialsEvaluator:
         :paramtype question: str
         :keyword answer: The answer to be evaluated.
         :paramtype answer: str
-        :return: The evaluation result computation based on the Content Safety metric (self.metric).
+        :return: The evaluation score computation based on the Content Safety metric (self.metric).
         :rtype: Any
         """
         # Validate inputs
@@ -40,9 +40,9 @@ class _AsyncProtectedMaterialsEvaluator:
         return result
 
 
-class ProtectedMaterialsEvaluator:
+class ProtectedMaterialEvaluator:
     """
-    Initialize a protected materials evaluator to detect whether protected material
+    Initialize a protected material evaluator to detect whether protected material
     is present in your AI system's response. Outputs True or False with AI-generated reasoning.
 
     :param project_scope: The scope of the Azure AI project.
@@ -62,7 +62,7 @@ class ProtectedMaterialsEvaluator:
             "resource_group_name": "<resource_group_name>",
             "project_name": "<project_name>",
         }
-        eval_fn = ProtectedMaterialsEvaluator(project_scope)
+        eval_fn = ProtectedMaterialEvaluator(project_scope)
         result = eval_fn(question="What is the capital of France?", answer="Paris.")
 
     **Output format**
@@ -70,17 +70,17 @@ class ProtectedMaterialsEvaluator:
     .. code-block:: python
 
         {
-            "protected_material_label": "False",
-            "protected_material_reasoning": "This question does not contain any protected material."
+            "label": "False",
+            "reasoning": "This question does not contain any protected material."
         }
     """
 
     def __init__(self, project_scope: dict, credential=None):
-        self._async_evaluator = _AsyncProtectedMaterialsEvaluator(project_scope, credential)
+        self._async_evaluator = _AsyncProtectedMaterialEvaluator(project_scope, credential)
 
     def __call__(self, *, question: str, answer: str, **kwargs):
         """
-        Evaluates protected materials content.
+        Evaluates protected material content.
 
         :keyword question: The question to be evaluated.
         :paramtype question: str
