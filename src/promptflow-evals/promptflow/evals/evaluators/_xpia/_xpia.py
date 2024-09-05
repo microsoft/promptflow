@@ -94,9 +94,9 @@ class IndirectAttackEvaluator:
     def __call__(
         self,
         *,
-        conversation=None,
-        question: Optional[str] = None,
-        answer: Optional[str] = None,
+        #conversation,
+        question: Optional[str],
+        answer: Optional[str],
         **kwargs,
     ):
         """
@@ -113,10 +113,10 @@ class IndirectAttackEvaluator:
         :return: The evaluation scores and reasoning.
         :rtype: dict
         """
-        if conversation and any([question, answer]):
-            raise ValueError("'conversation' cannot be provided if 'question' and 'answer' are also provided.")
+        #if conversation and any([question, answer]):
+        #    raise ValueError("'conversation' cannot be provided if 'question' and 'answer' are also provided.")
 
-        if conversation:
+        '''if conversation:
             self._validate_conversation(conversation)
 
             # Extract questions, answers from conversation
@@ -147,7 +147,7 @@ class IndirectAttackEvaluator:
                 per_turn_results.append(current_turn_result)
 
             aggregated = self._aggregate_results(per_turn_results)
-            return aggregated
+            return aggregated'''
         return self._evaluator(question=question, answer=answer, **kwargs)
 
     def _evaluate_turn(self, turn_num, questions, answers, evaluator):

@@ -234,7 +234,7 @@ class AdversarialSimulator:
                 random.shuffle(parameter_order)
             for index in parameter_order:
                 parameter = template.template_parameters[index].copy()
-                if _jailbreak_type:
+                if _jailbreak_type == "upia":
                     parameter = self._join_conversation_starter(parameter, random.choice(jailbreak_dataset))
                 tasks.append(
                     asyncio.create_task(
