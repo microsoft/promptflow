@@ -29,7 +29,7 @@ from ._utils import (
 )
 
 
-def _aggregate_content_safety_metrics(df: pd.DataFrame, evaluators: Dict[str, Type]) -> Dict[str, float]:
+def _aggregate_content_safety_metrics(df: pd.DataFrame, evaluators: Dict[str, Type]) -> Tuple[list[str], dict[str, float]]:
     """Find and aggregate defect rates for content safety metrics. Returns both a list
     of columns that were used to calculate defect rates and the defect rates themselves.
 
@@ -40,7 +40,7 @@ def _aggregate_content_safety_metrics(df: pd.DataFrame, evaluators: Dict[str, Ty
     :type evaluators: Dict[str, type]
     :return: A tuple; the first element is a list of dataframe columns that were used to calculate defect rates,
         and the second element is a dictionary of defect column names and defect rates.
-    :rtype: tuple[list[str], dict[str, float]]
+    :rtype: Tuple[list[str], dict[str, float]]
     """
     content_safety_metrics = [
         EvaluationMetrics.SEXUAL,
@@ -76,7 +76,7 @@ def _aggregate_content_safety_metrics(df: pd.DataFrame, evaluators: Dict[str, Ty
     return content_safety_cols, defect_rates
 
 
-def _aggregate_label_defect_metrics(df: pd.DataFrame) -> tuple[list[str], dict[str, float]]:
+def _aggregate_label_defect_metrics(df: pd.DataFrame) -> Tuple[list[str], dict[str, float]]:
     """Find and aggregate defect rates for label-based metrics. Returns both a list
     of columns that were used to calculate defect rates and the defect rates themselves.
 
@@ -84,7 +84,7 @@ def _aggregate_label_defect_metrics(df: pd.DataFrame) -> tuple[list[str], dict[s
     :type df: ~pandas.DataFrame
     :return: A tuple; the first element is a list of dataframe columns that were used to calculate defect rates,
         and the second element is a dictionary of defect column names and defect rates.
-    :rtype: tuple[list[str], dict[str, float]]
+    :rtype: Tuple[list[str], dict[str, float]]
     """
     handled_metrics = [
         EvaluationMetrics.PROTECTED_MATERIAL,
