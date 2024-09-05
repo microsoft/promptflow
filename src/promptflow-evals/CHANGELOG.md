@@ -2,13 +2,14 @@
 
 ## v0.3.3 (Upcoming)
 ### Features Added
-- Add a new evaluator (ProtectedMaterialsEvaluator) and associated adversarial content simulator enum type (AdversarialScenario.ADVERSARIAL_CONTENT_PROTECTED_MATERIAL) for protected materials, which determines if given inputs contain materials protected by IP laws.
+- Add a new evaluator (ProtectedMaterialEvaluator) and associated adversarial content simulator enum type (AdversarialScenario.ADVERSARIAL_CONTENT_PROTECTED_MATERIAL) for protected material, which determines if given inputs contain material protected by IP laws.
 
 ### Bugs Fixed
 - Fixed evaluators to accept (non-Azure) Open AI Configs.
 
 ### Improvements
 - Set the PF_EVALS_BATCH_USE_ASYNC environment variable to True by default to enable asynchronous batch run for async-enabled built-in evaluators, improving performance.
+- The `AdversarialSimulator` class now supports randomization of simulation prompts, as well as seeding of said randomization for consistency via two new arguments: `randomize_order` and `randomization_seed`. Randomization is enabled by default. The child class `AdversarialJailbreakSimulator` always uses a `randomization_seed` to synchronize sub-simulators, even if none is provided.
 
 ## v0.3.2 (2024-08-13)
 ### Features Added
