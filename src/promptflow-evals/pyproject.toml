@@ -51,7 +51,8 @@ isort = "^5.13.2"
 pyjwt = ">=2.8.0"
 azure-identity = ">=1.17.1"
 azure-core = ">=1.30.2"
-
+nltk = ">=3.8.1"
+rouge-score= ">=0.1.2"
 
 [tool.poetry.extras]
 azure = [

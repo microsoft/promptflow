@@ -248,7 +248,9 @@
     "pylintrc",
     "gleu",
     "Gleu",
-    "GLEU"
+    "GLEU",
+    "fmeasure",
+    "punkt"
   ],
   "flagWords": [
     "Prompt Flow"

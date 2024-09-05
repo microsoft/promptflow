@@ -41,22 +41,22 @@ project_scope = {
 def run_math_evaluators():
     # BLEU Score
     bleu_eval = BleuScoreEvaluator()
-    score = bleu_eval(reference="The capital of Japan is Tokyo.", hypothesis="Tokyo is the capital of Japan.")
+    score = bleu_eval(answer="Tokyo is the capital of Japan.", ground_truth="The capital of Japan is Tokyo.")
     print(score)
 
     # GLEU Score
     gleu_eval = GleuScoreEvaluator()
-    score = gleu_eval(reference="The capital of Japan is Tokyo.", hypothesis="Tokyo is the capital of Japan.")
+    score = gleu_eval(answer="Tokyo is the capital of Japan.", ground_truth="The capital of Japan is Tokyo.")
     print(score)
 
     # Meteor Score
     meteor_eval = MeteorScoreEvaluator(alpha=0.5, beta=0.5, gamma=0.5)
-    score = meteor_eval(reference="The capital of Japan is Tokyo.", hypothesis="Tokyo is the capital of Japan.")
+    score = meteor_eval(answer="Tokyo is the capital of Japan.", ground_truth="The capital of Japan is Tokyo.")
     print(score)
 
     # Rouge Score
     rouge_eval = RougeScoreEvaluator(rouge_type=RougeType.ROUGE_1)
-    score = rouge_eval(reference="The capital of Japan is Tokyo.", hypothesis="Tokyo is the capital of Japan.")
+    score = rouge_eval(answer="Tokyo is the capital of Japan.", ground_truth="The capital of Japan is Tokyo.")
     print(score)
 
 
@@ -267,15 +267,15 @@ if __name__ == "__main__":
     # Individual evaluators
     run_math_evaluators()
 
-    run_quality_evaluators()
+    # run_quality_evaluators()
 
-    run_safety_evaluators()
+    # run_safety_evaluators()
 
-    # Composite evaluators
-    run_qa_evaluator()
+    # # Composite evaluators
+    # run_qa_evaluator()
 
-    run_content_safety_evaluator()
+    # run_content_safety_evaluator()
 
-    run_chat_evaluator()
+    # run_chat_evaluator()
 
-    run_content_safety_chat_evaluator()
+    # run_content_safety_chat_evaluator()
