@@ -4,7 +4,7 @@
 import inspect
 import os
 import re
-from typing import Any, Callable, Dict, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Optional, Set, Tuple, Type
 
 import numpy as np
 import pandas as pd
@@ -29,7 +29,7 @@ from ._utils import (
 )
 
 
-def _aggregate_content_safety_metrics(df, evaluators) -> Dict[str, float]:
+def _aggregate_content_safety_metrics(df: pd.DataFrame, evaluators: Dict[str, Type]) -> Dict[str, float]:
     """Find and aggregate defect rates for content safety metrics. Returns both a list
     of columns that were used to calculate defect rates and the defect rates themselves.
 
@@ -76,7 +76,7 @@ def _aggregate_content_safety_metrics(df, evaluators) -> Dict[str, float]:
     return content_safety_cols, defect_rates
 
 
-def _aggregate_label_defect_metrics(df) -> tuple[list[str], dict[str, float]]:
+def _aggregate_label_defect_metrics(df: pd.DataFrame) -> tuple[list[str], dict[str, float]]:
     """Find and aggregate defect rates for label-based metrics. Returns both a list
     of columns that were used to calculate defect rates and the defect rates themselves.
 
@@ -108,7 +108,7 @@ def _aggregate_label_defect_metrics(df) -> tuple[list[str], dict[str, float]]:
     return label_cols, defect_rates
 
 
-def _aggregate_metrics(df: pd.DataFrame, evaluators: Dict[str, type]) -> Dict[str, float]:
+def _aggregate_metrics(df: pd.DataFrame, evaluators: Dict[str, Type]) -> Dict[str, float]:
     """Aggregate metrics from the evaluation results.
     On top of naively calculating the mean of most metrics, this function also identifies certain columns
     that represent defect rates and renames them accordingly. Other columns in the dataframe are dropped.
@@ -117,7 +117,7 @@ def _aggregate_metrics(df: pd.DataFrame, evaluators: Dict[str, type]) -> Dict[st
     :param df: The dataframe of evaluation results.
     :type df: ~pandas.DataFrame
     :param evaluators:  A dictionary mapping of strings to evaluator classes.
-    :type evaluators: Dict[str, type]
+    :type evaluators: Dict[str, Type]
     :return: The aggregated metrics.
     :rtype: List[str, float]
     """
