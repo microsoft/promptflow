@@ -4,7 +4,7 @@
 import inspect
 import os
 import re
-from typing import Any, Callable, Dict, Optional, Set, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type
 
 import numpy as np
 import pandas as pd
@@ -32,7 +32,7 @@ from ._utils import (
 # pylint: disable=line-too-long
 def _aggregate_content_safety_metrics(
     df: pd.DataFrame, evaluators: Dict[str, Type]
-) -> Tuple[list[str], dict[str, float]]:
+) -> Tuple[List[str], Dict[str, float]]:
     """Find and aggregate defect rates for content safety metrics. Returns both a list
     of columns that were used to calculate defect rates and the defect rates themselves.
 
@@ -43,7 +43,7 @@ def _aggregate_content_safety_metrics(
     :type evaluators: Dict[str, type]
     :return: A tuple; the first element is a list of dataframe columns that were used to calculate defect rates,
         and the second element is a dictionary of defect column names and defect rates.
-    :rtype: Tuple[list[str], dict[str, float]]
+    :rtype: Tuple[List[str], Dict[str, float]]
     """
     content_safety_metrics = [
         EvaluationMetrics.SEXUAL,
@@ -79,7 +79,7 @@ def _aggregate_content_safety_metrics(
     return content_safety_cols, defect_rates
 
 
-def _aggregate_label_defect_metrics(df: pd.DataFrame) -> Tuple[list[str], dict[str, float]]:
+def _aggregate_label_defect_metrics(df: pd.DataFrame) -> Tuple[list[str], Dict[str, float]]:
     """Find and aggregate defect rates for label-based metrics. Returns both a list
     of columns that were used to calculate defect rates and the defect rates themselves.
 
@@ -87,7 +87,7 @@ def _aggregate_label_defect_metrics(df: pd.DataFrame) -> Tuple[list[str], dict[s
     :type df: ~pandas.DataFrame
     :return: A tuple; the first element is a list of dataframe columns that were used to calculate defect rates,
         and the second element is a dictionary of defect column names and defect rates.
-    :rtype: Tuple[list[str], dict[str, float]]
+    :rtype: Tuple[List[str], Dict[str, float]]
     """
     handled_metrics = [
         EvaluationMetrics.PROTECTED_MATERIAL,
@@ -122,7 +122,7 @@ def _aggregate_metrics(df: pd.DataFrame, evaluators: Dict[str, Type]) -> Dict[st
     :param evaluators:  A dictionary mapping of strings to evaluator classes.
     :type evaluators: Dict[str, Type]
     :return: The aggregated metrics.
-    :rtype: List[str, float]
+    :rtype: Dict[str, float]
     """
     df.rename(columns={col: col.replace("outputs.", "") for col in df.columns}, inplace=True)
 
