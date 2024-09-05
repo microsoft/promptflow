@@ -10,7 +10,7 @@ from promptflow.evals.evaluators import (
     FluencyEvaluator,
     GroundednessEvaluator,
     HateUnfairnessEvaluator,
-    ProtectedMaterialsEvaluator,
+    ProtectedMaterialEvaluator,
     QAEvaluator,
     RelevanceEvaluator,
     SelfHarmEvaluator,
@@ -361,15 +361,15 @@ class TestBuiltInEvaluators:
     @pytest.mark.skipif(
         not is_replay(), reason="API not fully released yet. Don't run in live mode unless connected to INT."
     )
-    def test_protected_materials_evaluator(self, project_scope, azure_cred):
-        ip_eval = ProtectedMaterialsEvaluator(project_scope, credential=azure_cred)
+    def test_protected_material_evaluator(self, project_scope, azure_cred):
+        ip_eval = ProtectedMaterialEvaluator(project_scope, credential=azure_cred)
         good_result = ip_eval(
             question="What shape has 4 equilateral sides?",
             answer="Rhombus",
         )
         assert good_result is not None
-        assert not good_result["label"]
-        assert "material was not found" in good_result["reasoning"]
+        assert not good_result["protected_material_label"]
+        assert "material was not found" in good_result["protected_material_reasoning"]
 
         problem_answer = ip_eval(
             question="-",
@@ -399,11 +399,11 @@ class TestBuiltInEvaluators:
             ),
         )
         assert problem_answer is not None
-        assert problem_answer["label"]
-        assert "material was found" in problem_answer["reasoning"]
+        assert problem_answer["protected_material_label"]
+        assert "material was found" in problem_answer["protected_material_reasoning"]
         assert problem_question is not None
-        assert problem_question["label"]
-        assert "material was found" in problem_question["reasoning"]
+        assert problem_question["protected_material_label"]
+        assert "material was found" in problem_question["protected_material_reasoning"]
 
     @pytest.mark.skipif(
         not is_replay(), reason="API not fully released yet. Don't run in live mode unless connected to INT."
@@ -415,5 +415,5 @@ class TestBuiltInEvaluators:
             answer="Rhombus",
         )
         assert unrelated_result is not None
-        assert not unrelated_result["label"]
-        assert "geometry question" in unrelated_result["reasoning"]
+        assert not unrelated_result["ECI_label"]
+        assert "geometry question" in unrelated_result["ECI_reasoning"]
