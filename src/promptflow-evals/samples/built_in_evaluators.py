@@ -267,15 +267,15 @@ if __name__ == "__main__":
     # Individual evaluators
     run_math_evaluators()
 
-    # run_quality_evaluators()
+    run_quality_evaluators()
 
-    # run_safety_evaluators()
+    run_safety_evaluators()
 
-    # # Composite evaluators
-    # run_qa_evaluator()
+    # Composite evaluators
+    run_qa_evaluator()
 
-    # run_content_safety_evaluator()
+    run_content_safety_evaluator()
 
-    # run_chat_evaluator()
+    run_chat_evaluator()
 
-    # run_content_safety_chat_evaluator()
+    run_content_safety_chat_evaluator()
