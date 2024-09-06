@@ -3,7 +3,7 @@
 ## v0.3.3 (Upcoming)
 ### Features Added
 - Add a new evaluator (ProtectedMaterialEvaluator) and associated adversarial content simulator enum type (AdversarialScenario.ADVERSARIAL_CONTENT_PROTECTED_MATERIAL) for protected material, which determines if given inputs contain material protected by IP laws.
-- Added four mathematic evaluators, `BleuScoreEvaluator`, `GleuScoreEvaluator`, `MeteorScoreEvaluator` and `RougeScoreEvaluator` — for evaluating the quality of generated text by comparing it against referenced text.
+- Added four mathematic evaluators, `BleuScoreEvaluator`, `GleuScoreEvaluator`, `MeteorScoreEvaluator` and `RougeScoreEvaluator` - for evaluating the quality of generated text by comparing it against referenced text.
 
 ### Bugs Fixed
 - Fixed evaluators to accept (non-Azure) Open AI Configs.
