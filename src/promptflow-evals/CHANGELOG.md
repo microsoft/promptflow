@@ -2,10 +2,15 @@
 
 ## v0.3.3 (Upcoming)
 ### Features Added
+- Introduced `IndirectAttackSimulator` to simulate XPIA (cross domain prompt injected attack) jailbreak attacks on your AI system.
+- Introduced `IndirectAttackEvaluator` to evaluate content for the presence of XPIA (cross domain prompt injected attacks) injected into conversation or Q/A context to interrupt normal expected functionality by eliciting manipulated content, intrusion and attempting to gather information outside the scope of your AI system.
 - Add a new evaluator (ProtectedMaterialEvaluator) and associated adversarial content simulator enum type (AdversarialScenario.ADVERSARIAL_CONTENT_PROTECTED_MATERIAL) for protected material, which determines if given inputs contain material protected by IP laws.
 
 ### Bugs Fixed
 - Fixed evaluators to accept (non-Azure) Open AI Configs.
+
+### Breaking Changes
+- Replaced `jailbreak` parameter in `AdversarialSimulator` with `_jailbreak_type` parameter to support multiple jailbreak types. Instead of editing this parameter directly, we recommend using the `JailbreakAdversarialSimulator` class for UPIA jailbreak and `IndirectAttackSimulator` class for XPIA jailbreak.
 
 ### Improvements
 - Renamed `JailbreakAdversarialSimulator` to `DirectAttackSimulator`
