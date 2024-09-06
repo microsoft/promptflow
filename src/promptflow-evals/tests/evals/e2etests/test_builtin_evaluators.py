@@ -2,18 +2,23 @@ import numpy as np
 import pytest
 
 from promptflow.evals.evaluators import (
+    BleuScoreEvaluator,
     ChatEvaluator,
     CoherenceEvaluator,
     ContentSafetyChatEvaluator,
     ContentSafetyEvaluator,
     F1ScoreEvaluator,
     FluencyEvaluator,
+    GleuScoreEvaluator,
     GroundednessEvaluator,
     HateUnfairnessEvaluator,
     IndirectAttackEvaluator,
+    MeteorScoreEvaluator,
     ProtectedMaterialEvaluator,
     QAEvaluator,
     RelevanceEvaluator,
+    RougeScoreEvaluator,
+    RougeType,
     SelfHarmEvaluator,
     SexualEvaluator,
     SimilarityEvaluator,
@@ -26,6 +31,56 @@ from promptflow.recording.record_mode import is_replay
 @pytest.mark.usefixtures("recording_injection", "vcr_recording")
 @pytest.mark.localtest
 class TestBuiltInEvaluators:
+    def test_math_evaluator_bleu_score(self):
+        eval_fn = BleuScoreEvaluator()
+        score = eval_fn(
+            ground_truth="The capital of Japan is Tokyo.",
+            answer="Tokyo is the capital of Japan.",
+        )
+        assert score is not None and "bleu_score" in score
+        assert 0 <= score["bleu_score"] <= 1
+
+    def test_math_evaluator_gleu_score(self):
+        eval_fn = GleuScoreEvaluator()
+        score = eval_fn(
+            ground_truth="The capital of Japan is Tokyo.",
+            answer="Tokyo is the capital of Japan.",
+        )
+        assert score is not None and "gleu_score" in score
+        assert 0 <= score["gleu_score"] <= 1
+
+    def test_math_evaluator_meteor_score(self):
+        eval_fn = MeteorScoreEvaluator()
+        score = eval_fn(
+            ground_truth="The capital of Japan is Tokyo.",
+            answer="Tokyo is the capital of Japan.",
+        )
+        assert score is not None and "meteor_score" in score
+        assert 0 <= score["meteor_score"] <= 1
+
+    @pytest.mark.parametrize(
+        "rouge_type",
+        [
+            (RougeType.ROUGE_1),
+            (RougeType.ROUGE_2),
+            (RougeType.ROUGE_3),
+            (RougeType.ROUGE_4),
+            (RougeType.ROUGE_5),
+            (RougeType.ROUGE_L),
+        ],
+    )
+    def test_math_evaluator_rouge_score(self, rouge_type):
+        eval_fn = RougeScoreEvaluator(rouge_type)
+        score = eval_fn(
+            ground_truth="The capital of Japan is Tokyo.",
+            answer="Tokyo is the capital of Japan.",
+        )
+        assert score is not None
+        assert "rouge_precision" in score and "rouge_recall" in score and "rouge_f1_score" in score
+        assert 0 <= score["rouge_precision"] <= 1
+        assert 0 <= score["rouge_recall"] <= 1
+        assert 0 <= score["rouge_f1_score"] <= 1
+
     def test_quality_evaluator_fluency(self, model_config):
         eval_fn = FluencyEvaluator(model_config)
         score = eval_fn(
