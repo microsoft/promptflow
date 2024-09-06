@@ -9,6 +9,6 @@ keyrings.alt
 black==23.7.0
 black-nb
 pypandoc # for markdown reader
-pypandoc_binary # pypandoc pandoc backend
+pypandoc_binary # pypandoc backend
 panflute # for pandoc filters
 numpy<2.0.0 # for compatibility
