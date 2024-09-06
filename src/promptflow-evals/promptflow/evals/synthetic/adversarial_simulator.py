@@ -44,7 +44,7 @@ def monitor_adversarial_scenario(func) -> Callable:
         scenario = str(kwargs.get("scenario", None))
         max_conversation_turns = kwargs.get("max_conversation_turns", None)
         max_simulation_results = kwargs.get("max_simulation_results", None)
-        jailbreak = kwargs.get("jailbreak", None)
+        _jailbreak_type = kwargs.get("_jailbreak_type", None)
         decorated_func = monitor_operation(
             activity_name="adversarial.simulator.call",
             activity_type=ActivityType.PUBLICAPI,
@@ -52,7 +52,7 @@ def monitor_adversarial_scenario(func) -> Callable:
                 "scenario": scenario,
                 "max_conversation_turns": max_conversation_turns,
                 "max_simulation_results": max_simulation_results,
-                "jailbreak": jailbreak,
+                "_jailbreak_type": _jailbreak_type,
             },
         )(func)
 
@@ -115,7 +115,7 @@ class AdversarialSimulator:
         api_call_retry_sleep_sec: int = 1,
         api_call_delay_sec: int = 0,
         concurrent_async_task: int = 3,
-        jailbreak: bool = False,
+        _jailbreak_type: Optional[str] = None,
         randomize_order: bool = True,
         randomization_seed: Optional[int] = None,
     ):
@@ -149,9 +149,6 @@ class AdversarialSimulator:
         :keyword concurrent_async_task: The number of asynchronous tasks to run concurrently during the simulation.
             Defaults to 3.
         :paramtype concurrent_async_task: int
-        :keyword jailbreak: If set to True, allows breaking out of the conversation flow defined by the scenario.
-            Defaults to False.
-        :paramtype jailbreak: bool
         :keyword randomize_order: Whether or not the order of the prompts should be randomized. Defaults to True.
         :paramtype randomize_order: bool
         :keyword randomization_seed: The seed used to randomize prompt selection. If unset, the system's
@@ -218,11 +215,11 @@ class AdversarialSimulator:
                 total_tasks,
             )
         total_tasks = min(total_tasks, max_simulation_results)
-        if jailbreak:
-            jailbreak_dataset = await self.rai_client.get_jailbreaks_dataset()
+        if _jailbreak_type:
+            jailbreak_dataset = await self.rai_client.get_jailbreaks_dataset(type=_jailbreak_type)
         progress_bar = tqdm(
             total=total_tasks,
-            desc="generating jailbreak simulations" if jailbreak else "generating simulations",
+            desc="generating jailbreak simulations" if _jailbreak_type else "generating simulations",
             ncols=100,
             unit="simulations",
         )
@@ -237,7 +234,7 @@ class AdversarialSimulator:
                 random.shuffle(parameter_order)
             for index in parameter_order:
                 parameter = template.template_parameters[index].copy()
-                if jailbreak:
+                if _jailbreak_type == "upia":
                     parameter = self._join_conversation_starter(parameter, random.choice(jailbreak_dataset))
                 tasks.append(
                     asyncio.create_task(

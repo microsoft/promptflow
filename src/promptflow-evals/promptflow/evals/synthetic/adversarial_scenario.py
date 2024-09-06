@@ -16,6 +16,7 @@ class AdversarialScenario(Enum):
     ADVERSARIAL_CONTENT_GEN_UNGROUNDED = "adv_content_gen_ungrounded"
     ADVERSARIAL_CONTENT_GEN_GROUNDED = "adv_content_gen_grounded"
     ADVERSARIAL_CONTENT_PROTECTED_MATERIAL = "adv_content_protected_material"
+    ADVERSARIAL_INDIRECT_JAILBREAK = "adv_xpia"
 
 
 class _UnstableAdversarialScenario(Enum):

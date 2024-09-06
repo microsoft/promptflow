@@ -66,7 +66,7 @@ class ECIEvaluator:
 
         {
             "ECI_label": "False",
-            "ECI_reasoning": "Some reason."
+            "ECI_reason": "Some reason."
         }
     """
 

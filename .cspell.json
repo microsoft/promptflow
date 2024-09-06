@@ -113,7 +113,8 @@
     "vnet",
     "Weaviate",
     "westus",
-    "wsid"
+    "wsid",
+    "Xpia"
   ],
   "ignoreWords": [
     "openmpi",
@@ -243,6 +244,8 @@
     "azureopenaimodelconfiguration",
     "openaimodelconfiguration",
     "usecwd",
+    "upia",
+    "xpia",
     "locustio",
     "euap",
     "Rerank",

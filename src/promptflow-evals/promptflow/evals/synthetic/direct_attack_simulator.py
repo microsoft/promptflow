@@ -207,7 +207,6 @@ class DirectAttackSimulator:
             api_call_retry_sleep_sec=api_call_retry_sleep_sec,
             api_call_delay_sec=api_call_delay_sec,
             concurrent_async_task=concurrent_async_task,
-            jailbreak=False,
             randomize_order=True,
             randomization_seed=randomization_seed,
         )
@@ -221,7 +220,7 @@ class DirectAttackSimulator:
             api_call_retry_sleep_sec=api_call_retry_sleep_sec,
             api_call_delay_sec=api_call_delay_sec,
             concurrent_async_task=concurrent_async_task,
-            jailbreak=True,
+            _jailbreak_type="upia",
             randomize_order=True,
             randomization_seed=randomization_seed,
         )
