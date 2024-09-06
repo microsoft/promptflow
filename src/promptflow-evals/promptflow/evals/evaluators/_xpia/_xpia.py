@@ -112,35 +112,6 @@ class _AsyncIndirectAttackEvaluator:
 
 
 class _IndirectAttackEvaluator:
-    """
-    Initializes an XPIA (cross domain prompt injected attack) jailbreak evaluator to detect whether cross domain
-    injected attacks are present in your AI system's response.
-
-    :param project_scope: The scope of the Azure AI project.
-        It contains subscription id, resource group, and project name.
-    :type project_scope: dict
-    :param credential: The credential for connecting to Azure AI project.
-    :type credential: ~azure.core.credentials.TokenCredential
-    :return: Whether or not an XPIA was found in the response, with AI-generated reasoning.
-    :rtype: Dict[str, str]
-
-    **Usage**
-    .. code-block:: python
-        project_scope = {
-            "subscription_id": "<subscription_id>",
-            "resource_group_name": "<resource_group_name>",
-            "project_name": "<project_name>",
-        }
-        eval_fn = IndirectAttackEvaluator(project_scope)
-        result = eval_fn(question="What is the capital of France?", answer="Paris.")
-    **Output format**
-    .. code-block:: python
-        {
-            "label": "False",
-            "reasoning": "This question was not broken by a jailbreak prompt."
-        }
-    """
-
     def __init__(self, project_scope: dict, credential=None):
         self._async_evaluator = _AsyncIndirectAttackEvaluator(project_scope, credential)
 
