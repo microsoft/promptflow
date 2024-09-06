@@ -321,7 +321,7 @@ class TestAdvSimulator:
     def test_adv_eci_sim_responds_with_responses(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
         from promptflow.evals.synthetic import AdversarialSimulator
-        from promptflow.evals.synthetic.adversarial_scenario import _UnstableAdverarialScenario
+        from promptflow.evals.synthetic.adversarial_scenario import _UnstableAdversarialScenario
 
         azure_ai_project = {
             "subscription_id": project_scope["subscription_id"],
@@ -347,7 +347,7 @@ class TestAdvSimulator:
 
         outputs = asyncio.run(
             simulator(
-                scenario=_UnstableAdverarialScenario.ECI,
+                scenario=_UnstableAdversarialScenario.ECI,
                 max_conversation_turns=1,
                 max_simulation_results=1,
                 target=callback,
@@ -549,7 +549,7 @@ class TestAdvSimulator:
     @pytest.mark.usefixtures("vcr_recording")
     def test_jailbreak_sim_order_randomness(self, azure_cred, project_scope):
         os.environ.pop("RAI_SVC_URL", None)
-        from promptflow.evals.synthetic import AdversarialScenario, JailbreakAdversarialSimulator
+        from promptflow.evals.synthetic import AdversarialScenario, DirectAttackSimulator
 
         azure_ai_project = {
             "subscription_id": project_scope["subscription_id"],
@@ -571,7 +571,7 @@ class TestAdvSimulator:
                 "context": context,
             }
 
-        simulator = JailbreakAdversarialSimulator(azure_ai_project=azure_ai_project, credential=azure_cred)
+        simulator = DirectAttackSimulator(azure_ai_project=azure_ai_project, credential=azure_cred)
 
         outputs1 = asyncio.run(
             simulator(

@@ -19,7 +19,7 @@ class AdversarialScenario(Enum):
     ADVERSARIAL_INDIRECT_JAILBREAK = "adv_xpia"
 
 
-class _UnstableAdverarialScenario(Enum):
+class _UnstableAdversarialScenario(Enum):
     """Adversarial scenario types that we haven't published, but still want available for internal use
     Values listed here are subject to potential change, and/or migration to the main enum over time.
     """

@@ -47,9 +47,10 @@ def monitor_adversarial_scenario(func) -> Callable:
     return wrapper
 
 
-class JailbreakAdversarialSimulator:
+class DirectAttackSimulator:
     """
-    Initializes the jailbreak adversarial simulator with a project scope.
+    Initialize a UPIA (user prompt injected attack) jailbreak adversarial simulator with a project scope.
+    This simulator converses with your AI system using prompts designed to interrupt normal functionality.
 
     :param azure_ai_project: Dictionary defining the scope of the project. It must include the following keys:
 
@@ -106,7 +107,7 @@ class JailbreakAdversarialSimulator:
         randomization_seed: Optional[int] = None,
     ):
         """
-        Executes the adversarial simulation and jailbreak adversarial simulation
+        Executes the adversarial simulation and UPIA (user prompt injected attack) jailbreak adversarial simulation
         against a specified target function asynchronously.
 
         :keyword scenario: Enum value specifying the adversarial scenario used for generating inputs.
@@ -178,7 +179,7 @@ class JailbreakAdversarialSimulator:
                     'template_parameters': {},
                     'messages': [
                     {
-                        'content': '<adversaril question>',
+                        'content': '<adversarial question>',
                         'role': 'user'
                     },
                     {

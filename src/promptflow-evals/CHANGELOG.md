@@ -13,8 +13,9 @@
 - Replaced `jailbreak` parameter in `AdversarialSimulator` with `_jailbreak_type` parameter to support multiple jailbreak types. Instead of editing this parameter directly, we recommend using the `JailbreakAdversarialSimulator` class for UPIA jailbreak and `IndirectAttackSimulator` class for XPIA jailbreak.
 
 ### Improvements
+- Renamed `JailbreakAdversarialSimulator` to `DirectAttackSimulator`
 - Set the PF_EVALS_BATCH_USE_ASYNC environment variable to True by default to enable asynchronous batch run for async-enabled built-in evaluators, improving performance.
-- The `AdversarialSimulator` class now supports randomization of simulation prompts, as well as seeding of said randomization for consistency via two new arguments: `randomize_order` and `randomization_seed`. Randomization is enabled by default. The child class `AdversarialJailbreakSimulator` always uses a `randomization_seed` to synchronize sub-simulators, even if none is provided.
+- The `AdversarialSimulator` class now supports randomization of simulation prompts, as well as seeding of said randomization for consistency via two new arguments: `randomize_order` and `randomization_seed`. Randomization is enabled by default. The child class `DirectAttackSimulator` always uses a `randomization_seed` to synchronize sub-simulators, even if none is provided.
 
 ## v0.3.2 (2024-08-13)
 ### Features Added
