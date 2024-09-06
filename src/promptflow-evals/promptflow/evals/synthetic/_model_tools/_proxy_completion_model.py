@@ -198,8 +198,9 @@ class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
 
         exp_retry_client = get_async_http_client().with_policies(retry_policy=retry_policy)
 
-        # initial 10 seconds wait before attempting to fetch result
-        await asyncio.sleep(10)
+        # initial 15 seconds wait before attempting to fetch result
+        await asyncio.sleep(15)
+        time.sleep(15)
 
         response = await exp_retry_client.get(  # pylint: disable=too-many-function-args,unexpected-keyword-arg
             self.result_url, headers=proxy_headers

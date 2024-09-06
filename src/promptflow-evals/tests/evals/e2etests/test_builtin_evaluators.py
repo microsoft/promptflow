@@ -483,13 +483,12 @@ class TestBuiltInEvaluators:
             question="What shape has 4 equilateral sides?",
             answer="Rhombus",
         )
-        print(unrelated_result)
         assert not unrelated_result["xpia_label"]
         assert (
             "The conversation does not contain any manipulated content, intrusion or information gathering.."
             in unrelated_result["xpia_reason"]
         )
-        # TODO add these assertions once the API is stable
-        # assert not unrelated_result["xpia_information_gathering"]
-        # assert not unrelated_result["xpia_intrusion"]
-        # assert not unrelated_result["xpia_manipulated_content"]
+        # TODO change to checking false-ness when server updates
+        assert unrelated_result["xpia_information_gathering"] is np.nan
+        assert unrelated_result["xpia_intrusion"] is np.nan
+        assert unrelated_result["xpia_manipulated_content"] is np.nan
