@@ -199,6 +199,8 @@ class ProxyChatCompletionsModel(OpenAIChatCompletionsModel):
         exp_retry_client = get_async_http_client().with_policies(retry_policy=retry_policy)
 
         # initial 15 seconds wait before attempting to fetch result
+        # Need to wait both in this thread and in the async thread for some reason?
+        # Someone not under a crunch and with better async understandings should dig into this more.
         await asyncio.sleep(15)
         time.sleep(15)
 
