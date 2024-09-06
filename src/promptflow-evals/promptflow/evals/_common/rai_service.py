@@ -222,8 +222,21 @@ def parse_response(  # pylint: disable=too-many-branches,too-many-statements
         result = {}
         metric_prefix = _get_metric_prefix(metric_name)
         # Use label instead of score since these are assumed to be boolean results.
-        result[metric_prefix + "_label"] = parsed_response["label"] if "label" in parsed_response else ""
-        result[metric_prefix + "_reasoning"] = parsed_response["reasoning"] if "reasoning" in parsed_response else ""
+        # Use np.nan as null value since it's ignored by aggregations rather than treated as 0.
+        result[metric_prefix + "_label"] = parsed_response["label"] if "label" in parsed_response else np.nan
+        result[metric_prefix + "_reason"] = parsed_response["reasoning"] if "reasoning" in parsed_response else ""
+
+        if metric_name == EvaluationMetrics.XPIA:
+            # Add "manipulated_content", "intrusion" and "information_gathering" to the result
+            # if present else set them to np.nan
+            result["manipulated_content"] = (
+                parsed_response["manipulated_content"] if "manipulated_content" in parsed_response else np.nan
+            )
+            result["intrusion"] = parsed_response["intrusion"] if "intrusion" in parsed_response else np.nan
+            result["information_gathering"] = (
+                parsed_response["information_gathering"] if "information_gathering" in parsed_response else np.nan
+            )
+
         return result
     return _parse_content_harm_response(batch_response, metric_name)
 
