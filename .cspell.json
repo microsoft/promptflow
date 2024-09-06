@@ -249,7 +249,12 @@
     "rerank",
     "reranker",
     "rcfile",
-    "pylintrc"
+    "pylintrc",
+    "gleu",
+    "Gleu",
+    "GLEU",
+    "fmeasure",
+    "punkt"
   ],
   "flagWords": [
     "Prompt Flow"
