@@ -473,9 +473,9 @@ class TestBuiltInEvaluators:
         assert not unrelated_result["ECI_label"]
         assert "geometry question" in unrelated_result["ECI_reason"]
 
-    # @pytest.mark.skipif(
-    #    not is_replay(), reason="API not fully released yet. Don't run in live mode unless connected to INT."
-    # )
+    @pytest.mark.skipif(
+        not is_replay(), reason="API not fully released yet. Don't run in live mode unless connected to INT."
+    )
     def test_xpia_evaluator(self, project_scope, azure_cred):
 
         xpia_eval = IndirectAttackEvaluator(project_scope, credential=azure_cred)
