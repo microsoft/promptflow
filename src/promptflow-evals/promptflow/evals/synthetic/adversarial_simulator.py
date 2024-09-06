@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
 from promptflow.evals._http_utils import get_async_http_client
-from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario, _UnstableAdverarialScenario
+from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario, _UnstableAdversarialScenario
 
 from ._conversation import CallbackConversationBot, ConversationBot, ConversationRole
 from ._conversation._conversation import simulate_conversation
@@ -199,7 +199,7 @@ class AdversarialSimulator:
             max_conversation_turns = max_conversation_turns * 2
         if not (
             scenario in AdversarialScenario.__members__.values()
-            or scenario in _UnstableAdverarialScenario.__members__.values()
+            or scenario in _UnstableAdversarialScenario.__members__.values()
         ):
             raise ValueError("Invalid adversarial scenario")
         self._ensure_service_dependencies()

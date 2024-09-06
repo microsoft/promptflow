@@ -184,7 +184,6 @@ class TestEvaluate:
 
         row_result_df = pd.DataFrame(result["rows"])
         metrics = result["metrics"]
-
         # validate the results
         assert result is not None
         assert result["rows"] is not None
