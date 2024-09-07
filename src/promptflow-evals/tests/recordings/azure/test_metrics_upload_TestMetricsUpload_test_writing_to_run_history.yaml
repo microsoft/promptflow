@@ -1,84 +1,5 @@
 interactions:
 - request:
-    body: !!binary |
-      CpoICoYCChwKDHNlcnZpY2UubmFtZRIMCgpwcm9tcHRmbG93ClwKCmNvbGxlY3Rpb24STgpMcHJv
-      bXB0Zmxvd19ldmFsc19ldmFsdWF0b3JzX2YxX3Njb3JlX2YxX3Njb3JlX2FzeW5jZjFzY29yZWV2
-      YWx1YXRvcl9lX3FjMzJuNwo5Cg9zdWJzY3JpcHRpb24uaWQSJgokYjE3MjUzZmEtZjMyNy00MmQ2
-      LTk2ODYtZjNlNTUzZTI0NzYzCiwKE3Jlc291cmNlX2dyb3VwLm5hbWUSFQoTcHJvbXB0Zmxvdy1l
-      dmFscy1jaQofCg53b3Jrc3BhY2UubmFtZRINCgtwZi1ldmFscy13cxKOBgoMCgpwcm9tcHRmbG93
-      Ev0FChCI7sFSAq9UCHLY7iZ8LDLVEggdVqX/W6781CoaQW5zd2VyTGVuZ3RoLl9fYWdncmVnYXRl
-      X18wATmAwElSIhvnF0GAwElSIhvnF0oZCglmcmFtZXdvcmsSDAoKcHJvbXB0Zmxvd0oXCglzcGFu
-      X3R5cGUSCgoIRnVuY3Rpb25KKAoIZnVuY3Rpb24SHAoaQW5zd2VyTGVuZ3RoLl9fYWdncmVnYXRl
-      X19KGgoQZXhlY3V0aW9uX3RhcmdldBIGCgRmbGV4ShQKDmlzX2FnZ3JlZ2F0aW9uEgIQAUqFAQoM
-      YmF0Y2hfcnVuX2lkEnUKc2V2YWxzX2UyZXRlc3RzX2N1c3RvbV9ldmFsdWF0b3JzX2Fuc3dlcl9s
-      ZW5ndGhfd2l0aF9hZ2dyZWdhdGlvbl9hbnN3ZXJsZW5ndGhfNmplbGt0dmRfMjAyNDA3MzBfMTQz
-      MzEwXzEzOTM4OV9yZWR1Y2VKiQEKBmlucHV0cxJ/Cn17CiAgImxpbmVfcmVzdWx0cyI6IFsKICAg
-      IHsKICAgICAgImxlbmd0aCI6IDk4MQogICAgfSwKICAgIHsKICAgICAgImxlbmd0aCI6IDE2MjYK
-      ICAgIH0sCiAgICB7CiAgICAgICJsZW5ndGgiOiAzMQogICAgfQogIF0KfUoRCgZvdXRwdXQSBwoF
-      OTgxLjBasgEJgMBJUiIb5xcSGnByb21wdGZsb3cuZnVuY3Rpb24uaW5wdXRzGooBCgdwYXlsb2Fk
-      En8KfXsKICAibGluZV9yZXN1bHRzIjogWwogICAgewogICAgICAibGVuZ3RoIjogOTgxCiAgICB9
-      LAogICAgewogICAgICAibGVuZ3RoIjogMTYyNgogICAgfSwKICAgIHsKICAgICAgImxlbmd0aCI6
-      IDMxCiAgICB9CiAgXQp9WjkJgMBJUiIb5xcSGnByb21wdGZsb3cuZnVuY3Rpb24ub3V0cHV0GhIK
-      B3BheWxvYWQSBwoFOTgxLjB6AhgBhQEAAQAACrAHCo8CChwKDHNlcnZpY2UubmFtZRIMCgpwcm9t
-      cHRmbG93CmUKCmNvbGxlY3Rpb24SVwpVZXZhbHNfZTJldGVzdHNfY3VzdG9tX2V2YWx1YXRvcnNf
-      YW5zd2VyX2xlbmd0aF93aXRoX2FnZ3JlZ2F0aW9uX2Fuc3dlcmxlbmd0aF9qMDBybmc0Mwo5Cg9z
-      dWJzY3JpcHRpb24uaWQSJgokYjE3MjUzZmEtZjMyNy00MmQ2LTk2ODYtZjNlNTUzZTI0NzYzCiwK
-      E3Jlc291cmNlX2dyb3VwLm5hbWUSFQoTcHJvbXB0Zmxvdy1ldmFscy1jaQofCg53b3Jrc3BhY2Uu
-      bmFtZRINCgtwZi1ldmFscy13cxKbBQoMCgpwcm9tcHRmbG93EooFChDAjE636nIBRE1i14waaDAV
-      Egg3+oNdEd1M7yoaQW5zd2VyTGVuZ3RoLl9fYWdncmVnYXRlX18wATnQ4RlaKRvnF0HQ4RlaKRvn
-      F0oZCglmcmFtZXdvcmsSDAoKcHJvbXB0Zmxvd0oXCglzcGFuX3R5cGUSCgoIRnVuY3Rpb25KKAoI
-      ZnVuY3Rpb24SHAoaQW5zd2VyTGVuZ3RoLl9fYWdncmVnYXRlX19KGgoQZXhlY3V0aW9uX3Rhcmdl
-      dBIGCgRmbGV4ShQKDmlzX2FnZ3JlZ2F0aW9uEgIQAUqFAQoMYmF0Y2hfcnVuX2lkEnUKc2V2YWxz
-      X2UyZXRlc3RzX2N1c3RvbV9ldmFsdWF0b3JzX2Fuc3dlcl9sZW5ndGhfd2l0aF9hZ2dyZWdhdGlv
-      bl9hbnN3ZXJsZW5ndGhfajAwcm5nNDNfMjAyNDA3MzBfMTQzMzM4Xzc3Mzc2MF9yZWR1Y2VKQQoG
-      aW5wdXRzEjcKNXsKICAibGluZV9yZXN1bHRzIjogWwogICAgOTgxLAogICAgMTYyNiwKICAgIDMx
-      CiAgXQp9SiEKBm91dHB1dBIXChV7CiAgIm1lZGlhbiI6IDk4MS4wCn1aaQnQ4RlaKRvnFxIacHJv
-      bXB0Zmxvdy5mdW5jdGlvbi5pbnB1dHMaQgoHcGF5bG9hZBI3CjV7CiAgImxpbmVfcmVzdWx0cyI6
-      IFsKICAgIDk4MSwKICAgIDE2MjYsCiAgICAzMQogIF0KfVpJCdDhGVopG+cXEhpwcm9tcHRmbG93
-      LmZ1bmN0aW9uLm91dHB1dBoiCgdwYXlsb2FkEhcKFXsKICAibWVkaWFuIjogOTgxLjAKfXoCGAGF
-      AQABAAA=
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '2000'
-      Content-Type:
-      - application/x-protobuf
-      User-Agent:
-      - OTel-OTLP-Exporter-Python/1.25.0
-    method: POST
-    uri: http://127.0.0.1:23333/v1/traces
-  response:
-    body:
-      string: '<!doctype html>
-
-        <html lang=en>
-
-        <title>500 Internal Server Error</title>
-
-        <h1>Internal Server Error</h1>
-
-        <p>The server encountered an internal error and was unable to complete your
-        request. Either the server is overloaded or there is an error in the application.</p>
-
-        '
-    headers:
-      access-control-allow-origin:
-      - '*'
-      content-length:
-      - '265'
-      content-type:
-      - text/html; charset=utf-8
-      server:
-      - waitress
-    status:
-      code: 500
-      message: INTERNAL SERVER ERROR
-- request:
     body: null
     headers:
       Accept:
@@ -119,7 +40,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.024'
+      - '0.030'
     status:
       code: 200
       message: OK
@@ -143,13 +64,13 @@ interactions:
     uri: https://eastus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/create
   response:
     body:
-      string: '{"run": {"info": {"run_uuid": "f8d3ef4c-caab-4696-a45d-66900ad389c9",
+      string: '{"run": {"info": {"run_uuid": "9614a2d0-4ae0-4887-8901-c95dc52cf56d",
         "experiment_id": "34fb7f85-4f86-428b-9c6f-333adf9733a8", "run_name": "test",
         "user_id": "00000000-0000-0000-0000-000000000000", "status": "RUNNING", "start_time":
-        "1722375291745", "artifact_uri": "azureml://eastus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experiments/0/runs/f8d3ef4c-caab-4696-a45d-66900ad389c9/artifacts",
-        "lifecycle_stage": "active", "run_id": "f8d3ef4c-caab-4696-a45d-66900ad389c9"},
+        "1723753460587", "artifact_uri": "azureml://eastus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experiments/0/runs/9614a2d0-4ae0-4887-8901-c95dc52cf56d/artifacts",
+        "lifecycle_stage": "active", "run_id": "9614a2d0-4ae0-4887-8901-c95dc52cf56d"},
         "data": {"tags": [{"key": "mlflow.user", "value": "promptflow-evals"}, {"key":
-        "mlflow.rootRunId", "value": "f8d3ef4c-caab-4696-a45d-66900ad389c9"}, {"key":
+        "mlflow.rootRunId", "value": "9614a2d0-4ae0-4887-8901-c95dc52cf56d"}, {"key":
         "mlflow.runName", "value": "test"}, {"key": "mlflow.user", "value": "First
         Last"}]}, "inputs": {}}}'
     headers:
@@ -168,7 +89,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.202'
+      - '0.148'
     status:
       code: 200
       message: OK
@@ -192,30 +113,30 @@ interactions:
     uri: https://eastus2.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experimentids/11111111-1111-1111-1111-111111111111/runs/00000000-0000-0000-0000-000000000000
   response:
     body:
-      string: '{"runNumber": 1722375295, "rootRunId": "f8d3ef4c-caab-4696-a45d-66900ad389c9",
-        "createdUtc": "2024-07-30T21:34:51.745+00:00", "createdBy": {"userObjectId":
+      string: '{"runNumber": 1723753462, "rootRunId": "9614a2d0-4ae0-4887-8901-c95dc52cf56d",
+        "createdUtc": "2024-08-15T20:24:20.587+00:00", "createdBy": {"userObjectId":
         "00000000-0000-0000-0000-000000000000", "userPuId": "10037FFE814C9BDD", "userIdp":
         null, "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "First
         Last", "upn": "username@microsoft.com"}, "userId": "00000000-0000-0000-0000-000000000000",
-        "token": "sanitized_token_value", "tokenExpiryTimeUtc": "2024-08-20T23:28:45.6662179+00:00",
+        "token": "sanitized_token_value", "tokenExpiryTimeUtc": "2024-09-05T22:18:20.1698212+00:00",
         "error": null, "warnings": null, "revision": 2, "statusRevision": 0, "runUuid":
-        "251ef5ef-3ca3-47d9-a6a5-1119d9d582ac", "parentRunUuid": null, "rootRunUuid":
-        "251ef5ef-3ca3-47d9-a6a5-1119d9d582ac", "lastStartTimeUtc": "2024-07-30T21:34:51.745+00:00",
+        "6a95032d-7268-4f97-92d7-07e89855acb9", "parentRunUuid": null, "rootRunUuid":
+        "6a95032d-7268-4f97-92d7-07e89855acb9", "lastStartTimeUtc": "2024-08-15T20:24:20.587+00:00",
         "currentComputeTime": "00:00:00", "computeDuration": null, "effectiveStartTimeUtc":
-        "2024-07-30T21:34:51.745+00:00", "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
+        "2024-08-15T20:24:20.587+00:00", "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
         "userPuId": "10037FFE814C9BDD", "userIdp": null, "userAltSecId": null, "userIss":
         "https://sts.windows.net/00000000-0000-0000-0000-000000000000/", "userTenantId":
         "00000000-0000-0000-0000-000000000000", "userName": "First Last", "upn": "username@microsoft.com"},
-        "lastModifiedUtc": "2024-07-30T21:34:55.8378737+00:00", "duration": null,
-        "cancelationReason": null, "currentAttemptId": 1, "runId": "f8d3ef4c-caab-4696-a45d-66900ad389c9",
+        "lastModifiedUtc": "2024-08-15T20:24:23.5258293+00:00", "duration": null,
+        "cancelationReason": null, "currentAttemptId": 1, "runId": "9614a2d0-4ae0-4887-8901-c95dc52cf56d",
         "parentRunId": null, "experimentId": "00000000-0000-0000-0000-000000000000",
-        "status": "Running", "startTimeUtc": "2024-07-30T21:34:51.745+00:00", "endTimeUtc":
+        "status": "Running", "startTimeUtc": "2024-08-15T20:24:20.587+00:00", "endTimeUtc":
         null, "scheduleId": null, "displayName": "test", "name": null, "dataContainerId":
-        "dcid.f8d3ef4c-caab-4696-a45d-66900ad389c9", "description": null, "hidden":
+        "dcid.9614a2d0-4ae0-4887-8901-c95dc52cf56d", "description": null, "hidden":
         false, "runType": null, "runTypeV2": {"orchestrator": null, "traits": ["mlflow"],
         "attribution": null, "computeType": null}, "properties": {"mlflow.artifactUri":
-        "azureml://eastus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experiments/0/runs/f8d3ef4c-caab-4696-a45d-66900ad389c9/artifacts",
+        "azureml://eastus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/experiments/0/runs/9614a2d0-4ae0-4887-8901-c95dc52cf56d/artifacts",
         "test": "42"}, "parameters": {}, "actionUris": {}, "scriptName": null, "target":
         null, "uniqueChildRunComputeTargets": [], "tags": {"mlflow.user": "promptflow-evals"},
         "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets": [],
@@ -239,7 +160,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.043'
+      - '0.057'
     status:
       code: 200
       message: OK
@@ -263,10 +184,10 @@ interactions:
     uri: https://eastus2.api.azureml.ms/mlflow/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api/2.0/mlflow/runs/update
   response:
     body:
-      string: '{"run_info": {"run_uuid": "f8d3ef4c-caab-4696-a45d-66900ad389c9", "experiment_id":
+      string: '{"run_info": {"run_uuid": "9614a2d0-4ae0-4887-8901-c95dc52cf56d", "experiment_id":
         "34fb7f85-4f86-428b-9c6f-333adf9733a8", "run_name": "test", "user_id": "00000000-0000-0000-0000-000000000000",
-        "status": "FINISHED", "start_time": "1722375291745", "end_time": "1722375296383",
-        "lifecycle_stage": "active", "run_id": "f8d3ef4c-caab-4696-a45d-66900ad389c9"}}'
+        "status": "FINISHED", "start_time": "1723753460587", "end_time": "1723753464059",
+        "lifecycle_stage": "active", "run_id": "9614a2d0-4ae0-4887-8901-c95dc52cf56d"}}'
     headers:
       connection:
       - keep-alive
@@ -283,7 +204,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.435'
+      - '0.431'
     status:
       code: 200
       message: OK
