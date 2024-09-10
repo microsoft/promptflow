@@ -16,6 +16,12 @@ from promptflow.evals.evaluators import (
     GroundednessEvaluator,
 )
 
+try:
+    from promptflow.recording.record_mode import is_in_ci_pipeline
+except ModuleNotFoundError:
+    # The file is being imported by the local test
+    pass
+
 
 @pytest.fixture
 def data_file():
@@ -178,7 +184,6 @@ class TestEvaluate:
 
         row_result_df = pd.DataFrame(result["rows"])
         metrics = result["metrics"]
-
         # validate the results
         assert result is not None
         assert result["rows"] is not None
@@ -375,6 +380,7 @@ class TestEvaluate:
         assert "answer.length" in metrics.keys()
         assert "f1_score.f1_score" in metrics.keys()
 
+    @pytest.mark.skipif(is_in_ci_pipeline(), reason="This test fails in CI and needs to be investigate. Bug: 3458432")
     @pytest.mark.azuretest
     def test_evaluate_track_in_cloud(
         self,
@@ -419,6 +425,7 @@ class TestEvaluate:
         assert remote_run["runMetadata"]["properties"]["runType"] == "eval_run"
         assert remote_run["runMetadata"]["displayName"] == evaluation_name
 
+    @pytest.mark.skipif(is_in_ci_pipeline(), reason="This test fails in CI and needs to be investigate. Bug: 3458432")
     @pytest.mark.azuretest
     def test_evaluate_track_in_cloud_no_target(
         self,

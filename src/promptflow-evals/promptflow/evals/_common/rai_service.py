@@ -9,18 +9,22 @@ from ast import literal_eval
 from typing import Dict, List
 from urllib.parse import urlparse
 
-import httpx
 import jwt
 import numpy as np
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
 
-try:
-    from .constants import CommonConstants, EvaluationMetrics, RAIService, Tasks
-    from .utils import get_harm_severity_level
-except ImportError:
-    from constants import CommonConstants, EvaluationMetrics, RAIService, Tasks
-    from utils import get_harm_severity_level
+from promptflow.evals._http_utils import get_async_http_client
+
+from .constants import (
+    CommonConstants,
+    EvaluationMetrics,
+    RAIService,
+    Tasks,
+    _InternalAnnotationTasks,
+    _InternalEvaluationMetrics,
+)
+from .utils import get_harm_severity_level
 
 try:
     version = importlib.metadata.version("promptflow-evals")
@@ -61,8 +65,11 @@ async def ensure_service_availability(rai_svc_url: str, token: str, capability: 
     headers = get_common_headers(token)
     svc_liveness_url = rai_svc_url + "/checkannotation"
 
-    async with httpx.AsyncClient() as client:
-        response = await client.get(svc_liveness_url, headers=headers, timeout=CommonConstants.DEFAULT_HTTP_TIMEOUT)
+    client = get_async_http_client()
+
+    response = await client.get(  # pylint: disable=too-many-function-args,unexpected-keyword-arg
+        svc_liveness_url, headers=headers, timeout=CommonConstants.DEFAULT_HTTP_TIMEOUT
+    )
 
     if response.status_code != 200:
         raise Exception(  # pylint: disable=broad-exception-raised
@@ -75,6 +82,42 @@ async def ensure_service_availability(rai_svc_url: str, token: str, capability: 
         raise Exception(  # pylint: disable=broad-exception-raised
             f"Capability '{capability}' is not available in this region"
         )
+
+
+def generate_payload(normalized_user_text: str, metric: str) -> Dict:
+    """Generate the payload for the annotation request
+
+    :param normalized_user_text: The normalized user text to be entered as the "UserTextList" in the payload.
+    :type normalized_user_text: str
+    :param metric: The evaluation metric to use. This determines the task type, and whether a "MetricList" is needed
+        in the payload.
+    :type metric: str
+    :return: The payload for the annotation request.
+    :rtype: Dict
+    """
+    include_metric = True
+    task = Tasks.CONTENT_HARM
+    if metric == EvaluationMetrics.PROTECTED_MATERIAL:
+        task = Tasks.PROTECTED_MATERIAL
+        include_metric = False
+    elif metric == _InternalEvaluationMetrics.ECI:
+        task = _InternalAnnotationTasks.ECI
+        include_metric = False
+    elif metric == EvaluationMetrics.XPIA:
+        task = Tasks.XPIA
+        include_metric = False
+    return (
+        {
+            "UserTextList": [normalized_user_text],
+            "AnnotationTask": task,
+            "MetricList": [metric],
+        }
+        if include_metric
+        else {
+            "UserTextList": [normalized_user_text],
+            "AnnotationTask": task,
+        }
+    )
 
 
 async def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, token: str) -> str:
@@ -95,13 +138,16 @@ async def submit_request(question: str, answer: str, metric: str, rai_svc_url: s
     """
     user_text = f"<Human>{question}</><System>{answer}</>"
     normalized_user_text = user_text.replace("'", '\\"')
-    payload = {"UserTextList": [normalized_user_text], "AnnotationTask": Tasks.CONTENT_HARM, "MetricList": [metric]}
+    payload = generate_payload(normalized_user_text, metric)
 
     url = rai_svc_url + "/submitannotation"
     headers = get_common_headers(token)
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(url, json=payload, headers=headers, timeout=CommonConstants.DEFAULT_HTTP_TIMEOUT)
+    client = get_async_http_client()
+
+    response = await client.post(  # pylint: disable=too-many-function-args,unexpected-keyword-arg
+        url, json=payload, headers=headers, timeout=CommonConstants.DEFAULT_HTTP_TIMEOUT
+    )
 
     if response.status_code != 202:
         print("Fail evaluating '%s' with error message: %s" % (payload["UserTextList"], response.text))
@@ -134,8 +180,11 @@ async def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCre
         token = await fetch_or_reuse_token(credential, token)
         headers = get_common_headers(token)
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, headers=headers, timeout=CommonConstants.DEFAULT_HTTP_TIMEOUT)
+        client = get_async_http_client()
+
+        response = await client.get(  # pylint: disable=too-many-function-args,unexpected-keyword-arg
+            url, headers=headers, timeout=CommonConstants.DEFAULT_HTTP_TIMEOUT
+        )
 
         if response.status_code == 200:
             return response.json()
@@ -151,8 +200,64 @@ async def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCre
 
 def parse_response(  # pylint: disable=too-many-branches,too-many-statements
     batch_response: List[Dict], metric_name: str
-) -> List[List[dict]]:
-    """Parse the annotation response from Responsible AI service
+) -> Dict:
+    """Parse the annotation response from Responsible AI service for a content harm evaluation.
+
+    :param batch_response: The annotation response from Responsible AI service.
+    :type batch_response: List[Dict]
+    :param metric_name: The evaluation metric to use.
+    :type metric_name: str
+    :return: The parsed annotation result.
+    :rtype: List[List[Dict]]
+    """
+
+    # non-numeric metrics
+    if metric_name in {EvaluationMetrics.PROTECTED_MATERIAL, _InternalEvaluationMetrics.ECI, EvaluationMetrics.XPIA}:
+        if not batch_response or len(batch_response[0]) == 0 or metric_name not in batch_response[0]:
+            return {}
+        response = batch_response[0][metric_name]
+        response = response.replace("false", "False")
+        response = response.replace("true", "True")
+        parsed_response = literal_eval(response)
+        result = {}
+        metric_prefix = _get_metric_prefix(metric_name)
+        # Use label instead of score since these are assumed to be boolean results.
+        # Use np.nan as null value since it's ignored by aggregations rather than treated as 0.
+        result[metric_prefix + "_label"] = parsed_response["label"] if "label" in parsed_response else np.nan
+        result[metric_prefix + "_reason"] = parsed_response["reasoning"] if "reasoning" in parsed_response else ""
+
+        if metric_name == EvaluationMetrics.XPIA:
+            # Add "manipulated_content", "intrusion" and "information_gathering" to the result
+            # if present else set them to np.nan
+            result[metric_prefix + "_manipulated_content"] = (
+                parsed_response["manipulated_content"] if "manipulated_content" in parsed_response else np.nan
+            )
+            result[metric_prefix + "_intrusion"] = (
+                parsed_response["intrusion"] if "intrusion" in parsed_response else np.nan
+            )
+            result[metric_prefix + "_information_gathering"] = (
+                parsed_response["information_gathering"] if "information_gathering" in parsed_response else np.nan
+            )
+
+        return result
+    return _parse_content_harm_response(batch_response, metric_name)
+
+
+def _get_metric_prefix(metric_name: str) -> str:
+    """Get the prefix for the evaluation metric. This is usually the metric name.
+
+    :param metric_name: The evaluation metric to use.
+    :type metric_name: str
+    :return: The prefix for the evaluation metric.
+    :rtype: str
+    """
+    if metric_name == _InternalEvaluationMetrics.ECI:
+        return "ECI"
+    return metric_name
+
+
+def _parse_content_harm_response(batch_response: List[Dict], metric_name: str) -> Dict:
+    """Parse the annotation response from Responsible AI service for a content harm evaluation.
 
     :param batch_response: The annotation response from Responsible AI service.
     :type batch_response: List[Dict]
@@ -238,15 +343,18 @@ async def _get_service_discovery_url(azure_ai_project: dict, token: str) -> str:
     :rtype: str
     """
     headers = get_common_headers(token)
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            f"https://management.azure.com/subscriptions/{azure_ai_project['subscription_id']}/"
-            f"resourceGroups/{azure_ai_project['resource_group_name']}/"
-            f"providers/Microsoft.MachineLearningServices/workspaces/{azure_ai_project['project_name']}?"
-            f"api-version=2023-08-01-preview",
-            headers=headers,
-            timeout=CommonConstants.DEFAULT_HTTP_TIMEOUT,
-        )
+
+    client = get_async_http_client()
+
+    response = await client.get(  # pylint: disable=too-many-function-args,unexpected-keyword-arg
+        f"https://management.azure.com/subscriptions/{azure_ai_project['subscription_id']}/"
+        f"resourceGroups/{azure_ai_project['resource_group_name']}/"
+        f"providers/Microsoft.MachineLearningServices/workspaces/{azure_ai_project['project_name']}?"
+        f"api-version=2023-08-01-preview",
+        headers=headers,
+        timeout=CommonConstants.DEFAULT_HTTP_TIMEOUT,
+    )
+
     if response.status_code != 200:
         raise Exception("Failed to retrieve the discovery service URL")  # pylint: disable=broad-exception-raised
     base_url = urlparse(response.json()["properties"]["discoveryUrl"])

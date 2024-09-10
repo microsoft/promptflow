@@ -6,20 +6,20 @@ import asyncio
 import functools
 import logging
 import random
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
+from azure.core.pipeline.policies import AsyncRetryPolicy, RetryMode
 from azure.identity import DefaultAzureCredential
 from tqdm import tqdm
 
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
-from promptflow.evals.synthetic._constants import SupportedLanguages
-from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario
-
+from promptflow.evals._http_utils import get_async_http_client
+from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario, _UnstableAdversarialScenario
+from .constants import SupportedLanguages
 from ._conversation import CallbackConversationBot, ConversationBot, ConversationRole
 from ._conversation._conversation import simulate_conversation
 from ._model_tools import (
     AdversarialTemplateHandler,
-    AsyncHTTPClientWithRetry,
     ManagedIdentityAPITokenManager,
     ProxyChatCompletionsModel,
     RAIClient,
@@ -42,10 +42,10 @@ def monitor_adversarial_scenario(func) -> Callable:
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         scenario = str(kwargs.get("scenario", None))
-        max_conversation_turns = kwargs.get("max_conversation_turns", 1)
-        max_simulation_results = kwargs.get("max_simulation_results", 3)
-        jailbreak = kwargs.get("jailbreak", False)
-        selected_language = kwargs.get("language", SupportedLanguages.English)
+        max_conversation_turns = kwargs.get("max_conversation_turns", None)
+        max_simulation_results = kwargs.get("max_simulation_results", None)
+        _jailbreak_type = kwargs.get("_jailbreak_type", None)
+        selected_language = kwargs.get("language", SupportedLanguages.English),
         decorated_func = monitor_operation(
             activity_name="adversarial.simulator.call",
             activity_type=ActivityType.PUBLICAPI,
@@ -53,8 +53,8 @@ def monitor_adversarial_scenario(func) -> Callable:
                 "scenario": scenario,
                 "max_conversation_turns": max_conversation_turns,
                 "max_simulation_results": max_simulation_results,
-                "jailbreak": jailbreak,
-                "language": selected_language,
+                "_jailbreak_type": _jailbreak_type,
+                "selected_language": selected_language,
             },
         )(func)
 
@@ -107,6 +107,8 @@ class AdversarialSimulator:
     async def __call__(
         self,
         *,
+        # Note: the scenario input also accepts inputs from _PrivateAdversarialScenario, but that's
+        # not stated since those values are nominally for internal use only.
         scenario: AdversarialScenario,
         target: Callable,
         max_conversation_turns: int = 1,
@@ -115,8 +117,10 @@ class AdversarialSimulator:
         api_call_retry_sleep_sec: int = 1,
         api_call_delay_sec: int = 0,
         concurrent_async_task: int = 3,
-        jailbreak: bool = False,
+        _jailbreak_type: Optional[str] = None,
         language: SupportedLanguages = SupportedLanguages.English,
+        randomize_order: bool = True,
+        randomization_seed: Optional[int] = None,
     ):
         """
         Executes the adversarial simulation against a specified target function asynchronously.
@@ -148,14 +152,13 @@ class AdversarialSimulator:
         :keyword concurrent_async_task: The number of asynchronous tasks to run concurrently during the simulation.
             Defaults to 3.
         :paramtype concurrent_async_task: int
-        :keyword jailbreak: If set to True, allows breaking out of the conversation flow defined by the scenario.
-            Defaults to False.
-        :paramtype jailbreak: bool
         :keyword language: The language in which the conversation should be generated. Defaults to English.
-         example:
-
-         - :py:const:`promptflow.evals.synthetic._constants.SupportedLanguages.English`
-        :paramtype language: promptflow.evals.synthetic._constants.SupportedLanguages
+        :paramtype language: promptflow.evals.synthetic.constants.SupportedLanguages
+        :keyword randomize_order: Whether or not the order of the prompts should be randomized. Defaults to True.
+        :paramtype randomize_order: bool
+        :keyword randomization_seed: The seed used to randomize prompt selection. If unset, the system's
+            default seed is used. Defaults to None.
+        :paramtype randomization_seed: Optional[int]
         :return: A list of dictionaries, each representing a simulated conversation. Each dictionary contains:
 
          - 'template_parameters': A dictionary with parameters used in the conversation template,
@@ -190,12 +193,16 @@ class AdversarialSimulator:
                 }
             ]
         """
+
         # validate the inputs
         if scenario != AdversarialScenario.ADVERSARIAL_CONVERSATION:
             max_conversation_turns = 2
         else:
             max_conversation_turns = max_conversation_turns * 2
-        if scenario not in AdversarialScenario.__members__.values():
+        if not (
+            scenario in AdversarialScenario.__members__.values()
+            or scenario in _UnstableAdversarialScenario.__members__.values()
+        ):
             raise ValueError("Invalid adversarial scenario")
         self._ensure_service_dependencies()
         templates = await self.adversarial_template_handler._get_content_harm_template_collections(scenario.value)
@@ -213,17 +220,26 @@ class AdversarialSimulator:
                 total_tasks,
             )
         total_tasks = min(total_tasks, max_simulation_results)
-        if jailbreak:
-            jailbreak_dataset = await self.rai_client.get_jailbreaks_dataset()
+        if _jailbreak_type:
+            jailbreak_dataset = await self.rai_client.get_jailbreaks_dataset(type=_jailbreak_type)
         progress_bar = tqdm(
             total=total_tasks,
-            desc="generating jailbreak simulations" if jailbreak else "generating simulations",
+            desc="generating jailbreak simulations" if _jailbreak_type else "generating simulations",
             ncols=100,
             unit="simulations",
         )
         for template in templates:
-            for parameter in template.template_parameters:
-                if jailbreak:
+            parameter_order = list(range(len(template.template_parameters)))
+            if randomize_order:
+                # The template parameter lists are persistent across sim runs within a session,
+                # So randomize a the selection instead of the parameter list directly,
+                # or a potentially large deep copy.
+                if randomization_seed is not None:
+                    random.seed(randomization_seed)
+                random.shuffle(parameter_order)
+            for index in parameter_order:
+                parameter = template.template_parameters[index].copy()
+                if _jailbreak_type == "upia":
                     parameter = self._join_conversation_starter(parameter, random.choice(jailbreak_dataset))
                 tasks.append(
                     asyncio.create_task(
@@ -296,20 +312,22 @@ class AdversarialSimulator:
             target=target, role=ConversationRole.ASSISTANT, template=template, parameters=parameters
         )
         bots = [user_bot, system_bot]
-        asyncHttpClient = AsyncHTTPClientWithRetry(
-            n_retry=api_call_retry_limit,
-            retry_timeout=api_call_retry_sleep_sec,
-            logger=logger,
+        session = get_async_http_client().with_policies(
+            retry_policy=AsyncRetryPolicy(
+                retry_total=api_call_retry_limit,
+                retry_backoff_factor=api_call_retry_sleep_sec,
+                retry_mode=RetryMode.Fixed,
+            )
         )
+
         async with semaphore:
-            async with asyncHttpClient.client as session:
-                _, conversation_history = await simulate_conversation(
-                    bots=bots,
-                    language=language,
-                    session=session,
-                    turn_limit=max_conversation_turns,
-                    api_call_delay_sec=api_call_delay_sec,
-                )
+            _, conversation_history = await simulate_conversation(
+                bots=bots,
+                session=session,
+                turn_limit=max_conversation_turns,
+                api_call_delay_sec=api_call_delay_sec,
+                language=language,
+            )
         return self._to_chat_protocol(conversation_history=conversation_history, template_parameters=parameters)
 
     def _get_user_proxy_completion_model(self, template_key, template_parameters):
