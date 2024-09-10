@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-# pylint: disable=C4739,C4741,C4742
+# pylint: disable=C0103,C0114,C0116
 from dataclasses import dataclass
 from typing import Union
 

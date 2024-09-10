@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-# pylint: disable=C4741,C4742,C4739
+# pylint: disable=C0103,C0114,C0116,E0401,E0611
 
 import functools
 
