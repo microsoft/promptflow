@@ -11,9 +11,15 @@ from pandas.testing import assert_frame_equal
 from promptflow.client import PFClient
 from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME
 from promptflow.evals.evaluate import evaluate
-from promptflow.evals.evaluate._evaluate import _apply_target_to_data, _rename_columns_conditionally
+from promptflow.evals.evaluate._evaluate import _aggregate_metrics, _apply_target_to_data, _rename_columns_conditionally
 from promptflow.evals.evaluate._utils import _apply_column_mapping, _trace_destination_from_project_scope
-from promptflow.evals.evaluators import F1ScoreEvaluator, GroundednessEvaluator
+from promptflow.evals.evaluators import (
+    ContentSafetyEvaluator,
+    F1ScoreEvaluator,
+    GroundednessEvaluator,
+    ProtectedMaterialEvaluator,
+)
+from promptflow.evals.evaluators._eci._eci import ECIEvaluator
 
 
 def _get_file(name):
@@ -415,3 +421,85 @@ class TestEvaluate:
 
         assert trace_destination_with_override != trace_destination_without_override
         assert trace_destination_with_override == _trace_destination_from_project_scope(mock_project_scope)
+
+    def test_content_safety_aggregation(self):
+        data = {
+            # 10 zeroes in a list fully written out
+            "content_safety.violence_score": [0, 0, 1, 2, 5, 5, 6, 7, 9, 6],
+            "content_safety.sexual_score": [0, 0, 2, 3, 3, 3, 8, 8, 8, 8],
+            "content_safety.self_harm_score": [0, 0, 0, 0, 1, 1, 1, 1, 7, 7],
+            "content_safety.hate_unfairness_score": [0, 0, 1, 1, 2, 2, 3, 3, 3, 6],
+            "content_safety.violence": [
+                "low",
+                "low",
+                "low",
+                "low",
+                "high",
+                "high",
+                "high",
+                "high",
+                "high",
+                "high",
+            ],  # TODO DETERMINE ACTUAL BASED ON SCORES
+            "content_safety.sexual": ["low", "low", "low", "low", "low", "low", "high", "high", "high", "high"],
+            "content_safety.self_harm": ["low", "low", "low", "low", "low", "low", "low", "low", "high", "high"],
+            "content_safety.hate_unfairness": ["low", "low", "low", "low", "low", "low", "low", "low", "low", "high"],
+            "content_safety.violence_reason": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
+            "content_safety.sexual_reason": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
+            "content_safety.self_harm_reason": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
+            "content_safety.hate_unfairness_reason": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
+        }
+        data_df = pd.DataFrame(data)
+        evaluators = {
+            "content_safety": ContentSafetyEvaluator,
+        }
+        aggregation = _aggregate_metrics(data_df, evaluators)
+
+        assert len(aggregation) == 4
+        assert aggregation["content_safety.violence_defect_rate"] == 0.6
+        assert aggregation["content_safety.sexual_defect_rate"] == 0.4
+        assert aggregation["content_safety.self_harm_defect_rate"] == 0.2
+        assert aggregation["content_safety.hate_unfairness_defect_rate"] == 0.1
+
+    def test_label_based_aggregation(self):
+        data = {
+            "eci.ECI_label": [True, False, True, False, True],
+            "eci.ECI_reasoning": ["a", "b", "c", "d", "e"],
+            "protected_material.protected_material_label": [False, False, False, False, True],
+            "protected_material.protected_material_reasoning": ["f", "g", "h", "i", "j"],
+            "unknown.unaccounted_label": [True, False, False, False, True],
+            "unknown.unaccounted_reasoning": ["k", "l", "m", "n", "o"],
+        }
+        data_df = pd.DataFrame(data)
+        evaluators = {
+            "eci": ECIEvaluator,
+            "protected_material": ProtectedMaterialEvaluator,
+        }
+        aggregation = _aggregate_metrics(data_df, evaluators)
+        # ECI and PM labels should be replaced with defect rates, unaccounted should not
+        assert len(aggregation) == 3
+        assert "eci.ECI_label" not in aggregation
+        assert "protected_material.protected_material_label" not in aggregation
+        assert aggregation["unknown.unaccounted_label"] == 0.4
+
+        assert aggregation["eci.ECI_defect_rate"] == 0.6
+        assert aggregation["protected_material.protected_material_defect_rate"] == 0.2
+        assert "unaccounted_defect_rate" not in aggregation
+
+    def test_general_aggregation(self):
+        data = {
+            "thing.metric": [1, 2, 3, 4, 5],
+            "thing.reasoning": ["a", "b", "c", "d", "e"],
+            "other_thing.other_meteric": [-1, -2, -3, -4, -5],
+            "other_thing.other_reasoning": ["f", "g", "h", "i", "j"],
+            "final_thing.final_metric": [False, False, False, True, True],
+            "bad_thing.mixed_metric": [0, 1, False, True, True],
+        }
+        data_df = pd.DataFrame(data)
+        evaluators = {}
+        aggregation = _aggregate_metrics(data_df, evaluators)
+
+        assert len(aggregation) == 3
+        assert aggregation["thing.metric"] == 3
+        assert aggregation["other_thing.other_meteric"] == -3
+        assert aggregation["final_thing.final_metric"] == 0.4

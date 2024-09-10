@@ -53,7 +53,7 @@ class TestChatEvaluator:
         assert str(e.value) == "Expected role user but got assistant. Turn number: 3"
 
     def test_per_turn_results_aggregation(self, mock_project_scope):
-        chat_eval = ContentSafetyChatEvaluator(mock_project_scope)._to_async()
+        chat_eval = ContentSafetyChatEvaluator(mock_project_scope)
 
         per_turn_results = [
             {
