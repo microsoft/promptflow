@@ -6,6 +6,7 @@
 - Introduced `IndirectAttackEvaluator` to evaluate content for the presence of XPIA (cross domain prompt injected attacks) injected into conversation or Q/A context to interrupt normal expected functionality by eliciting manipulated content, intrusion and attempting to gather information outside the scope of your AI system.
 - Add a new evaluator (ProtectedMaterialEvaluator) and associated adversarial content simulator enum type (AdversarialScenario.ADVERSARIAL_CONTENT_PROTECTED_MATERIAL) for protected material, which determines if given inputs contain material protected by IP laws.
 - Added four mathematic evaluators, `BleuScoreEvaluator`, `GleuScoreEvaluator`, `MeteorScoreEvaluator` and `RougeScoreEvaluator` - for evaluating the quality of generated text by comparing it against referenced text.
+- Added unified synthetic data generation + general-purpose simulator which is completely configurable.
 
 ### Bugs Fixed
 - Fixed evaluators to accept (non-Azure) Open AI Configs.
