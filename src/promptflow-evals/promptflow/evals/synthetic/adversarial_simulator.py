@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # noqa: E501
+# pylint: disable=E0401,E0611
 import asyncio
 import functools
 import logging
@@ -15,7 +16,7 @@ from tqdm import tqdm
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
 from promptflow.evals._http_utils import get_async_http_client
 from promptflow.evals.synthetic.adversarial_scenario import AdversarialScenario, _UnstableAdversarialScenario
-from .constants import SupportedLanguages
+
 from ._conversation import CallbackConversationBot, ConversationBot, ConversationRole
 from ._conversation._conversation import simulate_conversation
 from ._model_tools import (
@@ -26,6 +27,7 @@ from ._model_tools import (
     TokenScope,
 )
 from ._utils import JsonLineList
+from .constants import SupportedLanguages
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +47,7 @@ def monitor_adversarial_scenario(func) -> Callable:
         max_conversation_turns = kwargs.get("max_conversation_turns", None)
         max_simulation_results = kwargs.get("max_simulation_results", None)
         _jailbreak_type = kwargs.get("_jailbreak_type", None)
-        selected_language = kwargs.get("language", SupportedLanguages.English),
+        selected_language = (kwargs.get("language", SupportedLanguages.English),)
         decorated_func = monitor_operation(
             activity_name="adversarial.simulator.call",
             activity_type=ActivityType.PUBLICAPI,
