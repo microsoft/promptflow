@@ -19,6 +19,7 @@ class EvaluationMetrics:
     SELF_HARM = "self_harm"
     SEXUAL = "sexual"
     PROTECTED_MATERIAL = "protected_material"
+    INDIRECT_ATTACK = "indirect_attack"
 
 
 class _InternalEvaluationMetrics:
