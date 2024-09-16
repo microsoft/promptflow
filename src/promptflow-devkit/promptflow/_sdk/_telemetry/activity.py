@@ -76,7 +76,7 @@ def log_activity_end(activity_info: Dict[str, Any], logger) -> None:
         "error_detail": "error_detail"
     }
     Error target & error type can be found in the following link:
-    https://github.com/microsoft/promptflow/blob/main/src/promptflow/promptflow/exceptions.py
+    https://github.com/microsoft/promptflow/blob/main/src/promptflow-core/promptflow/exceptions.py
 
     :param activity_info: The custom properties of the activity.
     :type activity_info: dict
