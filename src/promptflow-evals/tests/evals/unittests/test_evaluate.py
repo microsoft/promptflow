@@ -463,8 +463,8 @@ class TestEvaluate:
 
     def test_label_based_aggregation(self):
         data = {
-            "eci.ECI_label": [True, False, True, False, True],
-            "eci.ECI_reasoning": ["a", "b", "c", "d", "e"],
+            "eci.eci_label": [True, False, True, False, True],
+            "eci.eci_reasoning": ["a", "b", "c", "d", "e"],
             "protected_material.protected_material_label": [False, False, False, False, True],
             "protected_material.protected_material_reasoning": ["f", "g", "h", "i", "j"],
             "unknown.unaccounted_label": [True, False, False, False, True],
@@ -478,11 +478,11 @@ class TestEvaluate:
         aggregation = _aggregate_metrics(data_df, evaluators)
         # ECI and PM labels should be replaced with defect rates, unaccounted should not
         assert len(aggregation) == 3
-        assert "eci.ECI_label" not in aggregation
+        assert "eci.eci_label" not in aggregation
         assert "protected_material.protected_material_label" not in aggregation
         assert aggregation["unknown.unaccounted_label"] == 0.4
 
-        assert aggregation["eci.ECI_defect_rate"] == 0.6
+        assert aggregation["eci.eci_defect_rate"] == 0.6
         assert aggregation["protected_material.protected_material_defect_rate"] == 0.2
         assert "unaccounted_defect_rate" not in aggregation
 
