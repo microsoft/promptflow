@@ -1,6 +1,12 @@
 # Release History
 
-## v1.15.0 (Upcoming)
+## v1.15.0.post1 (2024.09.19)
+
+### Bug Fixed
+
+- Fix command parameter detection before executing commands to avoid risky characters.
+
+## v1.15.0 (2024.08.15)
 
 ### Bugs fixed
 - [promptflow-azure] Fixed `Connection aborted` error for local to cloud run when registering the run to cloud.
