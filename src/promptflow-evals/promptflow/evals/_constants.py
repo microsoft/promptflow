@@ -18,6 +18,17 @@ class EvaluationMetrics:
     VIOLENCE = "violence"
     SELF_HARM = "self_harm"
     SEXUAL = "sexual"
+    PROTECTED_MATERIAL = "protected_material"
+    XPIA = "xpia"
+
+
+class _InternalEvaluationMetrics:
+    """Evaluation metrics that are not publicly supported.
+    These metrics are experimental and subject to potential change or migration to the main
+    enum over time.
+    """
+
+    ECI = "eci"
 
 
 class Prefixes:

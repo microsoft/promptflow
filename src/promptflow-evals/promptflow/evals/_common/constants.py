@@ -32,6 +32,7 @@ class Tasks:
 
     CONTENT_HARM = "content harm"
     PROTECTED_MATERIAL = "protected material"
+    XPIA = "xpia"
 
 
 class _InternalAnnotationTasks:
@@ -52,6 +53,7 @@ class EvaluationMetrics:
     SELF_HARM = "self_harm"
     SEXUAL = "sexual"
     PROTECTED_MATERIAL = "protected_material"
+    XPIA = "xpia"
 
 
 class _InternalEvaluationMetrics:

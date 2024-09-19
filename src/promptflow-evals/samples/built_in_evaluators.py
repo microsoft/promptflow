@@ -4,16 +4,21 @@ from azure.identity import DefaultAzureCredential
 
 from promptflow.core import AzureOpenAIModelConfiguration
 from promptflow.evals.evaluators import (
+    BleuScoreEvaluator,
     ChatEvaluator,
     CoherenceEvaluator,
     ContentSafetyChatEvaluator,
     ContentSafetyEvaluator,
     F1ScoreEvaluator,
     FluencyEvaluator,
+    GleuScoreEvaluator,
     GroundednessEvaluator,
     HateUnfairnessEvaluator,
+    MeteorScoreEvaluator,
     QAEvaluator,
     RelevanceEvaluator,
+    RougeScoreEvaluator,
+    RougeType,
     SelfHarmEvaluator,
     SexualEvaluator,
     SimilarityEvaluator,
@@ -31,6 +36,28 @@ project_scope = {
     "resource_group_name": "resource-group",
     "project_name": "project-name",
 }
+
+
+def run_math_evaluators():
+    # BLEU Score
+    bleu_eval = BleuScoreEvaluator()
+    score = bleu_eval(answer="Tokyo is the capital of Japan.", ground_truth="The capital of Japan is Tokyo.")
+    print(score)
+
+    # GLEU Score
+    gleu_eval = GleuScoreEvaluator()
+    score = gleu_eval(answer="Tokyo is the capital of Japan.", ground_truth="The capital of Japan is Tokyo.")
+    print(score)
+
+    # Meteor Score
+    meteor_eval = MeteorScoreEvaluator(alpha=0.5, beta=0.5, gamma=0.5)
+    score = meteor_eval(answer="Tokyo is the capital of Japan.", ground_truth="The capital of Japan is Tokyo.")
+    print(score)
+
+    # Rouge Score
+    rouge_eval = RougeScoreEvaluator(rouge_type=RougeType.ROUGE_1)
+    score = rouge_eval(answer="Tokyo is the capital of Japan.", ground_truth="The capital of Japan is Tokyo.")
+    print(score)
 
 
 def run_quality_evaluators():
@@ -238,6 +265,8 @@ def run_content_safety_chat_evaluator():
 if __name__ == "__main__":
 
     # Individual evaluators
+    run_math_evaluators()
+
     run_quality_evaluators()
 
     run_safety_evaluators()

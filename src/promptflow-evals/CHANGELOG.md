@@ -2,13 +2,21 @@
 
 ## v0.3.3 (Upcoming)
 ### Features Added
-- Add a new evaluator (ProtectedMaterialsEvaluator) and associated adversarial content simulator enum type (AdversarialScenario.ADVERSARIAL_CONTENT_PROTECTED_MATERIAL) for protected materials, which determines if given inputs contain materials protected by IP laws.
+- Introduced `IndirectAttackSimulator` to simulate XPIA (cross domain prompt injected attack) jailbreak attacks on your AI system.
+- Introduced `IndirectAttackEvaluator` to evaluate content for the presence of XPIA (cross domain prompt injected attacks) injected into conversation or Q/A context to interrupt normal expected functionality by eliciting manipulated content, intrusion and attempting to gather information outside the scope of your AI system.
+- Add a new evaluator (ProtectedMaterialEvaluator) and associated adversarial content simulator enum type (AdversarialScenario.ADVERSARIAL_CONTENT_PROTECTED_MATERIAL) for protected material, which determines if given inputs contain material protected by IP laws.
+- Added four mathematic evaluators, `BleuScoreEvaluator`, `GleuScoreEvaluator`, `MeteorScoreEvaluator` and `RougeScoreEvaluator` - for evaluating the quality of generated text by comparing it against referenced text.
 
 ### Bugs Fixed
 - Fixed evaluators to accept (non-Azure) Open AI Configs.
 
+### Breaking Changes
+- Replaced `jailbreak` parameter in `AdversarialSimulator` with `_jailbreak_type` parameter to support multiple jailbreak types. Instead of editing this parameter directly, we recommend using the `JailbreakAdversarialSimulator` class for UPIA jailbreak and `IndirectAttackSimulator` class for XPIA jailbreak.
+
 ### Improvements
+- Renamed `JailbreakAdversarialSimulator` to `DirectAttackSimulator`
 - Set the PF_EVALS_BATCH_USE_ASYNC environment variable to True by default to enable asynchronous batch run for async-enabled built-in evaluators, improving performance.
+- The `AdversarialSimulator` class now supports randomization of simulation prompts, as well as seeding of said randomization for consistency via two new arguments: `randomize_order` and `randomization_seed`. Randomization is enabled by default. The child class `DirectAttackSimulator` always uses a `randomization_seed` to synchronize sub-simulators, even if none is provided.
 
 ## v0.3.2 (2024-08-13)
 ### Features Added

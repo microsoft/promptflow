@@ -1,9 +1,5 @@
 # pf
 
-:::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](../how-to-guides/faq.md#stable-vs-experimental).
-:::
-
 Manage prompt flow resources with the prompt flow CLI.
 
 | Command                         | Description                    |
