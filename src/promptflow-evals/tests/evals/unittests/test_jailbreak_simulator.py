@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
-from promptflow.evals.synthetic import AdversarialScenario, JailbreakAdversarialSimulator
+from promptflow.evals.synthetic import AdversarialScenario, DirectAttackSimulator
 
 
 @pytest.fixture()
@@ -52,7 +52,7 @@ class TestSimulator:
             AdversarialScenario.ADVERSARIAL_CONTENT_GEN_GROUNDED,
         ]
         for scenario in available_scenarios:
-            simulator = JailbreakAdversarialSimulator(azure_ai_project=azure_ai_project)
+            simulator = DirectAttackSimulator(azure_ai_project=azure_ai_project)
             assert callable(simulator)
             simulator(scenario=scenario, max_conversation_turns=1, max_simulation_results=3, target=async_callback)
 
@@ -72,7 +72,7 @@ class TestSimulator:
         async def callback(x):
             return x
 
-        simulator = JailbreakAdversarialSimulator(azure_ai_project=azure_ai_project)
+        simulator = DirectAttackSimulator(azure_ai_project=azure_ai_project)
         with pytest.raises(ValueError):
             outputs = asyncio.run(
                 simulator(
@@ -110,6 +110,6 @@ class TestSimulator:
             AdversarialScenario.ADVERSARIAL_CONTENT_GEN_GROUNDED,
         ]
         for scenario in available_scenarios:
-            simulator = JailbreakAdversarialSimulator(azure_ai_project=azure_ai_project, credential="test_credential")
+            simulator = DirectAttackSimulator(azure_ai_project=azure_ai_project, credential="test_credential")
             assert callable(simulator)
             simulator(scenario=scenario, max_conversation_turns=1, max_simulation_results=3, target=async_callback)
