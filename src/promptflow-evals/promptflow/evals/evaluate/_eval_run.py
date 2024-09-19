@@ -12,11 +12,11 @@ import uuid
 from typing import Any, Dict, Optional, Set
 from urllib.parse import urlparse
 
-from azure.core.pipeline.policies import RetryPolicy
-from azure.core.rest import HttpResponse
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from promptflow._sdk.entities import Run
-from promptflow.evals._http_utils import get_http_client
 from promptflow.evals._version import VERSION
 
 LOGGER = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ LOGGER = logging.getLogger(__name__)
 # Handle optional import. The azure libraries are only present if
 # promptflow-azure is installed.
 try:
-    from azure.ai.ml.entities._credentials import AccountKeyConfiguration  # pylint: disable=ungrouped-imports
+    from azure.ai.ml.entities._credentials import AccountKeyConfiguration
     from azure.ai.ml.entities._datastore.datastore import Datastore
     from azure.storage.blob import BlobServiceClient
 except (ModuleNotFoundError, ImportError):
@@ -180,7 +180,7 @@ class EvalRun(contextlib.AbstractContextManager):  # pylint: disable=too-many-in
                 if response.status_code != 200:
                     self.info = RunInfo.generate(self._run_name)
                     LOGGER.warning(
-                        f"The run failed to start: {response.status_code}: {response.text()}."
+                        f"The run failed to start: {response.status_code}: {response.text}."
                         "The results will be saved locally, but will not be logged to Azure."
                     )
                     self._status = RunStatus.BROKEN
@@ -279,7 +279,7 @@ class EvalRun(contextlib.AbstractContextManager):  # pylint: disable=too-many-in
 
     def request_with_retry(
         self, url: str, method: str, json_dict: Dict[str, Any], headers: Optional[Dict[str, str]] = None
-    ) -> HttpResponse:
+    ) -> requests.Response:
         """
         Send the request with retries.
 
@@ -292,38 +292,40 @@ class EvalRun(contextlib.AbstractContextManager):  # pylint: disable=too-many-in
         :param headers: The headers to be sent with the request.
         :type headers: Optional[Dict[str, str]]
         :return: The response
-        :rtype: HttpResponse
+        :rtype: requests.Response
         """
         if headers is None:
             headers = {}
         headers["User-Agent"] = f"promptflow/{VERSION}"
         headers["Authorization"] = f"Bearer {self._get_token()}"
-
-        session = get_http_client().with_policies(
-            retry_policy=RetryPolicy(
-                retry_total=EvalRun._MAX_RETRIES,
-                retry_connect=EvalRun._MAX_RETRIES,
-                retry_read=EvalRun._MAX_RETRIES,
-                retry_status=EvalRun._MAX_RETRIES,
-                retry_on_status_codes=(408, 429, 500, 502, 503, 504),
-                retry_backoff_factor=EvalRun._BACKOFF_FACTOR,
-            )
+        retry = Retry(
+            total=EvalRun._MAX_RETRIES,
+            connect=EvalRun._MAX_RETRIES,
+            read=EvalRun._MAX_RETRIES,
+            redirect=EvalRun._MAX_RETRIES,
+            status=EvalRun._MAX_RETRIES,
+            status_forcelist=(408, 429, 500, 502, 503, 504),
+            backoff_factor=EvalRun._BACKOFF_FACTOR,
+            allowed_methods=None,
         )
+        adapter = HTTPAdapter(max_retries=retry)
+        session = requests.Session()
+        session.mount("https://", adapter)
         return session.request(method, url, headers=headers, json=json_dict, timeout=EvalRun._TIMEOUT)
 
-    def _log_warning(self, failed_op: str, response: HttpResponse) -> None:
+    def _log_warning(self, failed_op: str, response: requests.Response) -> None:
         """
         Log the error if request was not successful.
 
         :param failed_op: The user-friendly message for the failed operation.
         :type failed_op: str
         :param response: The request.
-        :type response: HttpResponse
+        :type response: requests.Response
         """
         LOGGER.warning(
             f"Unable to {failed_op}, "
             f"the request failed with status code {response.status_code}, "
-            f"{response.text()=}."
+            f"{response.text=}."
         )
 
     def _check_state_and_log(self, action: str, bad_states: Set[RunStatus], should_raise: bool) -> bool:
@@ -480,4 +482,4 @@ class EvalRun(contextlib.AbstractContextManager):  # pylint: disable=too-many-in
             json_dict={"runId": self.info.run_id, "properties": properties},
         )
         if response.status_code != 200:
-            LOGGER.error("Fail writing properties '%s' to run history: %s", properties, response.text())
+            LOGGER.error("Fail writing properties '%s' to run history: %s", properties, response.text)

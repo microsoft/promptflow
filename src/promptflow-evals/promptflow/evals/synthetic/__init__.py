@@ -1,6 +1,5 @@
 from .adversarial_scenario import AdversarialScenario
 from .adversarial_simulator import AdversarialSimulator
-from .direct_attack_simulator import DirectAttackSimulator
-from .xpia_simulator import IndirectAttackSimulator
+from .jailbreak_adversarial_simulator import JailbreakAdversarialSimulator
 
-__all__ = ["AdversarialSimulator", "AdversarialScenario", "DirectAttackSimulator", "IndirectAttackSimulator"]
+__all__ = ["AdversarialSimulator", "AdversarialScenario", "JailbreakAdversarialSimulator"]

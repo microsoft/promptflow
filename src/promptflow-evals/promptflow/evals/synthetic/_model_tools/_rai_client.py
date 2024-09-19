@@ -1,15 +1,16 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import logging
 import os
 from typing import Any, Dict
 from urllib.parse import urljoin, urlparse
 
-from azure.core.pipeline.policies import AsyncRetryPolicy, RetryMode
+import requests
 
-from promptflow.evals._http_utils import AsyncHttpPipeline, get_async_http_client, get_http_client
 from promptflow.evals._user_agent import USER_AGENT
 
+from ._async_http_client import AsyncHTTPClientWithRetry
 from ._identity_manager import APITokenManager
 
 api_url = None
@@ -55,13 +56,11 @@ class RAIClient:
         self.parameter_json_endpoint = urljoin(self.api_url, "simulation/template/parameters")
         self.jailbreaks_json_endpoint = urljoin(self.api_url, "simulation/jailbreak")
         self.simulation_submit_endpoint = urljoin(self.api_url, "simulation/chat/completions/submit")
-        self.xpia_jailbreaks_json_endpoint = urljoin(self.api_url, "simulation/jailbreak/xpia")
 
     def _get_service_discovery_url(self):
         bearer_token = self.token_manager.get_token()
         headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
-        http_client = get_http_client()
-        response = http_client.get(  # pylint: disable=too-many-function-args,unexpected-keyword-arg
+        response = requests.get(
             f"https://management.azure.com/subscriptions/{self.azure_ai_project['subscription_id']}/"
             f"resourceGroups/{self.azure_ai_project['resource_group_name']}/"
             f"providers/Microsoft.MachineLearningServices/workspaces/{self.azure_ai_project['project_name']}?"
@@ -74,17 +73,15 @@ class RAIClient:
         base_url = urlparse(response.json()["properties"]["discoveryUrl"])
         return f"{base_url.scheme}://{base_url.netloc}"
 
-    def _create_async_client(self) -> AsyncHttpPipeline:
+    def _create_async_client(self) -> AsyncHTTPClientWithRetry:
         """Create an async http client with retry mechanism
 
         Number of retries is set to 6, and the timeout is set to 5 seconds.
 
         :return: The async http client
-        :rtype: ~promptflow.evals._http_utils.AsyncHttpPipeline
+        :rtype: ~promptflow.evals.synthetic._model_tools._async_http_client.AsyncHTTPClientWithRetry
         """
-        return get_async_http_client().with_policies(
-            retry_policy=AsyncRetryPolicy(retry_total=6, retry_backoff_factor=5, retry_mode=RetryMode.Fixed)
-        )
+        return AsyncHTTPClientWithRetry(n_retry=6, retry_timeout=5, logger=logging.getLogger())
 
     async def get_contentharm_parameters(self) -> Any:
         """Get the content harm parameters, if they exist"""
@@ -93,15 +90,10 @@ class RAIClient:
 
         return self.contentharm_parameters
 
-    async def get_jailbreaks_dataset(self, type: str) -> Any:
+    async def get_jailbreaks_dataset(self) -> Any:
         "Get the jailbreaks dataset, if exists"
         if self.jailbreaks_dataset is None:
-            if type == "xpia":
-                self.jailbreaks_dataset = await self.get(self.xpia_jailbreaks_json_endpoint)
-            elif type == "upia":
-                self.jailbreaks_dataset = await self.get(self.jailbreaks_json_endpoint)
-            else:
-                raise ValueError("Invalid type, please provide either 'xpia' or 'upia'")
+            self.jailbreaks_dataset = await self.get(self.jailbreaks_json_endpoint)
 
         return self.jailbreaks_dataset
 
@@ -121,11 +113,11 @@ class RAIClient:
             "User-Agent": USER_AGENT,
         }
 
-        session = self._create_async_client()
-        response = await session.get(url=url, headers=headers)  # pylint: disable=unexpected-keyword-arg
-
-        if response.status_code == 200:
-            return response.json()
+        async with self._create_async_client().client as session:
+            async with session.get(url=url, headers=headers) as response:
+                if response.status == 200:
+                    response = await response.json()
+                    return response
 
         raise ValueError(
             "Azure safety evaluation service is not available in your current region, "

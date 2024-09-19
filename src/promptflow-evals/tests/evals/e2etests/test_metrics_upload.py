@@ -116,7 +116,6 @@ class TestMetricsUpload(object):
 
     @pytest.mark.azuretest
     @pytest.mark.usefixtures("vcr_recording")
-    @pytest.mark.skipif(not is_live(), reason="This test fails in CI and needs to be investigate. See bug: 3415807")
     def test_log_artifact(self, project_scope, azure_ml_client, tracking_uri, caplog, tmp_path):
         """Test uploading artifact to the service."""
         logger = logging.getLogger(EvalRun.__module__)

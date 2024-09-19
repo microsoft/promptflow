@@ -17,7 +17,6 @@ AZURE_TOKEN_REFRESH_INTERVAL = 600  # seconds
 
 class TokenScope(Enum):
     """Token scopes for Azure endpoints"""
-
     DEFAULT_AZURE_MANAGEMENT = "https://management.azure.com/.default"
 
 
@@ -31,12 +30,10 @@ class APITokenManager(ABC):
     :param credential: Azure credential object
     :type credential: Optional[Union[azure.identity.DefaultAzureCredential, azure.identity.ManagedIdentityCredential]
     """
-
     def __init__(
-        self,
-        logger: logging.Logger,
+        self, logger: logging.Logger,
         auth_header: str = "Bearer",
-        credential: Optional[Union[DefaultAzureCredential, ManagedIdentityCredential]] = None,
+        credential: Optional[Union[DefaultAzureCredential, ManagedIdentityCredential]] = None
     ) -> None:
         self.logger = logger
         self.auth_header = auth_header
@@ -99,7 +96,6 @@ class ManagedIdentityAPITokenManager(APITokenManager):
     :keyword kwargs: Additional keyword arguments
     :paramtype kwargs: Dict
     """
-
     def __init__(self, token_scope: TokenScope, logger: logging.Logger, **kwargs: Dict):
         super().__init__(logger, **kwargs)
         self.token_scope = token_scope
@@ -133,7 +129,6 @@ class PlainTokenManager(APITokenManager):
     :keyword kwargs: Optional keyword arguments
     :paramtype kwargs: Dict
     """
-
     def __init__(self, openapi_key: str, logger: logging.Logger, **kwargs: Dict):
         super().__init__(logger, **kwargs)
         self.token = openapi_key

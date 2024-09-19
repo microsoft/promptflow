@@ -1,6 +1,6 @@
 # promptflow-azure package
 
-## v1.15.0 (2024.08.15)
+## v1.15.0 (Upcoming)
 
 ### Bugs fixed
 - Fixed `Connection aborted` error for local to cloud run when registering the run to cloud.
