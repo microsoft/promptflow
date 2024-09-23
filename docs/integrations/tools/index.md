@@ -15,6 +15,7 @@ The table below provides an index of custom tool packages. The columns contain:
 |-|-|-|-|
 | promptflow-azure-ai-language | Collection of Azure AI Language Prompt flow tools. | Sean Murray | taincidents@microsoft.com |
 |llmlingua-promptflow|Speed up large language model's inference and enhance large language model's perceive of key information, compress the prompt with minimal performance loss.| LLMLingua Team|llmlingua@microsoft.com|
+|unify-integration| Multi-endpoint connection with dynamic routing and custom routers. | Kacper Kożdoń, Kato Steven, Omkar Khade | k.kozdon@gmail.com
 
 ```{toctree}
 :maxdepth: 1
@@ -22,4 +23,5 @@ The table below provides an index of custom tool packages. The columns contain:
 
 azure-ai-language-tool
 llmlingua-prompt-compression-tool
+unify-integration
 ```

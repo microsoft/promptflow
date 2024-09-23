@@ -1,0 +1,50 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  chat_history:
+    type: list
+    is_chat_history: true
+    default: []
+  question:
+    type: string
+    is_chat_input: true
+    default: What day is today?
+outputs:
+  chat_out_unify_openai:
+    type: string
+    reference: ${llm_node_6xs2.output}
+  chat_out_unify:
+    type: string
+    reference: ${Unify_Chat_084p.output}
+nodes:
+- name: Unify_SSO_ryr7
+  type: python
+  source:
+    type: package
+    tool: unify_llm_tool.tools.single_sign_on_tool.single_sign_on
+  inputs:
+    unify_api_key: Sat+NV16sbk5avELi5OqqaGykr5RoNiFBYaydkWAkak=
+    find_endpoint_by: model
+    model: chatgpt-4o-latest
+    search_endpoint: continue
+    endpoint: chatgpt-4o-latest@openai
+- name: llm_node_6xs2
+  type: llm
+  source:
+    type: code
+    path: llm_node_6xs2.jinja2
+  inputs:
+    chat_history: ${inputs.chat_history}
+    question: ${inputs.question}
+    model: ${Unify_SSO_ryr7.output}
+  connection: unify_connection_openai
+  api: chat
+- name: Unify_Chat_084p
+  type: python
+  source:
+    type: package
+    tool: unify_llm_tool.tools.chat_tool.basic_chat
+  inputs:
+    connection: unify_connection
+    prompt: ${inputs.question}
