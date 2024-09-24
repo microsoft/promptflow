@@ -66,7 +66,7 @@ jobs:
             # Sleep for 4 minutes
             sleep 240
           done &
-      - name:
+      - name: Test Notebook
         working-directory: examples/tutorials/run-flow-with-pipeline
         run: |
           papermill -k python pipeline.ipynb pipeline.output.ipynb
