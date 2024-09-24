@@ -39,8 +39,8 @@ packages = [
 # dependencies
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
-promptflow-devkit = "<2.0.0,>=1.14.0"
-promptflow-core = "<2.0.0,>=1.14.0"
+promptflow-devkit = ">=1.15.0.post1,<2.0.0"
+promptflow-core = ">=1.15.0.post1,<2.0.0"
 aiohttp_retry = ">=2.8.3"
 websocket-client = ">=1.2.0"
 jsonpath_ng = ">=1.5.0"
