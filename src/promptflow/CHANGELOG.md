@@ -1,5 +1,11 @@
 # Release History
 
+## v1.15.0.1 (2024.09.23)
+
+### Bug Fixed
+
+- Fix command parameter detection before executing commands to avoid risky characters.
+
 ## v1.15.0.post1 (2024.09.19)
 
 ### Bug Fixed
