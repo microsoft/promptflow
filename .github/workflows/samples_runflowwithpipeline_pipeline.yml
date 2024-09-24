@@ -67,8 +67,6 @@ jobs:
             sleep 240
           done &
       - name:
-        # This notebook is failing in CI. Skip for PRs for now.
-        if: github.event_name != 'pull_request'
         working-directory: examples/tutorials/run-flow-with-pipeline
         run: |
           papermill -k python pipeline.ipynb pipeline.output.ipynb
