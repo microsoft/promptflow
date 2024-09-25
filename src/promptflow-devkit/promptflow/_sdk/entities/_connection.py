@@ -42,6 +42,7 @@ from promptflow._sdk.schemas._connection import (
     QdrantConnectionSchema,
     SerpConnectionSchema,
     ServerlessConnectionSchema,
+    OpenShiftConnectionSchema,
     WeaviateConnectionSchema,
 )
 from promptflow._utils.logger_utils import LoggerFactory
@@ -58,6 +59,7 @@ from promptflow.core._connection import OpenAIConnection as _CoreOpenAIConnectio
 from promptflow.core._connection import QdrantConnection as _CoreQdrantConnection
 from promptflow.core._connection import SerpConnection as _CoreSerpConnection
 from promptflow.core._connection import ServerlessConnection as _CoreServerlessConnection
+from promptflow.core._connection import OpenShiftConnection as _CoreOpenShiftConnection
 from promptflow.core._connection import WeaviateConnection as _CoreWeaviateConnection
 from promptflow.core._connection import _Connection as _CoreConnection
 from promptflow.core._connection import _StrongTypeConnection as _CoreStrongTypeConnection
@@ -313,6 +315,15 @@ class ServerlessConnection(_CoreServerlessConnection, _StrongTypeConnection):
     @classmethod
     def _get_schema_cls(cls):
         return ServerlessConnectionSchema
+
+
+class OpenShiftConnection(_CoreOpenShiftConnection, _StrongTypeConnection):
+    __doc__ = _CoreOpenShiftConnection.__doc__
+    DATA_CLASS = _CoreOpenShiftConnection
+
+    @classmethod
+    def _get_schema_cls(cls):
+        return OpenShiftConnectionSchema
 
 
 class SerpConnection(_CoreSerpConnection, _StrongTypeConnection):

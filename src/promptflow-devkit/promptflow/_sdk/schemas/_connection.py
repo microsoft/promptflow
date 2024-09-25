@@ -69,6 +69,12 @@ class ServerlessConnectionSchema(ConnectionSchema):
     api_base = fields.Str(required=True)
 
 
+class OpenShiftConnectionSchema(ConnectionSchema):
+    type = StringTransformedEnum(allowed_values=camel_to_snake(ConnectionType.OPENSHIFT), required=True)
+    token = fields.Str(required=True)
+    endpoint = fields.Str(required=True)
+
+
 class EmbeddingStoreConnectionSchema(ConnectionSchema):
     module = fields.Str(dump_default="promptflow_vectordb.connections")
     api_key = fields.Str(required=True)
