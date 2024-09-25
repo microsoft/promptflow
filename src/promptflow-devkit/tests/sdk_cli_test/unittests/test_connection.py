@@ -23,6 +23,7 @@ from promptflow._sdk.entities._connection import (
     QdrantConnection,
     SerpConnection,
     ServerlessConnection,
+    OpenShiftConnection,
     WeaviateConnection,
     _Connection,
 )
@@ -220,6 +221,19 @@ class TestConnection:
                 {
                     "module": "promptflow.connections",
                     "type": "serverless",
+                },
+            ),
+            (
+                "openshift_connection.yaml",
+                OpenShiftConnection,
+                {
+                    "name": "my_openshift_connection",
+                    "token": "<to-be-replaced>",
+                    "endpoint": "https://mock.api.base",
+                },
+                {
+                    "module": "promptflow.connections",
+                    "type": "openshift",
                 },
             ),
             (

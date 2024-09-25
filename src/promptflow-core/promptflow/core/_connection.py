@@ -368,6 +368,35 @@ class ServerlessConnection(_StrongTypeConnection):
         self.configs["api_base"] = value
 
 
+class OpenShiftConnection(_StrongTypeConnection):
+    """OpenShift connection.
+
+    :param token: The api token.
+    :type token: str
+    :param endpoint: The api endpoint.
+    :type endpoint: str
+    :param name: Connection name.
+    :type name: str
+    """
+
+    TYPE = ConnectionType.OPENSHIFT.value
+
+    def __init__(self, token: str, endpoint: str, **kwargs):
+        secrets = {"token": token}
+        configs = {"endpoint": endpoint}
+        super().__init__(secrets=secrets, configs=configs, **kwargs)
+
+    @property
+    def endpoint(self):
+        """Return the connection api endpoint."""
+        return self.configs.get("endpoint")
+
+    @endpoint.setter
+    def endpoint(self, value):
+        """Set the connection api endpoint."""
+        self.configs["endpoint"] = value
+
+
 class SerpConnection(_StrongTypeConnection):
     """Serp connection.
 

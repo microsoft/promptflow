@@ -239,6 +239,7 @@ class ConnectionType(str, Enum):
     WEAVIATE = "Weaviate"
     SERVERLESS = "Serverless"
     CUSTOM = "Custom"
+    OPENSHIFT = "OpenShift"
 
 
 class CustomStrongTypeConnectionConfigs:
