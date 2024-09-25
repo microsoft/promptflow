@@ -1,15 +1,23 @@
 # Release History
 
-## v1.16.0 (Upcoming)
-### Bugs fixed
-- [promptflow-core] Fix promptflow serving app logged inputs out with default logging level.
+## v1.15.0.1 (2024.09.23)
+
+### Bug Fixed
+
+- Fix command parameter detection before executing commands to avoid risky characters.
+
+## v1.15.0.post1 (2024.09.19)
+
+### Bug Fixed
+
+- Fix command parameter detection before executing commands to avoid risky characters.
 
 ## v1.15.0 (2024.08.15)
 
 ### Bugs fixed
 - [promptflow-azure] Fixed `Connection aborted` error for local to cloud run when registering the run to cloud.
 - [promptflow-core] Fixed openai error handler not functioning for `AsyncPrompty`.
-- [promptflow-devkit] Fixed trace view can't display boolean output.
+- [promptflow-devkit] Fixed trace view can't display boolean output (#3613)
 
 ## v1.14.0 (2024.07.25)
 ### Improvements

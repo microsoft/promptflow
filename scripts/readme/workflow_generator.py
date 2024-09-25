@@ -146,8 +146,6 @@ def no_readme_generation_filter(item, index, array) -> bool:
     try:
         if item.endswith("test.ipynb"):
             return False
-        if "examples/flows/integrations/" in item:
-            return False
         # read in notebook
         with open(item, "r", encoding="utf-8") as f:
             data = json.load(f)

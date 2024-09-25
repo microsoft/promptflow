@@ -41,7 +41,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.029'
+      - '0.026'
     status:
       code: 200
       message: OK

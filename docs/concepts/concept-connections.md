@@ -11,11 +11,11 @@ Prompt flow provides a variety of pre-built connections, including Azure OpenAI,
 
 | Connection type                                              | Built-in tools                  |
 | ------------------------------------------------------------ | ------------------------------- |
-| [Azure OpenAI](https://azure.microsoft.com/products/cognitive-services/openai-service) | LLM or Python                   |
+| [Azure OpenAI](https://azure.microsoft.com/en-us/products/cognitive-services/openai-service) | LLM or Python                   |
 | [OpenAI](https://openai.com/)                               | LLM or Python                   |
-| [Cognitive Search](https://azure.microsoft.com/products/search) | Vector DB Lookup or Python      |
+| [Cognitive Search](https://azure.microsoft.com/en-us/products/search) | Vector DB Lookup or Python      |
 | [Serp](https://serpapi.com/)                                 | Serp API or Python              |
-| [Serverless](https://learn.microsoft.com/azure/ai-studio/concepts/deployments-overview#deploy-models-as-serverless-apis)                                               | LLM or Python                   |
+| [Serverless](https://learn.microsoft.com/en-us/azure/ai-studio/concepts/deployments-overview#deploy-models-with-model-as-a-service-maas)                                               | LLM or Python                   |
 | Custom                                                       | Python                          |
 
 By leveraging connections in prompt flow, you can easily establish and manage connections to external APIs and data sources, facilitating efficient data exchange and interaction within their AI applications.

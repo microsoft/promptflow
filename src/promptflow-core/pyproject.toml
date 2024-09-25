@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-core"
-version = "1.16.0.dev0"
+version = "1.15.0.dev0"
 description = "Prompt flow core"
 include = [
   "promptflow/core/_serving/static/*",

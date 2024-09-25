@@ -1,7 +1,6 @@
 import inspect
 import os
 import pathlib
-from enum import Enum
 from typing import Any, List, Optional, Type
 
 import pytest
@@ -18,7 +17,7 @@ def data_file():
 def get_evaluators_from_module(namespace: Any, exceptions: Optional[List[str]] = None) -> List[Type]:
     evaluators = []
     for name, obj in inspect.getmembers(namespace):
-        if inspect.isclass(obj) and not issubclass(obj, Enum):
+        if inspect.isclass(obj):
             if exceptions and name in exceptions:
                 continue
             evaluators.append(obj)

@@ -83,7 +83,7 @@ class TestChatEvaluator:
         assert str(e.value) == "'citations' in context must be a list. Turn number: 2"
 
     def test_per_turn_results_aggregation(self, mock_model_config):
-        chat_eval = ChatEvaluator(model_config=mock_model_config)
+        chat_eval = ChatEvaluator(model_config=mock_model_config)._to_async()
 
         per_turn_results = [
             {

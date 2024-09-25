@@ -1,14 +1,5 @@
 # promptflow-core package
 
-## v1.16.0 (Upcoming)
-### Bugs fixed
-- Fix promptflow serving app logged inputs out with default logging level.
-
-## v1.15.0 (2024.08.15)
-
-### Bugs fixed
-- Fixed openai error handler not functioning for `AsyncPrompty`.
-
 ## v1.14.0 (2024.07.25)
 ### Improvements
 - Remove dependency on docutils package.

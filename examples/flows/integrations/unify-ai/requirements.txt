@@ -1,3 +1,0 @@
-promptflow[azure]
-python-dotenv
-unifyai
