@@ -143,6 +143,8 @@ class TokenCollector:
                     merged_tokens = {
                         key: self._span_id_to_tokens[parent_span_id].get(key, 0) + tokens.get(key, 0)
                         for key in set(self._span_id_to_tokens[parent_span_id]) | set(tokens)
+                        if isinstance(self._span_id_to_tokens[parent_span_id].get(key, 0), int)
+                        and isinstance(tokens.get(key, 0), int)
                     }
                     self._span_id_to_tokens[parent_span_id] = merged_tokens
                 else:
