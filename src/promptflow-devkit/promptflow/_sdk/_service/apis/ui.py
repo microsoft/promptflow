@@ -5,9 +5,11 @@ import base64
 import hashlib
 import json
 import os
+from io import BytesIO
 from pathlib import Path
 
 from flask import Response, current_app, make_response, send_from_directory
+from PIL import Image
 from ruamel.yaml import YAMLError
 from werkzeug.utils import safe_join
 
@@ -88,6 +90,20 @@ class MediaSave(Resource):
         flow, _ = resolve_flow_path(flow)
         base64_data = args.base64_data
         extension = args.extension
+
+        # Validate image extension
+        allowed_extensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp"]
+        if extension.lower() in allowed_extensions:
+            raise UserErrorException(f"Disallowed file extension: {extension}")
+
+        # Validate base64 image data
+        try:
+            image_data = base64.b64decode(base64_data)
+            image = Image.open(BytesIO(image_data))
+            image.verify()
+        except Exception as e:
+            raise UserErrorException(f"Invalid base64 image data: {str(e)}")
+
         safe_path = safe_join(str(flow), PROMPT_FLOW_DIR_NAME)
         if safe_path is None:
             message = f"The untrusted path {PROMPT_FLOW_DIR_NAME} relative to the base directory {flow} detected!"
