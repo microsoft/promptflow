@@ -1,6 +1,6 @@
 # Release History
 
-## v1.16.0 (Upcoming)
+## v1.16.0 (2024.09.30)
 ### Bugs fixed
 - [promptflow-core] Fix promptflow serving app logged inputs out with default logging level.
 
