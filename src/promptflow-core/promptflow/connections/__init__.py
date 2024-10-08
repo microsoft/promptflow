@@ -16,6 +16,7 @@ from promptflow.core._connection import (
     OpenAIConnection,
     SerpConnection,
     ServerlessConnection,
+    OpenShiftConnection,
     _Connection,
 )
 from promptflow.core._connection_provider._connection_provider import ConnectionProvider
@@ -41,6 +42,7 @@ __all__ = [
     "CustomConnection",
     "CustomStrongTypeConnection",
     "ServerlessConnection",
+    "OpenShiftConnection",
     "AzureAIServicesConnection",
     "ConnectionProvider",
 ]
