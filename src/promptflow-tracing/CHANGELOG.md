@@ -1,5 +1,7 @@
 # promptflow-tracing package
 
+## v1.17.0 (upcoming)
+
 ## v1.16.1 (2024.10.8)
 
 - Fix token count issue when the value is None.
