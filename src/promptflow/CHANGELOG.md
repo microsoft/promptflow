@@ -1,5 +1,9 @@
 # Release History
 
+## v1.16.1 (2024.10.08)
+### Bugs fixed
+- [promptflow-tracing] Fix token count issue when the value is None.
+
 ## v1.16.0 (2024.09.30)
 ### Bugs fixed
 - [promptflow-core] Fix promptflow serving app logged inputs out with default logging level.
