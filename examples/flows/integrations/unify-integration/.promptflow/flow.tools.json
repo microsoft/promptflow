@@ -1,0 +1,280 @@
+{
+  "package": {
+    "unify_llm_tool.tools.chat_tool.basic_chat": {
+      "function": "basic_chat",
+      "inputs": {
+        "connection": {
+          "custom_type": [
+            "UnifyConnection"
+          ],
+          "type": [
+            "CustomConnection"
+          ],
+          "default": "unify_connection"
+        },
+        "prompt": {
+          "type": [
+            "string"
+          ],
+          "default": "Hello."
+        },
+        "chat_history": {
+          "type": [
+            "list"
+          ],
+          "optional": true,
+          "default": []
+        }
+      },
+      "module": "unify_llm_tool.tools.chat_tool",
+      "name": "Unify Chat",
+      "description": "Tool for chatting with custom endpoints",
+      "type": "python",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAS1BMVEVHcEwAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCiJMrqTAAAAGXRSTlMAPjFUyAR65yreCkqh0h2Gl4C+cGC0qzVGwlRn4wAAAF1JREFUGNOtzzkSgCAQRFGWgZ5hEQUV739SE7SILTt8ya9W6rcFu67RTbDhqPCP9M7SDDfoASlp2ExMfkAhzlWEaRugseuD9gtxgCvwhm0+wxv1AkFapuwSrXFfT9yAMwLxXv2KqQAAAABJRU5ErkJggg==",
+      "package": "unify_integration",
+      "package_version": "0.0.14"
+    },
+    "unify_llm_tool.tools.single_sign_on_tool.single_sign_on": {
+      "function": "single_sign_on",
+      "inputs": {
+        "unify_api_key": {
+          "custom_type": [
+            "Secret"
+          ],
+          "type": [
+            "string"
+          ],
+          "default": "{{env: UNIFY_API_KEY}}"
+        },
+        "find_endpoint_by": {
+          "type": [
+            "string"
+          ],
+          "enum": [
+            "model",
+            "provider",
+            "custom"
+          ],
+          "enabled_by": "unify_api_key"
+        },
+        "model": {
+          "type": [
+            "string"
+          ],
+          "dynamic_list": {
+            "func_path": "unify_llm_tool.tools.single_sign_on_tool.list_models",
+            "func_kwargs": [
+              {
+                "name": "api_key",
+                "type": [
+                  "string"
+                ],
+                "optional": true,
+                "reference": "${inputs.unify_api_key}"
+              }
+            ]
+          },
+          "allow_manual_entry": false,
+          "is_multi_select": true,
+          "enabled_by": "find_endpoint_by",
+          "enabled_by_value": [
+            "model"
+          ]
+        },
+        "provider": {
+          "type": [
+            "string"
+          ],
+          "dynamic_list": {
+            "func_path": "unify_llm_tool.tools.single_sign_on_tool.list_providers",
+            "func_kwargs": [
+              {
+                "name": "api_key",
+                "type": [
+                  "string"
+                ],
+                "optional": true,
+                "reference": "${inputs.unify_api_key}"
+              }
+            ]
+          },
+          "allow_manual_entry": false,
+          "is_multi_select": true,
+          "enabled_by": "find_endpoints_by",
+          "enabled_by_value": [
+            "provider"
+          ]
+        },
+        "search_endpoint": {
+          "type": [
+            "string"
+          ],
+          "enum": [
+            "continue",
+            "back"
+          ],
+          "default": "back",
+          "enabled_by": "find_endpoint_by",
+          "enabled_by_value": [
+            "model",
+            "provider"
+          ]
+        },
+        "endpoint": {
+          "type": [
+            "string"
+          ],
+          "dynamic_list": {
+            "func_path": "unify_llm_tool.tools.single_sign_on_tool.list_endpoints",
+            "func_kwargs": [
+              {
+                "name": "model",
+                "type": [
+                  "string"
+                ],
+                "optional": true,
+                "reference": "${inputs.model}"
+              },
+              {
+                "name": "provider",
+                "type": [
+                  "string"
+                ],
+                "optional": true,
+                "reference": "${inputs.provider}"
+              },
+              {
+                "name": "api_key",
+                "type": [
+                  "string"
+                ],
+                "optional": true,
+                "reference": "${inputs.unify_api_key}"
+              },
+              {
+                "name": "find_endpoints_by",
+                "type": [
+                  "string"
+                ],
+                "optional": true,
+                "reference": "${inputs.find_endpoint_by}"
+              }
+            ]
+          },
+          "allow_manual_entry": false,
+          "is_multi_select": false,
+          "enabled_by": "search_endpoint",
+          "enabled_by_value": [
+            "continue"
+          ]
+        },
+        "custom": {
+          "type": [
+            "string"
+          ],
+          "enabled_by": "find_endpoint_by",
+          "enabled_by_value": [
+            "custom"
+          ]
+        }
+      },
+      "module": "unify_llm_tool.tools.single_sign_on_tool",
+      "name": "Unify SSO",
+      "description": "Tool for single sign on to multiple endpoints",
+      "type": "python",
+      "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAS1BMVEVHcEwAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCgAuCiJMrqTAAAAGXRSTlMAPjFUyAR65yreCkqh0h2Gl4C+cGC0qzVGwlRn4wAAAF1JREFUGNOtzzkSgCAQRFGWgZ5hEQUV739SE7SILTt8ya9W6rcFu67RTbDhqPCP9M7SDDfoASlp2ExMfkAhzlWEaRugseuD9gtxgCvwhm0+wxv1AkFapuwSrXFfT9yAMwLxXv2KqQAAAABJRU5ErkJggg==",
+      "package": "unify_integration",
+      "package_version": "0.0.14"
+    }
+  },
+  "code": {
+    "chat.jinja2": {
+      "type": "llm",
+      "inputs": {
+        "chat_history": {
+          "type": [
+            "string"
+          ]
+        },
+        "question": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "chat.jinja2"
+    },
+    "llm_node_atgq.jinja2": {
+      "type": "llm",
+      "inputs": {
+        "text": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "llm_node_atgq.jinja2"
+    },
+    "llm_node_atgq_variant_1.jinja2": {
+      "type": "llm",
+      "inputs": {
+        "text": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "llm_node_atgq_variant_1.jinja2"
+    },
+    "python_node_8e7e.py": {
+      "type": "python",
+      "inputs": {
+        "input1": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "python_node_8e7e.py",
+      "function": "my_python_tool"
+    },
+    "llm_node_ysjf.jinja2": {
+      "type": "llm",
+      "inputs": {
+        "text": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "llm_node_ysjf.jinja2"
+    },
+    "llm_node_bavo.jinja2": {
+      "type": "llm",
+      "inputs": {
+        "text": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "llm_node_bavo.jinja2"
+    },
+    "llm_node_6xs2.jinja2": {
+      "type": "llm",
+      "inputs": {
+        "chat_history": {
+          "type": [
+            "string"
+          ]
+        },
+        "question": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "llm_node_6xs2.jinja2"
+    }
+  }
+}
