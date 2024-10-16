@@ -15,6 +15,133 @@ You can check the runtime image version from the flow execution log:
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
 
+### 20241016.v1
+
+#### New features
+NA
+
+#### Bugs fixed
+- Upgrade langchain>=0.2.5 and langchain-community>=0.2.5,<0.3.0,!=0.2.14 to fix vulnerability
+
+### 20240919.v1
+
+#### New features
+NA
+
+#### Bugs fixed
+NA
+
+### 20240910.v1
+
+#### New features
+NA
+
+#### Bugs fixed
+NA
+
+### 20240829.v1
+
+#### New features
+NA
+
+#### Bugs fixed
+- add uvicorn dependency explicitly
+
+### 20240814.v1
+
+#### New features
+NA
+
+#### Bugs fixed
+- Fix non serializable search results
+
+### 20240731.v1
+
+#### New features
+- Add Reranker tool with Cohere accessibility to Prompt flow
+
+#### Bugs fixed
+- Fix run id duplicate check
+
+### 20240709.v1
+
+#### New features
+- cosmos db vector db support
+- Build and publish promptflow-parallel
+
+#### Bugs fixed
+- Add aad auth check
+- Fix metadata parser error
+
+### 20240619.v2
+
+#### New features
+NA
+
+#### Bugs fixed
+- Add @blob_error_handling_decorator for cancelling_run and get_run_status in async storage
+- Use dataplane api to list embedding deployments
+- Fix KeyError when get run meet UserAuthenticationValidationError.
+
+### 20240529.v1
+
+#### New features
+- Implement PostgreSQL
+- Implement BYO-Weaviate Index
+- Upgrade Werkzeug to 3.0.3.
+
+#### Bugs fixed
+- The destination of _download_fileshare_directory should be str
+- Passing DefaultAzureCredential into as_langchain_vectorstore
+
+### 20240515.v1
+
+#### New features
+- runtime support batch run prompty
+- Support init_kwargs for multi-container c# batch run
+
+#### Bugs fixed
+- Fix and avoid FlowExecutor in PythonApiExecutorProxy
+
+### 20240511.v1
+
+#### New features
+- Add support for more huggingface models
+
+#### Bugs fixed
+- _download_azure_file_share should return str
+- When ingress call gunicorn met timeout, we should not return 200.
+
+### 20240429.v8
+
+#### New features
+- Remove preview tag from Index Lookup
+- Support init_kwargs in c# batch run in cloud
+
+#### Bugs fixed
+- Pass init_kwargs to executor in multi container case
+- Fix error of span.attributes.flow_log_path in multi-container.
+- Add duplicated key in SystemLogContext to avoid breaking when LogContext does not have it
+- Add clarification to migration notebook and small fixes
+- [Lookup tool] Update list pinecone index endpoint
+- Handle case where flow_logs_folder is None
+
+### 20240424.v1
+
+#### New features
+- Support download working_dir from fileshare.  
+- Enable line log for batch run
+- Add prompt_tokens/completion_tokens to run properties
+- Support C# batch run in multi-container runtime
+- Implement ESIndex in common index lookup
+- Handle metadata processing better in Index Lookup
+- implement mongodb support
+
+#### Bugs fixed
+- Remove Promptflow-evals publish.
+- [Lookup tool] Add workspace name in get()
+- changes to utils.py were accidentally left out of previous PR.
+
 ### 20240411.v4
 
 #### New features
