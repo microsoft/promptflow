@@ -134,7 +134,7 @@ def convert_model_configuration_to_connection(model_configuration):
 def convert_prompt_template(template, inputs, api):
     prompt = preprocess_template_string(template)
 
-    if api == "completion":
+    if api in ["completion", "embedding"]:
         rendered_prompt = render_jinja_template_content(
             template_content=prompt, trim_blocks=True, keep_trailing_newline=True, **inputs
         )
@@ -152,6 +152,8 @@ def prepare_open_ai_request_params(model_config, template, connection):
 
     if model_config.api == "completion":
         params["prompt"] = template
+    elif model_config.api == "embedding":
+        params["input"] = template
     else:
         params["messages"] = template
 
@@ -196,6 +198,8 @@ def get_open_ai_client_by_connection(connection, is_async=False):
 def send_request_to_llm(client, api, parameters, timeout):
     if api == "completion":
         result = client.with_options(timeout=timeout).completions.create(**parameters)
+    elif api == "embedding":
+        result = client.with_options(timeout=timeout).embeddings.create(**parameters)
     else:
         result = client.with_options(timeout=timeout).chat.completions.create(**parameters)
     return result
@@ -275,6 +279,8 @@ def format_llm_response(response, api, is_first_choice, response_format=None, st
             return format_choice(content)
     if api == "completion":
         result = format_choice(response.choices[0].text)
+    if api == "embedding":
+        return response.data[0].embedding if response.data else []
     else:
         # When calling function/tool, function_call/tool_call response will be returned as a field in message,
         # so we need return message directly. Otherwise, we only return content.
