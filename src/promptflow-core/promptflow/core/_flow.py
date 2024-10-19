@@ -25,6 +25,7 @@ from promptflow.core._prompty_utils import (
     handle_openai_error,
     handle_openai_error_async,
     num_tokens_from_messages,
+    num_tokens_for_tools,
     prepare_open_ai_request_params,
     resolve_references,
     send_request_to_llm,
@@ -508,9 +509,13 @@ class Prompty(FlowBase):
             raise UserErrorException("Max_token needs to be integer.")
         elif response_max_token <= 1:
             raise UserErrorException(f"{response_max_token} is less than the minimum of max_tokens.")
+
         total_token = num_tokens_from_messages(prompt, self._model._model, working_dir=self.path.parent) + (
             response_max_token or 0
         )
+
+        if self._model.parameters.get("tools", None):
+            total_token += num_tokens_for_tools(self._model.parameters["tools"], self._model._model)
         return total_token
 
 
