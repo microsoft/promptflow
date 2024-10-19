@@ -377,6 +377,13 @@ class Prompty(FlowBase):
         config_content, prompt_template = result.groups()
         configs = load_yaml_string(config_content)
         return configs, prompt_template
+    
+    @property
+    def model(self) -> PromptyModelConfiguration:
+        """
+        Returns the parsed and resolved model configuration associated with this object.
+        """
+        return self._model
 
     def _resolve_inputs(self, input_values):
         """
