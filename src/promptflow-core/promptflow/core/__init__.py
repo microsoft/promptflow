@@ -13,6 +13,7 @@ from promptflow.core._model_configuration import (
     ModelConfiguration,
     OpenAIModelConfiguration,
 )
+import promptflow.core._errors as errors
 
 from ._version import __version__
 
@@ -30,5 +31,6 @@ __all__ = [
     "ModelConfiguration",
     "OpenAIModelConfiguration",
     "AzureOpenAIModelConfiguration",
+    "errors",
     "__version__",
 ]

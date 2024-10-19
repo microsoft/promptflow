@@ -234,6 +234,11 @@ class WrappedOpenAIError(UserErrorException):
     @property
     def message(self):
         return str(to_openai_error_message(self._ex))
+    
+    @property
+    def inner_exception(self):
+        """Get the inner exception."""
+        return self._ex
 
     @property
     def error_codes(self):
