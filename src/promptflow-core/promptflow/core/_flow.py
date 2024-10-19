@@ -485,11 +485,13 @@ class Prompty(FlowBase):
         # For chat mode, the message generated is list type. Convert to string type and return to user.
         return str(prompt)
 
-    def estimate_token_count(self, *args, **kwargs):
+    def estimate_token_count(self, model: Union[str, None] = None, *args, **kwargs):
         """Estimate the token count.
         LLM will reject the request when prompt token + response token is greater than the maximum number of
         tokens supported by the model. It is used to estimate the number of total tokens in this round of chat.
 
+        :param model: optional OpenAI model to use to determine tokenizer.
+            Use it when the Azure OpenaI deployment name is not a valid OpenAI model name.
         :param args: positional arguments are not supported.
         :param kwargs: prompty inputs with key word arguments.
         :return: Estimate total token count
@@ -510,12 +512,12 @@ class Prompty(FlowBase):
         elif response_max_token <= 1:
             raise UserErrorException(f"{response_max_token} is less than the minimum of max_tokens.")
 
-        total_token = num_tokens_from_messages(prompt, self._model._model, working_dir=self.path.parent) + (
+        total_token = num_tokens_from_messages(prompt, model or self._model._model, working_dir=self.path.parent) + (
             response_max_token or 0
         )
 
         if self._model.parameters.get("tools", None):
-            total_token += num_tokens_for_tools(self._model.parameters["tools"], self._model._model)
+            total_token += num_tokens_for_tools(self._model.parameters["tools"], model or self._model._model)
         return total_token
 
 
