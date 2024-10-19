@@ -12,6 +12,7 @@ from promptflow.core._model_configuration import (
     AzureOpenAIModelConfiguration,
     ModelConfiguration,
     OpenAIModelConfiguration,
+    PromptyModelConfiguration
 )
 
 from ._version import __version__
@@ -29,6 +30,7 @@ __all__ = [
     "AsyncPrompty",
     "ModelConfiguration",
     "OpenAIModelConfiguration",
+    "PromptyModelConfiguration",
     "AzureOpenAIModelConfiguration",
     "__version__",
 ]
