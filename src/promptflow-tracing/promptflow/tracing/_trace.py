@@ -141,7 +141,8 @@ class TokenCollector:
             with self._lock:
                 if parent_span_id in self._span_id_to_tokens:
                     merged_tokens = {
-                        key: self._span_id_to_tokens[parent_span_id].get(key, 0) + tokens.get(key, 0)
+                        # When token count is None for some reason, we should default to 0.
+                        key: (self._span_id_to_tokens[parent_span_id].get(key, 0) or 0) + (tokens.get(key, 0) or 0)
                         for key in set(self._span_id_to_tokens[parent_span_id]) | set(tokens)
                     }
                     self._span_id_to_tokens[parent_span_id] = merged_tokens
