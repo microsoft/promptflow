@@ -1,5 +1,7 @@
 # promptflow-devkit package
 
+## v1.16.0 (2024.09.30)
+
 ## v1.15.0 (2024.08.15)
 
 ### Bugs fixed
