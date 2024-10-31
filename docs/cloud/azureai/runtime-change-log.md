@@ -15,7 +15,7 @@ You can check the runtime image version from the flow execution log:
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
 
-### 20241016.v1
+### 20241021.v1
 
 #### New features
 NA
@@ -23,7 +23,7 @@ NA
 #### Bugs fixed
 - Upgrade langchain>=0.2.5 and langchain-community>=0.2.5,<0.3.0,!=0.2.14 to fix vulnerability
 
-### 20240919.v1
+### 20240918.v2
 
 #### New features
 NA
@@ -31,7 +31,7 @@ NA
 #### Bugs fixed
 NA
 
-### 20240910.v1
+### 20240909.v2
 
 #### New features
 NA
@@ -45,7 +45,7 @@ NA
 NA
 
 #### Bugs fixed
-- add uvicorn dependency explicitly
+- Add uvicorn dependency explicitly
 
 ### 20240814.v1
 
@@ -62,6 +62,7 @@ NA
 
 #### Bugs fixed
 - Fix run id duplicate check
+- Upgrade langchain version in promptflow-vectordb-sdk
 
 ### 20240709.v1
 
@@ -86,19 +87,20 @@ NA
 ### 20240529.v1
 
 #### New features
-- Implement PostgreSQL
-- Implement BYO-Weaviate Index
-- Upgrade Werkzeug to 3.0.3.
+- [BYOI] Implement PostgreSQL
+- [Lookup tool] Implement BYO-Weaviate Index
 
 #### Bugs fixed
 - The destination of _download_fileshare_directory should be str
 - Passing DefaultAzureCredential into as_langchain_vectorstore
+- Upgrade Werkzeug to 3.0.3.
 
 ### 20240515.v1
 
 #### New features
 - runtime support batch run prompty
 - Support init_kwargs for multi-container c# batch run
+- Upgrade gunicorn and mlflow
 
 #### Bugs fixed
 - Fix and avoid FlowExecutor in PythonApiExecutorProxy
@@ -111,6 +113,8 @@ NA
 #### Bugs fixed
 - _download_azure_file_share should return str
 - When ingress call gunicorn met timeout, we should not return 200.
+- Pin azureml-rag version to 0.2.30.2
+- Upgrade golang.org/x/net from 0.17.0 to 0.23.0 to fix vulnerability
 
 ### 20240429.v8
 
