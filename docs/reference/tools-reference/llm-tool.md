@@ -1,7 +1,7 @@
-# LLM 
+# LLM
 
 ## Introduction
-Prompt flow LLM tool enables you to leverage widely used large language models like [OpenAI](https://platform.openai.com/), [Azure OpenAI (AOAI)](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/overview), and models in [Azure AI Studio model catalog](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/model-catalog) for natural language processing. 
+Prompt flow LLM tool enables you to leverage widely used large language models like [OpenAI](https://platform.openai.com/), [Azure OpenAI (AOAI)](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/overview), and models in [Azure AI Studio model catalog](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/model-catalog) for natural language processing.
 > [!NOTE]
 > The previous version of the LLM tool is now being deprecated. Please upgrade to latest [promptflow-tools](https://pypi.org/project/promptflow-tools/) package to consume new llm tools.
 
@@ -25,7 +25,7 @@ Create OpenAI resources, Azure OpenAI resources or MaaS deployment with the LLM 
 
 - **MaaS deployment**
 
-    Create MaaS deployment for models in Azure AI Studio model catalog with [instruction](https://learn.microsoft.com/azure/ai-studio/concepts/deployments-overview#deploy-models-as-serverless-apis)
+    Create MaaS deployment for models in Azure AI Studio model catalog with [instruction](https://learn.microsoft.com/azure/ai-studio/concepts/deployments-overview)
 
     You can create serverless connection to use this MaaS deployment.
 
