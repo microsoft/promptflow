@@ -257,7 +257,8 @@
     "Gleu",
     "GLEU",
     "fmeasure",
-    "punkt"
+    "punkt",
+    "BYOI"
   ],
   "flagWords": [
     "Prompt Flow"
