@@ -1,0 +1,5 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenShiftConnection.schema.json
+name: my_openshift_connection
+type: openshift
+token: "<to-be-replaced>"
+endpoint: "https://mock.api.base"

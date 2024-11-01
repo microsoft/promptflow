@@ -93,5 +93,13 @@
       "api_base": "serverless-embedding-endpoint-url"
     },
     "module": "promptflow.connections"
+  },
+  "openshift_connection": {
+    "type": "OpenShiftConnection",
+    "value": {
+      "endpoint": "openshift-endpoint",
+      "token": "openshift-token"
+    },
+    "module": "promtflow.connections"
   }
 }

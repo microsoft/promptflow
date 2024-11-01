@@ -17,6 +17,7 @@ from ._connection import (
     FormRecognizerConnection,
     CustomStrongTypeConnection,
     ServerlessConnection,
+    OpenShiftConnection,
 )
 from ._run import Run
 from ._validation import ValidationResult
@@ -35,6 +36,7 @@ __all__ = [
     "WeaviateConnection",
     "FormRecognizerConnection",
     "ServerlessConnection",
+    "OpenShiftConnection",
     # endregion
     # region Run
     "Run",
