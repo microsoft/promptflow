@@ -131,7 +131,20 @@ class TokenCollector:
             tokens = calculator.get_openai_metrics_for_completion_api(inputs, output)
         with self._lock:
             self._span_id_to_tokens[span_id] = tokens
-
+    
+    def merge_tokens(self, child_tokens, parent_tokens):
+        merged_tokens = {}
+        for key in set(child_tokens) | set(parent_tokens):
+            child_value = child_tokens.get(key, 0) or 0
+            parent_value = parent_tokens.get(key, 0) or 0
+            if isinstance(child_value, dict) and isinstance(parent_value, dict):
+                merged_tokens[key] = self.merge_tokens(child_tokens[key], parent_tokens[key])
+            elif isinstance(child_value, dict) or isinstance(parent_value, dict):
+                merged_tokens[key] = parent_value if isinstance(child_value, dict) else child_value
+            else:
+                merged_tokens[key] = child_value + parent_value
+        return merged_tokens
+                
     def collect_openai_tokens_for_parent_span(self, span):
         tokens = self.try_get_openai_tokens(span.get_span_context().span_id)
         if tokens:
@@ -140,12 +153,7 @@ class TokenCollector:
             parent_span_id = span.parent.span_id
             with self._lock:
                 if parent_span_id in self._span_id_to_tokens:
-                    merged_tokens = {
-                        # When token count is None for some reason, we should default to 0.
-                        key: (self._span_id_to_tokens[parent_span_id].get(key, 0) or 0) + (tokens.get(key, 0) or 0)
-                        for key in set(self._span_id_to_tokens[parent_span_id]) | set(tokens)
-                    }
-                    self._span_id_to_tokens[parent_span_id] = merged_tokens
+                    self._span_id_to_tokens[parent_span_id] = self.merge_tokens(tokens, self._span_id_to_tokens[parent_span_id])
                 else:
                     self._span_id_to_tokens[parent_span_id] = tokens
 
