@@ -1,4 +1,4 @@
-FROM python:3.9-slim-bullseye AS base
+FROM python:3.12-slim-bookworm AS base
 
 RUN set -x
 
