@@ -160,16 +160,13 @@ pf run show-details --name <run-name>
 
 :::{tab-item} SDK
 :sync: SDK
-Show run details with `PFClient`
+Show run details with `show_run_details`
 ```python
-from promptflow.client import PFClient
-from tabulate import tabulate
+from promptflow._cli._pf._run import show_run_details
 
-# Get a pf client to manage runs
-pf = PFClient()
-# Get and print the run-details
-run_details = pf.runs.get_details(name="<run-name>")
-print(tabulate(details.head(max_results), headers="keys", tablefmt="grid"))
+# Print the run-details
+show_run_details(run_name, max_results=100, all_results=True)
+
 ```
 :::
 
