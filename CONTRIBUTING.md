@@ -85,7 +85,7 @@ We use and recommend the following workflow:
      "issue-123" or "githubhandle-issue".
 4. Make and commit your changes to your branch.
 5. Add new tests corresponding to your change, if applicable.
-6. Run the relevant scripts in [the section below](https://github.com/microsoft/promptflow/blob/main/CONTRIBUTING.md#dev-scripts) to ensure that your build is clean and all tests are passing.
+6. Run the relevant scripts in [the section below](https://github.com/microsoft/promptflow/blob/main/CONTRIBUTING.md#development-scripts) to ensure that your build is clean and all tests are passing.
 7. Create a PR against the repository's **main** branch.
    - State in the description what issue or improvement your change is addressing.
    - Link the PR to the issue in step 1.
