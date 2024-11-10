@@ -1,7 +1,7 @@
 # Test your prompt variants for chat with math
 This is a prompt tuning case with 3 prompt variants for math question answering.
 
-By utilizing this flow, in conjunction with the `evaluation/eval-chat-math` flow, you can quickly grasp the advantages of prompt tuning and experimentation with prompt flow. Here we provide a [video](https://www.youtube.com/watch?v=gcIe6nk2gA4) and a [tutorial]((../../../tutorials/flow-fine-tuning-evaluation/promptflow-quality-improvement.md)) for you to get started.
+By utilizing this flow, in conjunction with the `evaluation/eval-chat-math` flow, you can quickly grasp the advantages of prompt tuning and experimentation with prompt flow. Here we provide a [video](https://www.youtube.com/watch?v=gcIe6nk2gA4) and a [tutorial](../../../tutorials/flow-fine-tuning-evaluation/promptflow-quality-improvement.md) for you to get started.
 
 Tools used in this flow：
 - `llm` tool
