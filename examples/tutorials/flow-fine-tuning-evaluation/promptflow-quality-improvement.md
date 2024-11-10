@@ -32,9 +32,10 @@ It's time to put theory into practice! Execute our sample and witness the effect
 
 ### Prerequisite
 
-Before moving ahead, ensure you've completed the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) guidance. Ensure you have the following setup:
+Before moving ahead, ensure you've completed the [Quick Start](../../../README.md#quick-start-) guidance. Ensure you have the following setup:
+
 * [Install prompt flow](../../../README.md#installation)
-* [Setup a connection for your API key](../../../README.md#quick-start-⚡)
+* [Setup a connection for your API key](../../../README.md#quick-start-)
 
 > ℹ️ For testing quickly, this tutorial uses CLI command.
 
@@ -54,7 +55,7 @@ Next, let's get started with customizing the flow for a specific task.
 
 ### Customize the flow for a specific task
 
-In the `promptflow/examples/flows/chat` folder, you can see a `chat-basic` folder, which represents a chat template flow as same as the one you created in the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) guidance. We'll use this flow as a starting point to build a math problem solver.
+In the `promptflow/examples/flows/chat` folder, you can see a `chat-basic` folder, which represents a chat template flow as same as the one you created in the [Quick Start](../../../README.md#quick-start-) guidance. We'll use this flow as a starting point to build a math problem solver.
 
 ```bash
 cd ../../flows/chat/chat-basic/
