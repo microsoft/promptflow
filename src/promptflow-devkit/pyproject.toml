@@ -56,13 +56,13 @@ filelock = ">=3.4.0,<4.0.0"  # control plane sdk requirements, to lock for multi
 marshmallow = ">=3.5,<4.0.0"
 gitpython = ">=3.1.24,<4.0.0"  # used git info to generate flow id
 strictyaml = ">=1.5.0,<2.0.0"  # used to identify exact location of validation error
-waitress = ">=2.1.2,<3.0.0"  # used to serve local service
+waitress = ">=3.0.0,<4.0.0"  # used to serve local service
 azure-monitor-opentelemetry-exporter = ">=1.0.0b21,<2.0.0"
 pyarrow = { version = ">=14.0.1,<15.0.0", optional = true }  # used to read parquet file with pandas.read_parquet
 pillow = ">=10.1.0,<11.0.0"  # used to generate icon data URI for package tool
 opentelemetry-exporter-otlp-proto-http = ">=1.22.0,<2.0.0"  # trace support
 flask-restx = ">=1.2.0,<2.0.0"  # PFS Swagger
-flask-cors = ">=4.0.0,<5.0.0"  # handle PFS CORS
+flask-cors = ">=5.0.0,<6.0.0"  # handle PFS CORS
 pyinstaller = { version = ">=5.13.2", optional = true}  # used to package the CLI tool
 streamlit = { version = ">=1.26.0", optional = true}
 streamlit-quill = { version = "<0.1.0", optional = true}
