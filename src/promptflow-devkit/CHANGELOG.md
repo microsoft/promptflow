@@ -29,7 +29,7 @@
 ## v1.11.0 (2024.05.17)
 
 ### Features Added
-- Upload local run details to cloud when trace destination is configured to cloud. See [here](https://microsoft.github.io/promptflow/cloud/azureai/tracing/run_tracking.html) for more details.
+- Upload local run details to cloud when trace destination is configured to cloud.
 
 ### Improvements
 - Interactive browser credential is excluded by default when using Azure AI connections, user could set `PF_NO_INTERACTIVE_LOGIN=False` to enable it.
