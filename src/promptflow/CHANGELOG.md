@@ -46,7 +46,7 @@
 
 ### Features Added
 
-- [promptflow-devkit]: Upload local run details to cloud when trace destination is configured to cloud. See [here](https://microsoft.github.io/promptflow/cloud/azureai/tracing/run_tracking.html) for more details.
+- [promptflow-devkit]: Upload local run details to cloud when trace destination is configured to cloud.
 - [promptflow-core]: Support modifying the promptflow logger format through environment variables, reach [here](https://microsoft.github.io/promptflow/how-to-guides/faq.html#set-logging-format) for more details.
 
 ### Improvements
