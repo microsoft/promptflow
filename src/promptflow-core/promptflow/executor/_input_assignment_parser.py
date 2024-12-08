@@ -70,7 +70,7 @@ property_pattern = r"(\w+)|(\['.*?'\])|(\[\d+\])"
 def parse_node_property(node_name, node_val, property=""):
     val = node_val
     if "." in property and property in val.keys():
-        val= val[property]
+        val = val[property]
     property_parts = re.findall(property_pattern, property)
     try:
         for part in property_parts:
