@@ -1,6 +1,6 @@
 # promptflow-tracing package
 
-## v1.16.1 (2024.12.14)
+## v1.16.3 (2024.12.14)
 
 - Fix token count issue when the value is None or it is a Dict
 
