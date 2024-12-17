@@ -140,11 +140,18 @@ class TokenCollector:
             parent_span_id = span.parent.span_id
             with self._lock:
                 if parent_span_id in self._span_id_to_tokens:
-                    merged_tokens = {
-                        # When token count is None for some reason, we should default to 0.
-                        key: (self._span_id_to_tokens[parent_span_id].get(key, 0) or 0) + (tokens.get(key, 0) or 0)
-                        for key in set(self._span_id_to_tokens[parent_span_id]) | set(tokens)
-                    }
+                    merged_tokens = {}
+                    for key in set(self._span_id_to_tokens[parent_span_id]) | set(tokens):
+                        parent_value = self._span_id_to_tokens[parent_span_id].get(key, 0)
+                        token_value = tokens.get(key, 0)
+                        if isinstance(parent_value, dict) and isinstance(token_value, dict):
+                            # Handle the case where both values are dictionaries
+                            merged_tokens[key] = {**parent_value, **token_value}
+                        elif isinstance(parent_value, dict) or isinstance(token_value, dict):
+                            # Handle the case where one value is a dictionary and the other is not
+                            merged_tokens[key] = parent_value if isinstance(parent_value, dict) else token_value
+                        else:
+                            merged_tokens[key] = int(parent_value or 0) + int(token_value or 0)
                     self._span_id_to_tokens[parent_span_id] = merged_tokens
                 else:
                     self._span_id_to_tokens[parent_span_id] = tokens
