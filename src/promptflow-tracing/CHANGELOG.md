@@ -1,5 +1,9 @@
 # promptflow-tracing package
 
+## v1.16.4 (2024.19.14)
+- Fix Open Telemetry warnings
+- Fix token count issue
+
 ## v1.16.3 (2024.12.14)
 
 - Fix token count issue when the value is None or it is a Dict
