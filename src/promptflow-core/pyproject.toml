@@ -24,7 +24,6 @@ classifiers = [
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -40,7 +39,7 @@ packages = [
 "Bug Reports" = "https://github.com/microsoft/promptflow/issues"
 
 [tool.poetry.dependencies]
-python = "<4.0,>=3.8"
+python = "<4.0,>=3.9"
 promptflow-tracing = ">=1.0.0,<2.0.0"
 "ruamel.yaml" = ">=0.17.10,<1.0.0"  # used to generate connection templates with preserved comments
 docstring_parser = "*"  # used to parse doc string for Assistant user tools
