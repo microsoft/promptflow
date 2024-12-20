@@ -37,7 +37,7 @@ def get_score_router(logger):
             logger.info("Start loading request data...")
             data = load_request_data(app.flow, raw_data, logger)
         # set context data
-        _request_ctx_var.get()["data"] = data
+        _request_ctx_var.get()["input_data"] = data
         _request_ctx_var.get()["flow_id"] = app.flow.id or app.flow.name
         run_id = _request_ctx_var.get().get("req_id", None)
         # TODO: refine this once we can directly set the input/output log level to DEBUG in flow_invoker.
