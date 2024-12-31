@@ -218,7 +218,7 @@ def verify_python_version():
     print_status('Verifying Python version.')
     v = sys.version_info
     if v < (3, 8):
-        raise CLIInstallError('The promptflow does not support Python versions less than 3.8.')
+        raise CLIInstallError('The promptflow does not support Python versions less than 3.9.')
     if 'conda' in sys.version:
         raise CLIInstallError("This script does not support the Python Anaconda environment. "
                               "Create an Anaconda virtual environment and install with 'pip'")

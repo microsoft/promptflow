@@ -5,13 +5,13 @@
 Select either Conda or Poetry to set up your development environment.
 
 1. Conda environment setup
-  - First create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. Please specify python version as 3.8/3.9/3.10/3.11.
+  - First create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. Please specify python version as 3.9/3.10/3.11.
     `conda create -n <env_name> python=3.9`.
   - Activate the env you created.
   - In root folder, run `python scripts/dev-setup/main.py` to install the packages and dependencies; if you are using Visual Studio Code, it is recommended to add `--vscode` (which is `python scripts/dev-setup/main.py --vscode`) to enable VS Code to recognize the packages.
 
 2. Poetry environment setup
-  - Install [poetry](https://python-poetry.org/docs/). Please specify python version as 3.8/3.9/3.10/3.11.
+  - Install [poetry](https://python-poetry.org/docs/). Please specify python version as 3.9/3.10/3.11.
   - Each folder under [src](../../src/) (except the promptflow folder) is a separate package, so you need to install the dependencies for each package.
     - `poetry install -C promptflow-core -E <extra> --with dev,test`
     - `poetry install -C promptflow-devkit -E <extra> --with dev,test`

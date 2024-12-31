@@ -1,7 +1,7 @@
 [MASTER]
 py-version=3.9
 ignore-patterns=test_*,conftest,setup,.*_utils\.py
-ignore-paths=src\promptflow-evals\tests,src\promptflow-evals\samples,promptflow\evals\evaluate\_telemetry,promptflow\evals\evaluate\_batch_run_client\code_client.py,promptflow\evals\evaluate\_batch_run_client\proxy_client.py
+ignore-paths=src\promptflow-evals\tests,src\promptflow-evals\samples,promptflow\evals\evaluate\_telemetry,promptflow\evals\evaluate\_batch_run_client\code_client.py,promptflow\evals\evaluate\_batch_run_client\proxy_client.py,src/promptflow-devkit/tests/sdk_pfs_test/utils.py
 reports=no
 
 [MESSAGES CONTROL]

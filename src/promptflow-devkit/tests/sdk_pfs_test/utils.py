@@ -3,11 +3,11 @@
 # ---------------------------------------------------------
 import contextlib
 import getpass
+import importlib.metadata
 import json
 from typing import Any, Dict, List, Optional
 from unittest import mock
 
-import werkzeug
 from flask.testing import FlaskClient
 
 from promptflow._sdk._service.utils.utils import encrypt_flow_path
@@ -34,7 +34,7 @@ def check_activity_end_telemetry(
             "first_call": True,
             "activity_type": "PublicApi",
             "completion_status": "Success",
-            "user_agent": [f"Werkzeug/{werkzeug.__version__}", f"local_pfs/{VERSION}"],
+            "user_agent": [f"Werkzeug/{importlib.metadata.version('werkzeug')}", f"local_pfs/{VERSION}"],
         }
         for i, expected_activity in enumerate(expected_activities):
             temp = default_expected_call.copy()

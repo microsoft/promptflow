@@ -152,13 +152,13 @@ class TestAPIBasedExecutorProxy:
             (
                 httpx.Response(400, json={"detail": "test"}),
                 {
-                    "message": 'Unexpected error when executing a line, status code: 400, error: {"detail": "test"}',
+                    "message": 'Unexpected error when executing a line, status code: 400, error: {"detail":"test"}',
                     "messageFormat": (
                         "Unexpected error when executing a line, " "status code: {status_code}, error: {error}"
                     ),
                     "messageParameters": {
                         "status_code": "400",
-                        "error": '{"detail": "test"}',
+                        "error": '{"detail":"test"}',
                     },
                     "referenceCode": "Unknown",
                     "code": "SystemError",
