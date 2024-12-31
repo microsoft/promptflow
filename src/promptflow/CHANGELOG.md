@@ -1,5 +1,10 @@
 # Release History
 
+## v1.17.0 (2025.1.8)
+
+### Improvements
+- Dropped Python 3.8 support for security reasons.
+
 ## v1.16.2 (2024.11.25)
 ### Improvements
 - Address security vulnerabilities.
