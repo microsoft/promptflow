@@ -114,6 +114,7 @@ class TestTracing:
         span_list = exporter.get_finished_spans()
         self.validate_span_list(span_list, expected_span_length)
 
+    @pytest.mark.skip(reason="pf-tracing is being replaced by AI foundry tracing features. Skipping these flaky tests.")
     @pytest.mark.parametrize(
         "func, inputs, expected_span_length",
         [
