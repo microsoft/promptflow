@@ -5,8 +5,7 @@
 ### Improvements
 - Dropped Python 3.8 support for security reasons.
 
-## v1.16.3 (2024.12.14)
-
+### Bugs fixed
 - Fix token count issue when the value is None or it is a Dict
 
 ## v1.16.1 (2024.10.8)
