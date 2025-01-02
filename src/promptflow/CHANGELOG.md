@@ -5,6 +5,9 @@
 ### Improvements
 - Dropped Python 3.8 support for security reasons.
 
+### Bugs fixed
+- [promptflow-tracing] Fix token count issue when the value is None or it is a Dict.
+
 ## v1.16.2 (2024.11.25)
 ### Improvements
 - Address security vulnerabilities.
