@@ -7,7 +7,7 @@ from pathlib import Path
 
 from marshmallow import fields
 from marshmallow.exceptions import FieldInstanceResolutionError, ValidationError
-from marshmallow.fields import _T, Field, Nested
+from marshmallow.fields import Field, Nested
 from marshmallow.utils import RAISE, resolve_field_instance
 
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
@@ -17,6 +17,7 @@ from promptflow._utils.logger_utils import LoggerFactory
 # pylint: disable=unused-argument,no-self-use,protected-access
 
 module_logger = LoggerFactory.get_logger(__name__)
+T = typing.TypeVar("T")
 
 
 class StringTransformedEnum(Field):
@@ -215,7 +216,7 @@ class NestedField(Nested):
 class DumpableIntegerField(fields.Integer):
     """An int field that cannot serialize other type of values to int if self.strict."""
 
-    def _serialize(self, value, attr, obj, **kwargs) -> typing.Optional[typing.Union[str, _T]]:
+    def _serialize(self, value, attr, obj, **kwargs) -> typing.Optional[typing.Union[str, T]]:
         if self.strict and not isinstance(value, int):
             # this implementation can serialize bool to bool
             raise self.make_error("invalid", input=value)
@@ -241,7 +242,7 @@ class DumpableFloatField(fields.Float):
             raise self.make_error("invalid", input=value)
         return super()._validated(value)
 
-    def _serialize(self, value, attr, obj, **kwargs) -> typing.Optional[typing.Union[str, _T]]:
+    def _serialize(self, value, attr, obj, **kwargs) -> typing.Optional[typing.Union[str, T]]:
         return super()._serialize(self._validated(value), attr, obj, **kwargs)
 
 
