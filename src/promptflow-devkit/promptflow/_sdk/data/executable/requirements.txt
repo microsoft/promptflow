@@ -22,7 +22,7 @@ cryptography
 colorama
 tabulate
 filelock
-marshmallow==3.22.0
+marshmallow
 gitpython
 strictyaml
 waitress
