@@ -21,6 +21,9 @@ from promptflow._utils.context_utils import _change_working_dir
 
 load_dotenv()
 
+# Enable tracing in tests
+os.environ["PF_DISABLE_TRACING"] = "false"
+
 
 @pytest.fixture(scope="session", autouse=True)
 def modify_work_directory():
