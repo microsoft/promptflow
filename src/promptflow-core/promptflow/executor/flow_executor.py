@@ -882,7 +882,7 @@ class FlowExecutor:
 
     @staticmethod
     def _tracing_disabled():
-        return os.environ.get("PF_DISABLE_TRACING", "false").lower() == "true"
+        return os.environ.get("PF_DISABLE_TRACING", "true").lower() == "true"
 
     @contextlib.contextmanager
     def _start_flow_span(self, inputs: Mapping[str, Any]):
