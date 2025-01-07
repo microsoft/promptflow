@@ -26,9 +26,6 @@ CONNECTION_FILE = PROMPTFLOW_ROOT / "connections.json"
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "../promptflow-recording/recordings/local").resolve()
 COUNTER_FILE = (Path(__file__) / "../count.json").resolve()
 
-# Enable tracing in tests
-os.environ["PF_DISABLE_TRACING"] = "false"
-
 
 def get_flow_folder(folder_name, root: str = FLOW_ROOT) -> Path:
     flow_folder_path = Path(root) / folder_name
