@@ -22,6 +22,9 @@ from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 
+# Enable tracing in tests
+os.environ["PF_DISABLE_TRACING"] = "false"
+
 try:
     from promptflow.recording.local import recording_array_reset
     from promptflow.recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
