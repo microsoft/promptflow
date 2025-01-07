@@ -57,7 +57,7 @@ promptflow-tools = {path = "../promptflow-tools"}
 promptflow-recording =  {path = "../promptflow-recording", develop = true}
 
 [tool.poetry.group.ci.dependencies]
-azure-ai-ml = ">=1.14.0,<1.19.0"  # 1.19.0 will break azure replay test
+azure-ai-ml = ">=1.14.0,<2.0.0"  # 1.19.0 will break azure replay test however stick with newer ver for marshmallow bug
 import-linter = "*"
 promptflow-core = {path = "../promptflow-core", extras = ["azureml-serving"]}
 promptflow-devkit = {path = "../promptflow-devkit"}

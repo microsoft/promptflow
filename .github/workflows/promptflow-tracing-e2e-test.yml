@@ -11,6 +11,7 @@ on:
 
 env:
   IS_IN_CI_PIPELINE: "true"
+  PF_DISABLE_TRACING: "false"
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 
