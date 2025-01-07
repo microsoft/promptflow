@@ -1,6 +1,5 @@
 import json
 import multiprocessing
-import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -33,9 +32,6 @@ except ImportError:
 from .utils import _run_in_subprocess
 
 RECORDINGS_TEST_CONFIGS_ROOT = Path(__file__).parent.parent.parent / "promptflow-recording/recordings/local"
-
-# Enable tracing in tests
-os.environ["PF_DISABLE_TRACING"] = "false"
 
 
 def pytest_configure():

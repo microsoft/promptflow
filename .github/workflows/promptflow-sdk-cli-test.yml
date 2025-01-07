@@ -23,6 +23,7 @@ permissions:
   contents: read
 env:
   IS_IN_CI_PIPELINE: "true"
+  PF_DISABLE_TRACING: "false"
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
   TRACING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
   CORE_DIRECTORY: ${{ github.workspace }}/src/promptflow-core
