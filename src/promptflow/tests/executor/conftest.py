@@ -41,7 +41,7 @@ except ImportError:
 
 
 # Enable tracing for testing
-os.environ["PF_DISABLE_TRACING"] = False
+os.environ["PF_DISABLE_TRACING"] = "false"
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 
