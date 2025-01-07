@@ -31,7 +31,6 @@ permissions:
   id-token: write
   contents: read
 env:
-  PF_DISABLE_TRACING: "false"
   packageSetupType: promptflow_with_extra
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
