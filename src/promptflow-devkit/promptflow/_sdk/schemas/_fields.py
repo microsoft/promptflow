@@ -26,6 +26,7 @@ class StringTransformedEnum(Field):
         self.casing_transform = kwargs.pop("casing_transform", lambda x: x.lower())
         self.pass_original = kwargs.pop("pass_original", False)
         super().__init__(**kwargs)
+
         if isinstance(self.allowed_values, str):
             self.allowed_values = [self.allowed_values]
         self.allowed_values = [self.casing_transform(x) for x in self.allowed_values]
