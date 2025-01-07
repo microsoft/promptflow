@@ -11,7 +11,6 @@ def get_cli_activity_name(cmd):
 
 @pytest.mark.unittest
 class TestAzureCliTimeConsume:
-    @pytest.mark.skip(reason="To investigate: Got InternalSDKError")
     def test_pfazure_run_create(self, activity_name="pfazure.run.create"):
         assert (
             get_cli_activity_name(

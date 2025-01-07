@@ -27,6 +27,7 @@ on:
       - .github/workflows/promptflow-executor-e2e-test.yml
   workflow_dispatch:
 env:
+  PF_DISABLE_TRACING: "false"
   packageSetupType: promptflow_with_extra
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow

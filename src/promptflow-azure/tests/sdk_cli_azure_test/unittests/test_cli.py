@@ -42,7 +42,6 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
 @pytest.mark.usefixtures("mock_get_azure_pf_client")
 @pytest.mark.unittest
 class TestAzureCli:
-    @pytest.mark.skip(reason="To investigate: ModuleNotFoundError")
     def test_pf_azure_version(self, capfd):
         import re
 
