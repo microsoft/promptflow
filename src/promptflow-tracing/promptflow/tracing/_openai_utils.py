@@ -197,7 +197,8 @@ class OpenAIMetricsCalculator:
 
     def merge_metrics_dict(self, metrics: dict, metrics_to_merge: dict):
         for k, v in metrics_to_merge.items():
-            metrics[k] = metrics.get(k, 0) + v
+            if isinstance(v, int):
+                metrics[k] = metrics.get(k, 0) + v
 
     def _log_warning(self, msg):
         if self._logger:
