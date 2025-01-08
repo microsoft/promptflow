@@ -49,7 +49,7 @@ pip install promptflow promptflow-tools
 
 ## Quick Start ⚡
 
-**Create a chatbot with prompt flow**
+### Create a chatbot with prompt flow
 
 Run the command to initiate a prompt flow from a chat template, it creates folder named `my_chatbot` and generates required files within it:
 
@@ -57,7 +57,7 @@ Run the command to initiate a prompt flow from a chat template, it creates folde
 pf flow init --flow ./my_chatbot --type chat
 ```
 
-**Setup a connection for your API key**
+### Setup a connection for your API key
 
 For OpenAI key, establish a connection by running the command, using the `openai.yaml` file in the `my_chatbot` folder, which stores your OpenAI key (override keys and name with --set to avoid yaml file changes):
 
@@ -71,7 +71,7 @@ For Azure OpenAI key, establish the connection by running the command, using the
 pf connection create --file ./my_chatbot/azure_openai.yaml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
 ```
 
-**Chat with your flow**
+### Chat with your flow
 
 In the `my_chatbot` folder, there's a `flow.dag.yaml` file that outlines the flow, including inputs/outputs, nodes,  connection, and the LLM model, etc
 
@@ -83,7 +83,7 @@ Interact with your chatbot by running: (press `Ctrl + C` to end the session)
 pf flow test --flow ./my_chatbot --interactive
 ```
 
-**Core value: ensuring "High Quality” from prototype to production**
+### Core value: ensuring "High Quality” from prototype to production
 
 Explore our [**15-minute tutorial**](examples/tutorials/flow-fine-tuning-evaluation/promptflow-quality-improvement.md) that guides you through prompt tuning ➡ batch testing ➡ evaluation, all designed to ensure high quality ready for production.
 
