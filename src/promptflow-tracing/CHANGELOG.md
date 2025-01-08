@@ -1,5 +1,10 @@
 # promptflow-tracing package
 
+## v1.17.1 (2025.1.13)
+
+### Others
+- Promptflow Tracing feature is now disabled by default, with `PF_DISABLE_TRACING` set to true by default.
+
 ## v1.17.0 (2025.1.8)
 
 ### Improvements
