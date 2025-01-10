@@ -36,7 +36,7 @@ jobs:
       matrix:
         # replay tests can cover more combinations
         os: [ubuntu-latest]
-        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+        pythonVersion: ['3.9', '3.10', '3.11']
 
     runs-on: ${{ matrix.os }}
     steps:

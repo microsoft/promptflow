@@ -80,7 +80,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
-        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+        pythonVersion: ['3.9', '3.10', '3.11']
     defaults:
       run:
         shell: bash
@@ -136,7 +136,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
-        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+        pythonVersion: ['3.9', '3.10', '3.11']
     # snok/install-poetry need this to support Windows
     defaults:
       run:
@@ -193,7 +193,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
-        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+        pythonVersion: ['3.9', '3.10', '3.11']
     # snok/install-poetry need this to support Windows
     defaults:
       run:
@@ -243,7 +243,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
-        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+        pythonVersion: ['3.9', '3.10', '3.11']
     # snok/install-poetry need this to support Windows
     defaults:
       run:
@@ -301,7 +301,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
-        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+        pythonVersion: ['3.9', '3.10', '3.11']
     env:
       PROMPT_FLOW_TEST_MODE: "live"
       WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-azure
@@ -368,7 +368,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13]
-        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+        pythonVersion: ['3.9', '3.10', '3.11']
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout

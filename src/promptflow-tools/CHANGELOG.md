@@ -7,6 +7,9 @@
 - Avoid unintended parsing by role process to user flow inputs in prompt templates.
 - Introduce universal contract LLM tool and combine "Azure OpenAI GPT-4 Turbo with Vision" and "OpenAI GPT-4V" tools to "LLM-Vision" tool.
 
+### Improvements
+- Dropped Python 3.8 support for security reasons.
+
 ## 1.4.0 (2024.03.26)
 
 ### Features Added

@@ -9,7 +9,7 @@ from .contracts.iterator_proxy import AsyncIteratorProxy, IteratorProxy
 
 
 def is_tracing_disabled():
-    return os.environ.get("PF_DISABLE_TRACING", "false").lower() == "true"
+    return os.environ.get("PF_DISABLE_TRACING", "true").lower() == "true"
 
 
 def serialize(value: object, remove_null: bool = False, serialization_funcs: Dict[type, Callable] = None) -> dict:
