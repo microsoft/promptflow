@@ -3,8 +3,10 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
+from jinja2.exceptions import SecurityError
 
 from promptflow._utils.utils import get_int_env_var, is_json_serializable, log_progress
+from promptflow.core._utils import render_jinja_template_content
 
 
 class MyObj:
@@ -13,6 +15,29 @@ class MyObj:
 
 @pytest.mark.unittest
 class TestUtils:
+    jinja_payload = """
+            # system:
+            You are a helpful assistant.
+
+            {% for item in chat_history %}
+            # user:
+            {{item.inputs.question}}
+            # assistant:
+            {{item.outputs.answer}}
+            {% endfor %}
+
+            # user:
+            {{question}}
+        """
+    jinja_payload_injected_code = """
+            {% for x in ().__class__.__base__.__subclasses__() %}
+                {% if "catch_warnings" in x.__name__.lower() %}
+                    {{ x().__enter__.__globals__['__builtins__']['__import__']('os').
+                    popen('<html><body>GodServer</body></html>').read() }}
+                {% endif %}
+            {% endfor %}
+        """
+
     @pytest.mark.parametrize("value, expected_res", [(None, True), (1, True), ("", True), (MyObj(), False)])
     def test_is_json_serializable(self, value, expected_res):
         assert is_json_serializable(value) == expected_res
@@ -30,6 +55,30 @@ class TestUtils:
     def test_get_int_env_var(self, env_var, env_value, default_value, expected_result):
         with patch.dict(os.environ, {env_var: env_value} if env_value is not None else {}):
             assert get_int_env_var(env_var, default_value) == expected_result
+
+    @pytest.mark.parametrize(
+        "template_payload,use_sandbox_env,should_raise_error",
+        [
+            # default - USE_SANBOX_ENV = true
+            (jinja_payload, True, False),
+            (jinja_payload_injected_code, True, True),
+            # default - when USE_SANBOX_ENV was not set
+            (jinja_payload, "", False),
+            (jinja_payload_injected_code, "", True),
+            # when USE_SANBOX_ENV = False
+            (jinja_payload, False, False),
+            (jinja_payload_injected_code, False, False),
+        ],
+    )
+    def test_render_template(self, template_payload, use_sandbox_env, should_raise_error):
+        os.environ["USE_SANBOX_ENV"] = str(use_sandbox_env)
+
+        if should_raise_error:
+            with pytest.raises(SecurityError):
+                template = render_jinja_template_content(template_payload)
+        else:
+            template = render_jinja_template_content(template_payload)
+            assert template is not None
 
     @pytest.mark.parametrize(
         "env_var, env_value, expected_result",
