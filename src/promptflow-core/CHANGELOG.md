@@ -1,5 +1,10 @@
 # promptflow-core package
 
+## v1.17.2 (2025.1.17)
+### Bugs fixed
+- Jinja template is going to use Sandbox Environment at rendering. With `USE_SANBOX_ENV` set to false, sanbox environment is not used.
+- Pre-commit pycln hook is upgraded to 2.5.0 version.
+
 ## v1.17.1 (2025.1.13)
 
 ### Others
