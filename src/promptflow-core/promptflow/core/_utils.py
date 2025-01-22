@@ -24,7 +24,7 @@ logger = LoggerFactory.get_logger(name=__name__)
 
 
 def render_jinja_template_content(template_content, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
-    use_sandbox_env = os.environ.get("USE_SANBOX_ENV", "true")
+    use_sandbox_env = os.environ.get("PF_USE_SANDBOX_FOR_JINJA", "true")
     if use_sandbox_env.lower() == "false":
         template = Template(template_content, trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
         return template.render(**kwargs)

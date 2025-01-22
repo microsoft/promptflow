@@ -59,19 +59,19 @@ class TestUtils:
     @pytest.mark.parametrize(
         "template_payload,use_sandbox_env,should_raise_error",
         [
-            # default - USE_SANBOX_ENV = true
+            # default - PF_USE_SANDBOX_FOR_JINJA = true
             (jinja_payload, True, False),
             (jinja_payload_injected_code, True, True),
-            # default - when USE_SANBOX_ENV was not set
+            # default - when PF_USE_SANDBOX_FOR_JINJA was not set
             (jinja_payload, "", False),
             (jinja_payload_injected_code, "", True),
-            # when USE_SANBOX_ENV = False
+            # when PF_USE_SANDBOX_FOR_JINJA = False
             (jinja_payload, False, False),
             (jinja_payload_injected_code, False, False),
         ],
     )
     def test_render_template(self, template_payload, use_sandbox_env, should_raise_error):
-        os.environ["USE_SANBOX_ENV"] = str(use_sandbox_env)
+        os.environ["PF_USE_SANDBOX_FOR_JINJA"] = str(use_sandbox_env)
 
         if should_raise_error:
             with pytest.raises(SecurityError):
