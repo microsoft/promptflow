@@ -1,3 +1,4 @@
 promptflow
 promptflow-tools
 azure-ai-evaluation
+openai
