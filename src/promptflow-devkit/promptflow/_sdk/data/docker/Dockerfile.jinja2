@@ -23,7 +23,7 @@ COPY ./flow/{{env.conda_file}} /flow/{{env.conda_file}}
 
 RUN conda create -f flow/{{env.conda_file}} -q && \
 {% else %}
-RUN conda create -n {{env.conda_env_name}} python=3.9.16 pip=23.0.1 -q -y && \
+RUN conda create -n {{env.conda_env_name}} python={{env.python_version}} pip=23.0.1 -q -y && \
 {% endif %}
     conda run -n {{env.conda_env_name}} \
 {% if env.python_requirements_txt %}
