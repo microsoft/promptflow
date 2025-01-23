@@ -1,5 +1,14 @@
 # Release History
 
+## v1.17.2 (2025.1.23)
+
+### Improvements
+- Pre-commit pycln hook is upgraded to 2.5.0 version.
+- Pillow library dependency range updated to <11.1.0
+
+### Bugs fixed
+- Jinja template is going to use Sandbox Environment at rendering. With `PF_USE_SANDBOX_FOR_JINJA` set to false, sanbox environment is not used.
+
 ## v1.17.1 (2025.1.13)
 
 ### Bugs Fixed
