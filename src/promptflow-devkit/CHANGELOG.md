@@ -4,7 +4,7 @@
 
 ### Improvements
 - Pillow library dependency range updated to <11.1.0
--
+
   ## v1.17.1 (2025.1.13)
 
 ### Bugs Fixed

@@ -1,5 +1,10 @@
 # Release History
 
+## v1.17.2 (2025.1.23)
+
+### Improvements
+- Pre-commit pycln hook is upgraded to 2.5.0 version.
+
 ## v1.17.1 (2025.1.13)
 
 ### Bugs Fixed
