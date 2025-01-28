@@ -15,10 +15,7 @@ PACKAGE_FOLDER_PATH = "promptflow"
 
 def parse_requirements(file_name: str) -> List[str]:
     with open(file_name) as f:
-        return [
-            require.strip() for require in f
-            if require.strip() and not require.startswith('#')
-        ]
+        return [require.strip() for require in f if require.strip() and not require.startswith("#")]
 
 
 # Version extraction inspired from 'requests'
@@ -49,7 +46,6 @@ setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
@@ -57,8 +53,8 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires="<4.0,>=3.8",
-    install_requires=parse_requirements('requirements.txt'),
+    python_requires="<4.0,>=3.9",
+    install_requires=parse_requirements("requirements.txt"),
     packages=find_namespace_packages(include=[f"{PACKAGE_FOLDER_PATH}.*"]),
     include_package_data=True,
     project_urls={

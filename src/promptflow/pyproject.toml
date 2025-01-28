@@ -12,7 +12,7 @@
 # ]
 
 # [tool.poetry.dependencies]
-# python = "<4.0,>=3.8"
+# python = "<4.0,>=3.9"
 # promptflow-tracing = { path = "../promptflow-tracing", develop = true }
 # promptflow-core = { path = "../promptflow-core", develop = true }
 # promptflow-devkit = { path = "../promptflow-devkit", develop = true }

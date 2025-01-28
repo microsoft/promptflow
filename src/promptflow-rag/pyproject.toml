@@ -16,7 +16,6 @@ classifiers = [
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -32,7 +31,7 @@ packages = [
 
 # dependencies
 [tool.poetry.dependencies]
-python = "<4.0,>=3.8"
+python = "<4.0,>=3.9"
 azureml-rag = ">= 0.2.30.2"
 azure-search-documents = ">=11.4.0"
 langchain = ">=0.0.236,<=0.1.15"

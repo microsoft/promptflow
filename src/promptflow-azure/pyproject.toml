@@ -22,7 +22,6 @@ classifiers = [
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -38,7 +37,7 @@ packages = [
 "Bug Reports" = "https://github.com/microsoft/promptflow/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.9.7 || >3.9.7,<3.13"
+python = ">=3.9,<3.9.7 || >3.9.7,<3.13"
 azure-core = ">=1.26.4,<2.0.0"
 azure-storage-blob = {extras = ["aio"], version = ">=12.17.0,<13.0.0"}  # add [aio] for async run download feature
 azure-identity = ">=1.12.0,<2.0.0"
@@ -58,7 +57,7 @@ promptflow-tools = {path = "../promptflow-tools"}
 promptflow-recording =  {path = "../promptflow-recording", develop = true}
 
 [tool.poetry.group.ci.dependencies]
-azure-ai-ml = ">=1.14.0,<1.19.0"  # 1.19.0 will break azure replay test
+azure-ai-ml = ">=1.14.0,<2.0.0"  # 1.19.0 will break azure replay test however stick with newer ver for marshmallow bug
 import-linter = "*"
 promptflow-core = {path = "../promptflow-core", extras = ["azureml-serving"]}
 promptflow-devkit = {path = "../promptflow-devkit"}

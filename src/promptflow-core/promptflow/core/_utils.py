@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
 
 from jinja2 import Template
+from jinja2.sandbox import SandboxedEnvironment
 
 from promptflow._constants import AZURE_WORKSPACE_REGEX_FORMAT
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
@@ -23,8 +24,14 @@ logger = LoggerFactory.get_logger(name=__name__)
 
 
 def render_jinja_template_content(template_content, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
-    template = Template(template_content, trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
-    return template.render(**kwargs)
+    use_sandbox_env = os.environ.get("PF_USE_SANDBOX_FOR_JINJA", "true")
+    if use_sandbox_env.lower() == "false":
+        template = Template(template_content, trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
+        return template.render(**kwargs)
+    else:
+        sandbox_env = SandboxedEnvironment(trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
+        sanitized_template = sandbox_env.from_string(template_content)
+        return sanitized_template.render(**kwargs)
 
 
 def init_executable(*, flow_data: dict = None, flow_path: Path = None, working_dir: Path = None):

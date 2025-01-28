@@ -26,33 +26,28 @@ jobs:
     - name: Install all packages
       run: |
         touch src/promptflow-tracing/promptflow/__init__.py
-        poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-tracing
+        poetry install -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-tracing --with dev
         touch src/promptflow-core/promptflow/__init__.py
-        poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-core
+        poetry install -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-core --with dev
         touch src/promptflow-devkit/promptflow/__init__.py
-        poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit
+        poetry install -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit --with dev
         touch src/promptflow-azure/promptflow/__init__.py
-        poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
+        poetry install -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure --with dev
         touch src/promptflow-evals/promptflow/__init__.py
-        poetry install --with dev -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals
+        poetry install -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals --with dev
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: import lint
       run: |
         echo "=== Running import lint in promptflow-tracing ==="
-        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-tracing
-        poetry run lint-imports
+        poetry -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-tracing run lint-imports
         echo "=== Running import lint in promptflow-core ==="
-        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-core
-        poetry run lint-imports
+        poetry -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-core run lint-imports
         echo "=== Running import lint in promptflow-devkit ==="
-        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit
-        poetry run lint-imports
+        poetry -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit run lint-imports
         echo "=== Running import lint in promptflow-azure ==="
-        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
-        poetry run lint-imports
+        poetry -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure run lint-imports
         echo "=== Running import lint in promptflow-evals ==="
-        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals
-        poetry run lint-imports
+        poetry -C ${{ env.WORKING_DIRECTORY }}/src/promptflow-evals run lint-imports
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: import lint testing private imports from global
       working-directory: ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure

@@ -25,7 +25,6 @@ classifiers = [
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -41,7 +40,7 @@ packages = [
 "Bug Reports" = "https://github.com/microsoft/promptflow/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.9.7 || >3.9.7,<3.13"
+python = ">=3.9,<3.9.7 || >3.9.7,<3.13"
 promptflow-core = "<2.0.0"
 httpx = ">=0.25.1"  # used to send http requests asynchronously
 sqlalchemy = ">=1.4.48,<3.0.0"  # sqlite requirements
@@ -59,7 +58,7 @@ strictyaml = ">=1.5.0,<2.0.0"  # used to identify exact location of validation e
 waitress = ">=3.0.0,<4.0.0"  # used to serve local service
 azure-monitor-opentelemetry-exporter = ">=1.0.0b21,<2.0.0"
 pyarrow = { version = ">=14.0.1,<15.0.0", optional = true }  # used to read parquet file with pandas.read_parquet
-pillow = ">=10.1.0,<11.0.0"  # used to generate icon data URI for package tool
+pillow = ">=10.1.0,<11.1.0"  # used to generate icon data URI for package tool
 opentelemetry-exporter-otlp-proto-http = ">=1.22.0,<2.0.0"  # trace support
 flask-restx = ">=1.2.0,<2.0.0"  # PFS Swagger
 flask-cors = ">=5.0.0,<6.0.0"  # handle PFS CORS

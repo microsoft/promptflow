@@ -9,7 +9,7 @@ This guide outlines the Promptflow SDK and CLI installation process.
 ## Create a virtual environment (optional)
 When installing prompt flow locally, we recommend using a virtual environment for the installation. This ensures
 that the dependencies for prompt flow are isolated from the rest of your system. Please ensure you have a working 
-python environment (python>=3.8,<4.0), a new virtual environment is preferred.
+python environment (python>=3.9,<4.0), a new virtual environment is preferred.
 
 ::::{tab-set}
 :::{tab-item} venv

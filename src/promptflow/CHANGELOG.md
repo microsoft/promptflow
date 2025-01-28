@@ -1,5 +1,30 @@
 # Release History
 
+## v1.17.2 (2025.1.23)
+
+### Improvements
+- Pre-commit pycln hook is upgraded to 2.5.0 version.
+- Pillow library dependency range updated to <11.1.0
+
+### Bugs fixed
+- Jinja template is going to use Sandbox Environment at rendering. With `PF_USE_SANDBOX_FOR_JINJA` set to false, sanbox environment is not used.
+
+## v1.17.1 (2025.1.13)
+
+### Bugs Fixed
+- Marshmallow 3.24 was recently released, removing the `_T` import, which caused a breaking change in Promptflow. We've eliminated the dependency on `_T` to resolve this issue.
+
+### Others
+- Promptflow Tracing feature is now disabled by default, with `PF_DISABLE_TRACING` set to true by default.
+
+## v1.17.0 (2025.1.8)
+
+### Improvements
+- Dropped Python 3.8 support for security reasons.
+
+### Bugs fixed
+- [promptflow-tracing] Fix token count issue when the value is None or it is a Dict.
+
 ## v1.16.2 (2024.11.25)
 ### Improvements
 - Address security vulnerabilities.
