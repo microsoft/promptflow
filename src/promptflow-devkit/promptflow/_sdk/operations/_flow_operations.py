@@ -414,6 +414,8 @@ class FlowOperations(TelemetryMixin):
                 conda_obj = load_yaml(conda_file)
                 if "name" in conda_obj:
                     env_obj["conda_env_name"] = conda_obj["name"]
+        # Set deployed python version to the current python version
+        env_obj["python_version"] = platform.python_version()
 
         return env_obj
 

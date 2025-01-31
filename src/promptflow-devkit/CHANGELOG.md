@@ -1,5 +1,9 @@
 # promptflow-devkit package
 
+### Improvements
+- Python version in the conda environment in the deployed docker image is parsed from the environment that calls the build command.
+
+
 ## v1.17.2 (2025.1.23)
 
 ### Improvements
