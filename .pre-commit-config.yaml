@@ -30,7 +30,7 @@ repos:
       - id: cspell
         args: ['--config', '.cspell.json', "--no-must-find-files"]
     - repo: https://github.com/hadialqattan/pycln
-      rev: v2.1.2 # Possible releases: https://github.com/hadialqattan/pycln/tags
+      rev: v2.5.0 # Possible releases: https://github.com/hadialqattan/pycln/tags
       hooks:
           - id: pycln
             name: "Clean unused python imports"

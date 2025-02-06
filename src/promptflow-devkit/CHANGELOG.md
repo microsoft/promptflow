@@ -1,6 +1,11 @@
 # promptflow-devkit package
 
-## v1.17.1 (2025.1.13)
+## v1.17.2 (2025.1.23)
+
+### Improvements
+- Pillow library dependency range updated to <11.1.0
+
+  ## v1.17.1 (2025.1.13)
 
 ### Bugs Fixed
 - Marshmallow 3.24 was recently released, removing the `_T` import, which caused a breaking change in Promptflow. We've eliminated the dependency on `_T` to resolve this issue.
