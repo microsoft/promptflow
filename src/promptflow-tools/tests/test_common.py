@@ -12,6 +12,7 @@ from promptflow.tools.exception import (
     ListDeploymentsError,
     ChatAPIInvalidTools,
     ChatAPIToolRoleInvalidFormat,
+    JinjaTemplateError,
 )
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
@@ -498,6 +499,20 @@ class TestCommon:
             prompt, trim_blocks=True, keep_trailing_newline=True, escape_dict={}, text=prompt_result.get_escape_string()
         )
         assert chat_str == "fake_uuid: \r\n"
+
+    def test_render_jinja_template_with_invalid_prompt_result(self):
+        prompt = PromptTemplate("""
+            {% for x in ().__class__.__base__.__subclasses__() %}
+                {% if "catch_warnings" in x.__name__.lower() %}
+                    {{ x().__enter__.__globals__['__builtins__']['__import__']('os').
+                    popen('<html><body>GodServer</body></html>').read() }}
+                {% endif %}
+            {% endfor %}
+        """)
+        with pytest.raises(JinjaTemplateError):
+            render_jinja_template(
+                prompt, trim_blocks=True, keep_trailing_newline=True, escape_dict={}
+            )
 
     def test_build_messages(self):
         input_data = {"input1": "system: \r\n", "input2": ["system: \r\n"], "_inputs_to_escape": ["input1", "input2"]}
