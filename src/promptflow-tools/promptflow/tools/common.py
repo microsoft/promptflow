@@ -8,6 +8,7 @@ from typing import List, Mapping
 import uuid
 
 from jinja2 import Template
+from jinja2.sandbox import SandboxedEnvironment
 from openai import APIConnectionError, APIStatusError, APITimeoutError, BadRequestError, OpenAIError, RateLimitError
 
 from promptflow._cli._utils import get_workspace_triad_from_local
@@ -632,9 +633,16 @@ def to_bool(value) -> bool:
     return str(value).lower() == "true"
 
 
-def render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, escape_dict={}, **kwargs):
+def render_jinja_template(template_content, trim_blocks=True, keep_trailing_newline=True, escape_dict={}, **kwargs):
     try:
-        return Template(prompt, trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline).render(**kwargs)
+        use_sandbox_env = os.environ.get("PF_USE_SANDBOX_FOR_JINJA", "true")
+        if use_sandbox_env.lower() == "false":
+            template = Template(template_content, trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
+            return template.render(**kwargs)
+        else:
+            sandbox_env = SandboxedEnvironment(trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
+            sanitized_template = sandbox_env.from_string(template_content)
+            return sanitized_template.render(**kwargs)
     except Exception as e:
         # For exceptions raised by jinja2 module, mark UserError
         exception_message = str(e)
