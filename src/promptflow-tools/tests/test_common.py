@@ -12,7 +12,7 @@ from promptflow.tools.exception import (
     ListDeploymentsError,
     ChatAPIInvalidTools,
     ChatAPIToolRoleInvalidFormat,
-    JinjaTemplateError
+    JinjaTemplateError,
 )
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
