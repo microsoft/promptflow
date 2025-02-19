@@ -510,7 +510,7 @@ class TestCommon:
             {% endfor %}
         """)
         with pytest.raises(JinjaTemplateError):
-            chat_str = render_jinja_template(
+            render_jinja_template(
                 prompt, trim_blocks=True, keep_trailing_newline=True, escape_dict={}
             )
 
