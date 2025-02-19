@@ -1,5 +1,10 @@
 # Release History
 
+## 1.6.0 (2025.02.19)
+
+### Bug fixed
+- Fix for jinja2 template rendering.
+
 ## 1.5.0 (2025.01.29)
 
 ### Features Added
