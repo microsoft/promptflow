@@ -15,6 +15,66 @@ You can check the runtime image version from the flow execution log:
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
 
+### 20250220.v2
+
+#### New features
+- Update promptflow-tools to 1.16.0
+
+#### Bugs fixed
+- Pin marshmallow to ensure compatibility with older versions of promptflow for customer use.
+
+### 20250131.v2
+Promptflow version 1.17.1 or higher is required due to a known issue with marshmallow.
+#### New features
+- Update promptflow-tools to 1.5.0
+- Update promptflow to 1.17.2
+
+#### Bugs fixed
+NA
+
+### 20250109.v2
+
+#### New features
+- Update promptflow to 1.17.0
+- PromptFlow-vectordb package update : To support langchain 0.3.x
+
+#### Bugs fixed
+- Update golang crypto, net to fix vulnerabilities
+- Pin aiohttp in runtime image to fix vulnerability
+
+### 20241214.v1
+Do not use this version due to known issues and bugs.
+#### New features
+NA
+
+#### Bugs fixed
+- Update langchain-community>=0.3.0 to fix vulnerability
+- Update mlflow>=2.16.0 to fix vulnerability
+
+### 20241126.v3
+
+#### New features
+- Upgrade promptflow version to 1.16.2
+
+#### Bugs fixed
+NA
+
+### 20241114.v2
+
+#### New features
+NA
+
+#### Bugs fixed
+- Update langchain-community>=0.2.19 to fix vulnerability
+
+### 20241031.v1
+
+#### New features
+- Upgrade promptflow version to 1.16.1
+
+#### Bugs fixed
+NA
+
 ### 20241021.v1
 
 #### New features
