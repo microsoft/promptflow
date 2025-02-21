@@ -18,7 +18,7 @@ Default runtime image is continuously updated, and here we record the new featur
 ### 20250220.v2
 
 #### New features
-- Update promptflow-tools to 1.16.0
+- Update promptflow-tools to 1.6.0
 
 #### Bugs fixed
 - Pin marshmallow to ensure compatibility with older versions of promptflow for customer use.
