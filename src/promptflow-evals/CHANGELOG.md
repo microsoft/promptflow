@@ -1,6 +1,7 @@
 # Release History
 
 ## v0.3.4 (Unreleased)
+
 ### Other Changes
 - Updating Readme.
 
