@@ -9,6 +9,10 @@ Evaluators are custom or prebuilt promptflow flows that are designed to measure 
 ## Usage
 Users can create evaluator runs on the local machine as shown in the example below:
 
+## ChangeLog
+
+Reach the full change log [here](https://microsoft.github.io/promptflow/reference/changelog/promptflow-evals.html).
+
 ```python
 import os
 from pprint import pprint
