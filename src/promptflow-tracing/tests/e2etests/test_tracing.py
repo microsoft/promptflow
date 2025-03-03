@@ -480,3 +480,204 @@ class TestTracing:
             )
         else:
             return span.attributes.get("function", "") in LLM_FUNCTION_NAMES
+
+
+@pytest.mark.parametrize(
+    "func, inputs, expected_span_length",
+    [
+        (openai_chat_async, {"prompt": "Hello", "stream": True}, 2),
+        (openai_completion_async, {"prompt": "Hello", "stream": True}, 2),
+    ],
+)
+def test_traced_async_iterator_with_fastapi(dev_connections, func, inputs, expected_span_length):
+    execute_function_in_subprocess(
+        assert_traced_async_iterator_with_fastapi, dev_connections, func, inputs, expected_span_length
+    )
+
+
+def assert_traced_async_iterator_with_fastapi(dev_connections, func, inputs, expected_span_length):
+    inject_openai_api()
+    exporter = prepare_memory_exporter()
+
+    inputs = add_azure_connection_to_inputs(inputs, dev_connections)
+    result = run_func(func, inputs)
+    assert isinstance(result, str)
+    span_list = exporter.get_finished_spans()
+    validate_span_list(span_list, expected_span_length)
+    validate_openai_tokens(span_list, inputs.get("stream", False))
+
+
+def add_azure_connection_to_inputs(inputs, dev_connections):
+    conn_name = "azure_open_ai_connection"
+    if conn_name not in dev_connections:
+        raise ValueError(f"Connection '{conn_name}' not found in dev connections.")
+    conn_dict = {
+        "api_key": dev_connections[conn_name]["value"]["api_key"],
+        "azure_endpoint": dev_connections[conn_name]["value"]["api_base"],
+        "api_version": dev_connections[conn_name]["value"]["api_version"],
+    }
+    inputs["connection"] = conn_dict
+    return inputs
+
+
+def run_func(func, inputs):
+    if asyncio.iscoroutinefunction(func):
+        return asyncio.run(func(**inputs))
+    else:
+        return func(**inputs)
+
+
+def validate_span_list(span_list, expected_span_length):
+    assert (
+        len(span_list) == expected_span_length
+    ), f"Expected {expected_span_length} spans, but got {len(span_list)}."
+    root_spans = [span for span in span_list if span.parent is None]
+    names = ",".join([span.name for span in span_list])
+    msg = f"Expected exactly one root span but got {len(root_spans)}: {names}."
+    assert len(root_spans) == 1, msg
+    root_span = root_spans[0]
+    for span in span_list:
+        assert span.status.status_code == StatusCode.OK, "Expected status code to be OK."
+        assert isinstance(span.name, str), "Expected span name to be a string."
+        assert (
+            span.attributes[FRAMEWORK_ATTRIBUTE] == EXPECTED_FRAMEWORK
+        ), f"Expected framework attribute to be '{EXPECTED_FRAMEWORK}'."
+        if span != root_span:  # Non-root spans should have a parent
+            assert FUNCTION_ATTRIBUTE in span.attributes, "Expected non-root spans to have a function attribute."
+
+        validate_span_type(span)
+        validate_span_events(span)
+
+
+def validate_span_type(span):
+    if span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
+        expected_span_type = TraceType.LLM
+    elif span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
+        expected_span_type = TraceType.EMBEDDING
+    else:
+        expected_span_type = TraceType.FUNCTION
+    assert span.attributes["span_type"] == expected_span_type
+
+
+def validate_span_events(span):
+    events = load_builtin_events(span)
+    assert FUNCTION_INPUTS_EVENT in events, f"Expected '{FUNCTION_INPUTS_EVENT}' in events"
+    assert FUNCTION_OUTPUT_EVENT in events, f"Expected '{FUNCTION_OUTPUT_EVENT}' in events"
+
+    if span.attributes[SPAN_TYPE_ATTRIBUTE] == TraceType.LLM:
+        validate_llm_event(events)
+    elif span.attributes[SPAN_TYPE_ATTRIBUTE] == TraceType.EMBEDDING:
+        validate_embedding_event(events)
+
+    if PROMPT_TEMPLATE_EVENT in events:
+        validate_prompt_template_event(events)
+
+
+def validate_llm_event(span_events):
+    assert LLM_GENERATED_MESSAGE_EVENT in span_events, f"Expected '{LLM_GENERATED_MESSAGE_EVENT}' in span events"
+
+
+def validate_embedding_event(span_events):
+    assert EMBEDDING_EVENT in span_events, f"Expected '{EMBEDDING_EVENT}' in span events"
+    embeddings = json.dumps(span_events[EMBEDDING_EVENT])
+    assert EMBEDDING_VECTOR in embeddings, f"Expected '{EMBEDDING_VECTOR}' in embeddings"
+    assert EMBEDDING_TEXT in embeddings, f"Expected '{EMBEDDING_TEXT}' in embeddings"
+
+    assert INPUT in span_events[FUNCTION_INPUTS_EVENT], f"Expected '{INPUT}' in function inputs"
+    embeddings_input = span_events[FUNCTION_INPUTS_EVENT].get(INPUT)
+
+    if isinstance(embeddings_input, list):
+        # If the input is a token array, which is list of int, the attribute should contains
+        # the length of the token array '<len(token_array) dimensional token>'.
+        assert (
+            DIMENSIONAL_TOKEN in embeddings
+        ), f"Expected '{DIMENSIONAL_TOKEN}' in embeddings for token array input"
+    else:
+        # If the input is a string, the attribute should contains the original input string.
+        assert embeddings_input in embeddings, f"Expected input string '{embeddings_input}' in embeddings"
+
+
+def validate_prompt_template_event(span_events):
+    assert PROMPT_TEMPLATE_EVENT in span_events, f"Expected '{PROMPT_TEMPLATE_EVENT}' in span events"
+    assert (
+        PROMPT_TEMPLATE in span_events[PROMPT_TEMPLATE_EVENT]
+    ), f"Expected '{PROMPT_TEMPLATE}' in {PROMPT_TEMPLATE_EVENT}"
+    assert (
+        PROMPT_VARIABLES in span_events[PROMPT_TEMPLATE_EVENT]
+    ), f"Expected '{PROMPT_VARIABLES}' in {PROMPT_TEMPLATE_EVENT}"
+
+
+def load_builtin_events(span):
+    events_dict = {}
+    for event in span.events:
+        if event.name in events_dict:
+            raise ValueError(f"Duplicate event {event.name} found in span {span.name}")
+        if event.name in BUILTIN_EVENT_NAMES:
+            try:
+                payload = json.loads(event.attributes["payload"])
+                events_dict[event.name] = payload
+            except json.JSONDecodeError:
+                raise ValueError(
+                    f"Failed to parse payload for event {event.name}. Payload: {event.attributes['payload']}"
+                )
+    return events_dict
+
+
+def validate_openai_tokens(span_list, is_stream=False):
+    span_dict = {span.context.span_id: span for span in span_list}
+    expected_tokens = {}
+    for span in span_list:
+        tokens = None
+        # Validate the openai tokens are correctly set in the llm trace.
+        if is_llm_span_with_tokens(span, is_stream):
+            for token_name in LLM_TOKEN_NAMES + CUMULATIVE_LLM_TOKEN_NAMES:
+                assert token_name in span.attributes
+            tokens = {token_name: span.attributes[token_name] for token_name in CUMULATIVE_LLM_TOKEN_NAMES}
+        # Validate the openai tokens are correctly set in the embedding trace.
+        if span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
+            for token_name in EMBEDDING_TOKEN_NAMES + CUMULATIVE_EMBEDDING_TOKEN_NAMES:
+                assert token_name in span.attributes
+            tokens = {token_name: span.attributes[token_name] for token_name in CUMULATIVE_EMBEDDING_TOKEN_NAMES}
+        # Aggregate the tokens to the parent span.
+        if tokens is not None:
+            current_span_id = span.context.span_id
+            while True:
+                if current_span_id in expected_tokens:
+                    expected_tokens[current_span_id] = {
+                        key: expected_tokens[current_span_id][key] + tokens[key] for key in tokens
+                    }
+                else:
+                    expected_tokens[current_span_id] = tokens
+                parent_cxt = getattr(span_dict[current_span_id], "parent", None)
+                if parent_cxt is None:
+                    break
+                current_span_id = parent_cxt.span_id
+    # Validate the aggregated tokens are correctly set in the parent span.
+    for span in span_list:
+        span_id = span.context.span_id
+        if span_id in expected_tokens:
+            for token_name in expected_tokens[span_id]:
+                assert span.attributes[token_name] == expected_tokens[span_id][token_name]
+
+
+def is_llm_span_with_tokens(span, is_stream):
+    """
+    This function checks if a given span is a LLM span with tokens.
+
+    If in stream mode, the function checks if the span has attributes indicating it's an iterated span.
+    In non-stream mode, it simply checks if the span's function attribute is in the list of LLM function names.
+
+    Args:
+        span: The span to check.
+        is_stream: A boolean indicating whether the span is in stream mode.
+
+    Returns:
+        A boolean indicating whether the span is a LLM span with tokens.
+    """
+    if is_stream:
+        return (
+            span.attributes.get("function", "") in LLM_FUNCTION_NAMES
+            and span.attributes.get("output_type", "") == "iterated"
+        )
+    else:
+        return span.attributes.get("function", "") in LLM_FUNCTION_NAMES

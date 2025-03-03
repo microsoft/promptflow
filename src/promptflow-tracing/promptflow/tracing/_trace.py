@@ -313,6 +313,14 @@ class TracedAsyncIterator(AsyncIteratorProxy):
                 self._span.end()
                 raise e
 
+    async def __aenter__(self):
+        await self._iterator.__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        await self._iterator.__aexit__(exc_type, exc_value, traceback)
+        self._span.end()
+
 
 def enrich_span_with_original_attributes(span, attributes):
     try:
