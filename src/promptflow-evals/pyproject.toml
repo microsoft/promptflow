@@ -19,6 +19,7 @@ homepage = "https://microsoft.github.io/promptflow/"
 readme = ["README.md"]
 keywords = ["telemetry"]
 classifiers = [
+  "Development Status :: 7 - Inactive",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
