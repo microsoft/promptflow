@@ -253,7 +253,7 @@ class OpenAIChatResponseParser(OpenAIResponseParser):
         chunks = []
         role = "assistant"
         for item in self._response:
-            if item.choices and item.choices[0].delta and item.choices[0].delta.get("content"):
+            if item.choices and item.choices[0].delta and getattr(item.choices[0].delta, "content", None):
                 chunks.append(item.choices[0].delta.content)
                 role = item.choices[0].delta.role or role
         return {"content": "".join(chunks), "role": role} if chunks else None
