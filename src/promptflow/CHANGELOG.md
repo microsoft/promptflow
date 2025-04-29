@@ -1,6 +1,7 @@
 # Release History
 
-## v1.17.2 (2025.1.23)
+
+## v1.18.0 (2025.4.29)
 
 ### Improvements
 - Pre-commit pycln hook is upgraded to 2.5.0 version.
@@ -8,6 +9,7 @@
 
 ### Bugs fixed
 - Jinja template is going to use Sandbox Environment at rendering. With `PF_USE_SANDBOX_FOR_JINJA` set to false, sanbox environment is not used.
+- Resolved an issue that allows an attacker to cause an RCE by setting specific environment variables
 
 ## v1.17.1 (2025.1.13)
 
