@@ -40,7 +40,7 @@ packages = [
 "Bug Reports" = "https://github.com/microsoft/promptflow/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.9.7 || >3.9.7,<3.13"
+python = ">=3.9,<3.9.7 || >3.9.7,<3.14"
 promptflow-core = "<2.0.0"
 httpx = ">=0.25.1"  # used to send http requests asynchronously
 sqlalchemy = ">=1.4.48,<3.0.0"  # sqlite requirements
