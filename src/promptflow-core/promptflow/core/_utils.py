@@ -25,13 +25,18 @@ logger = LoggerFactory.get_logger(name=__name__)
 
 def render_jinja_template_content(template_content, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
     use_sandbox_env = os.environ.get("PF_USE_SANDBOX_FOR_JINJA", "true")
-    if use_sandbox_env.lower() == "false":
-        template = Template(template_content, trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
-        return template.render(**kwargs)
-    else:
-        sandbox_env = SandboxedEnvironment(trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
-        sanitized_template = sandbox_env.from_string(template_content)
-        return sanitized_template.render(**kwargs)
+    try:
+        if use_sandbox_env.lower() == "false":
+            template = Template(template_content, trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
+            return template.render(**kwargs)
+        else:
+            sandbox_env = SandboxedEnvironment(trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
+            sanitized_template = sandbox_env.from_string(template_content)
+            return sanitized_template.render(**kwargs)
+    except Exception as e:
+        # For exceptions raised by jinja2 module, mark UserError
+        error_message = "Failed to render jinja template. Please modify your prompt to fix the issue."
+        raise UserErrorException(message=error_message) from e
 
 
 def init_executable(*, flow_data: dict = None, flow_path: Path = None, working_dir: Path = None):

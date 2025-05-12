@@ -2,9 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import io
+import os
 import re
 
 from jinja2 import Template
+from jinja2.sandbox import SandboxedEnvironment
+
+from promptflow.exceptions import UserErrorException
 
 from .yaml_utils import dump_yaml, load_yaml_string
 
@@ -51,7 +55,17 @@ def generate_custom_strong_type_connection_template(cls, connection_spec, packag
       {{ key }}: "{{ value -}}"{% endfor %}
     """
 
-    connection_template = Template(connection_template_str)
+    use_sandbox_env = os.environ.get("PF_USE_SANDBOX_FOR_JINJA", "true")
+    try:
+        if use_sandbox_env.lower() == "false":
+            connection_template = Template(connection_template_str, trim_blocks=True, keep_trailing_newline=True)
+        else:
+            sandbox_env = SandboxedEnvironment(trim_blocks=True, keep_trailing_newline=True)
+            connection_template = sandbox_env.from_string(connection_template_str)
+    except Exception as e:
+        # For exceptions raised by jinja2 module, mark UserError
+        error_message = "Failed to render jinja template. Please modify your prompt to fix the issue."
+        raise UserErrorException(message=error_message) from e
 
     # Extract configs and secrets
     configs = {}

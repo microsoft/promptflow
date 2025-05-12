@@ -4,6 +4,7 @@
 
 import inspect
 import json
+import os
 import shutil
 from abc import ABC, abstractmethod
 from ast import literal_eval
@@ -11,6 +12,7 @@ from enum import Enum
 from pathlib import Path
 
 from jinja2 import Environment, Template, meta
+from jinja2.sandbox import SandboxedEnvironment
 
 from promptflow._sdk._constants import DEFAULT_ENCODING
 from promptflow._utils.flow_utils import is_executable_chat_flow
@@ -39,9 +41,20 @@ class BaseGenerator(ABC):
 
     def generate(self) -> str:
         """Generate content based on given template and actual value of template keys."""
-        with open(self.tpl_file, encoding=DEFAULT_ENCODING) as f:
-            entry_template = f.read()
-            entry_template = Template(entry_template, trim_blocks=True, lstrip_blocks=True)
+        try:
+            with open(self.tpl_file, encoding=DEFAULT_ENCODING) as f:
+                use_sandbox_env = os.environ.get("PF_USE_SANDBOX_FOR_JINJA", "true")
+                if use_sandbox_env.lower() == "false":
+                    entry_template = f.read()
+                    entry_template = Template(entry_template, trim_blocks=True, keep_trailing_newline=True)
+                else:
+                    sandbox_env = SandboxedEnvironment(trim_blocks=True, keep_trailing_newline=True)
+                    entry_template = f.read()
+                    entry_template = sandbox_env.from_string(entry_template)
+        except Exception as e:
+            # For exceptions raised by jinja2 module, mark UserError
+            error_message = "Failed to render jinja template. Please modify your prompt to fix the issue."
+            raise UserErrorException(message=error_message) from e
 
         return entry_template.render(**{key: getattr(self, key) for key in self.entry_template_keys})
 
