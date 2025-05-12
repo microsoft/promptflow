@@ -9,6 +9,9 @@ from flask import Blueprint
 from flask import current_app as app
 from flask import request, url_for
 from jinja2 import Template
+from jinja2.sandbox import SandboxedEnvironment
+
+from promptflow.exceptions import UserErrorException
 
 
 def construct_staticweb_blueprint(static_folder):
@@ -20,8 +23,20 @@ def construct_staticweb_blueprint(static_folder):
         """Show the home page."""
         index_path = Path(static_folder) / "index.html" if static_folder else None
         if index_path and index_path.exists():
-            template = Template(open(index_path, "r", encoding="UTF-8").read())
-            return flask.render_template(template, url_for=url_for)
+            try:
+                use_sandbox_env = os.environ.get("PF_USE_SANDBOX_FOR_JINJA", "true")
+                if use_sandbox_env.lower() == "false":
+                    template = Template(open(index_path, "r", encoding="UTF-8").read())
+                    return flask.render_template(template, url_for=url_for)
+                else:
+                    sandbox_env = SandboxedEnvironment()
+                    sanitized_template = sandbox_env.from_string(open(index_path, "r", encoding="UTF-8").read())
+                    return flask.render_template(sanitized_template, url_for=url_for)
+            except Exception as e:
+                # For exceptions raised by jinja2 module, mark UserError
+                error_message = "Failed to render jinja template. Please modify your prompt to fix the issue."
+                raise UserErrorException(message=error_message) from e
+
         else:
             return "<h1>Welcome to promptflow app.</h1>"
 
