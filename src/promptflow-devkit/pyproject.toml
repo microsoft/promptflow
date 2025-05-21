@@ -61,7 +61,7 @@ pyarrow = { version = ">=14.0.1,<15.0.0", optional = true }  # used to read parq
 pillow = ">=10.1.0,<11.1.0"  # used to generate icon data URI for package tool
 opentelemetry-exporter-otlp-proto-http = ">=1.22.0,<2.0.0"  # trace support
 flask-restx = ">=1.2.0,<2.0.0"  # PFS Swagger
-flask-cors = ">=5.0.0,<6.0.0"  # handle PFS CORS
+flask-cors = ">=6.0.0,<7.0.0"  # handle PFS CORS
 pyinstaller = { version = ">=5.13.2", optional = true}  # used to package the CLI tool
 streamlit = { version = ">=1.26.0", optional = true}
 streamlit-quill = { version = "<0.1.0", optional = true}
