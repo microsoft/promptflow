@@ -540,13 +540,55 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return self._modify_run_in_run_history(run_id=run, payload=payload)
 
     def _get_log(self, flow_run_id: str) -> str:
-        return self._service_caller.caller.bulk_runs.get_flow_run_log_content(
-            subscription_id=self._operation_scope.subscription_id,
-            resource_group_name=self._operation_scope.resource_group_name,
-            workspace_name=self._operation_scope.workspace_name,
-            flow_run_id=flow_run_id,
-            headers=self._get_headers(),
-        )
+        """Get logs for a flow run with retry for the case when logs are being created.
+
+        :param flow_run_id: The flow run ID.
+        :type flow_run_id: str
+        :return: The log content.
+        :rtype: str
+        """
+        from azure.core.exceptions import HttpResponseError
+        from functools import wraps
+        import time
+        
+        # Define a retry decorator specifically for this operation
+        def retry_get_log(max_tries=5, initial_delay=1, backoff=2):
+            def deco_retry(f):
+                @wraps(f)
+                def f_retry(*args, **kwargs):
+                    tries_remaining, delay_seconds = max_tries, initial_delay
+                    while tries_remaining > 1:
+                        try:
+                            return f(*args, **kwargs)
+                        except HttpResponseError as e:
+                            # Only retry on 400 errors with the specific message
+                            if e.status_code == 400 and "Value cannot be null. (Parameter 'bytes')" in str(e):
+                                time.sleep(delay_seconds)
+                                tries_remaining -= 1
+                                delay_seconds *= backoff
+                                logger.warning(
+                                    "Log file is still being created. Retrying in %d seconds... (%d tries left)",
+                                    delay_seconds, tries_remaining
+                                )
+                            else:
+                                # For other errors, just raise
+                                raise
+                    return f(*args, **kwargs)
+                return f_retry
+            return deco_retry
+
+        # Apply the retry decorator to the get_flow_run_log_content call
+        @retry_get_log()
+        def get_log_with_retry():
+            return self._service_caller.caller.bulk_runs.get_flow_run_log_content(
+                subscription_id=self._operation_scope.subscription_id,
+                resource_group_name=self._operation_scope.resource_group_name,
+                workspace_name=self._operation_scope.workspace_name,
+                flow_run_id=flow_run_id,
+                headers=self._get_headers(),
+            )
+
+        return get_log_with_retry()
 
     @monitor_operation(activity_name="pfazure.runs.update", activity_type=ActivityType.PUBLICAPI)
     def update(
