@@ -1,3 +1,4 @@
+import ast
 import functools
 import json
 import os
@@ -246,7 +247,7 @@ def try_parse_tool_calls(role_prompt):
     match = re.search(pattern, role_prompt, re.DOTALL)
     if match:
         try:
-            parsed_array = eval(match.group(1))
+            parsed_array = ast.literal_eval(match.group(1))
             return parsed_array
         except Exception:
             None
