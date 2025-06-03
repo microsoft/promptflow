@@ -688,6 +688,9 @@ class Escaper:
         if isinstance(val, ChatInputList):
             for item in val:
                 Escaper.build_flow_input_escape_dict(item, escape_dict)
+        elif isinstance(val, dict):
+            for k, v in val.items():
+                Escaper.build_flow_input_escape_dict(v, escape_dict)
         elif isinstance(val, str):
             pattern = r"(?i)^\s*#?\s*(" + "|".join(VALID_ROLES) + r")\s*:\s*\n"
             roles = re.findall(pattern, val, flags=re.MULTILINE)
@@ -724,6 +727,10 @@ class Escaper:
         elif isinstance(val, str):
             for encoded_role, role in escape_dict.items():
                 val = val.replace(role, encoded_role)
+            return val
+        elif isinstance(val, dict):
+            for k, v in val.items():
+                val[k] = Escaper.escape_roles_in_flow_input(v, escape_dict)
             return val
         else:
             return val
