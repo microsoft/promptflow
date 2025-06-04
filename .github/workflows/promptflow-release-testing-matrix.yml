@@ -59,7 +59,7 @@ jobs:
       run: python ./setup.py bdist_wheel
 
     - name: Upload Wheel
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: wheel
         path: |
@@ -96,7 +96,7 @@ jobs:
         python-version: ${{ matrix.pythonVersion }}
     - uses: snok/install-poetry@v1
     - name: Download Artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: wheel
         path: ${{ env.WORKING_DIRECTORY }}/artifacts
@@ -149,7 +149,7 @@ jobs:
           python-version: ${{ matrix.pythonVersion }}
       - uses: snok/install-poetry@v1
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wheel
           path: ${{ env.WORKING_DIRECTORY }}/artifacts
@@ -206,7 +206,7 @@ jobs:
           python-version: ${{ matrix.pythonVersion }}
       - uses: snok/install-poetry@v1
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wheel
           path: ${{ env.WORKING_DIRECTORY }}/artifacts
@@ -256,7 +256,7 @@ jobs:
           python-version: ${{ matrix.pythonVersion }}
       - uses: snok/install-poetry@v1
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wheel
           path: ${{ env.WORKING_DIRECTORY }}/artifacts
@@ -318,7 +318,7 @@ jobs:
           python-version: ${{ matrix.pythonVersion }}
       - uses: snok/install-poetry@v1
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wheel
           path: ${{ env.WORKING_DIRECTORY }}/artifacts
@@ -382,7 +382,7 @@ jobs:
       with:
         pythonVersion: ${{ matrix.pythonVersion }}
     - name: Download Artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: wheel
         path: artifacts
@@ -440,7 +440,7 @@ jobs:
           -o "${{ github.workspace }}/test-results-executor-e2e.xml"
     - name: Upload pytest test results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
       if: ${{ always() }}
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: promptflow_executor_tests Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
         path: ${{ github.workspace }}/*.xml
@@ -459,7 +459,7 @@ jobs:
 
     steps:
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
       - name: Publish Test Results
