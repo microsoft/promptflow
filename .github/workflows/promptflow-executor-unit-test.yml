@@ -75,7 +75,7 @@ jobs:
         scriptPath: ${{ env.testWorkingDirectory }}
     - name: Upload Wheel
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: wheel
         path: |
@@ -110,7 +110,7 @@ jobs:
       with:
         pythonVersion: 3.9
     - name: Download Artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: wheel
         path: artifacts
@@ -162,7 +162,7 @@ jobs:
           --disable-cov-branch
     - name: Upload Test Results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Test Results (Python 3.9) (OS ${{ matrix.os }})
         path: |
