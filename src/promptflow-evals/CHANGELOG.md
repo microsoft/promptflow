@@ -1,5 +1,11 @@
 # Release History
 
+## v0.3.4 (2025.6.06)
+
+### Bugs fixed
+
+- Fixed a bug that could allow for arbitrary code execution
+
 ## v0.3.4 (2025-03-25)
 
 ### Other Changes
