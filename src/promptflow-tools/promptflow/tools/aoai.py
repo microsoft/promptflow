@@ -1,7 +1,7 @@
 import json
 from promptflow.tools.common import render_jinja_template, handle_openai_error, to_bool, \
     validate_functions, process_function_call, post_process_chat_api_response, init_azure_openai_client, \
-    build_messages, process_tool_choice, validate_tools
+    build_messages, process_tool_choice, validate_tools, convert_to_chat_list
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -127,7 +127,7 @@ class AzureOpenAI(ToolProvider):
         seed: int = None,
         **kwargs,
     ):
-        messages = build_messages(prompt, **kwargs)
+        messages = build_messages(prompt, **convert_to_chat_list(kwargs))
         stream = to_bool(stream)
         params = {
             "model": deployment_name,
