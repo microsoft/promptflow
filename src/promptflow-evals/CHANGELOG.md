@@ -1,6 +1,6 @@
 # Release History
 
-## v0.3.5 (2025.6.06)
+## v0.3.5 (2025.6.10)
 
 ### Bugs fixed
 

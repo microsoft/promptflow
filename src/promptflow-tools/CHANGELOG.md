@@ -1,6 +1,6 @@
 # Release History
 
-## 1.6.1 (2025.6.06)
+## 1.6.1 (2025.6.10)
 
 - Fixed a bug that could allow for arbitrary code execution when parsing `tool_calls`
 - Fixed a bug that could allow prompt injection
