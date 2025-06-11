@@ -1,5 +1,11 @@
 # promptflow-devkit package
 
+## v1.18.0 (2025.6.10)
+
+### Bugs fixed
+
+- Fixed a bug that could allow for arbitrary code execution
+
 ## v1.17.2 (2025.1.23)
 
 ### Improvements
