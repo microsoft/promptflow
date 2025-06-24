@@ -1,0 +1,16 @@
+{# PROMPT_ROLE: USER #}
+{# DESCRIPTION: User asks a hardcoded question by default, but can provide a dynamic question, and may provide context. #}
+
+Please answer the following question{% if context %}, using the provided context{% endif %}.
+
+{% if context -%}**Context:**
+```text
+{{ context }}
+{%- endif %}
+
+Question:
+{% if dynamic_question %}
+{{ dynamic_question }}
+{% else %}
+Tell me about large language models.
+{% endif %}

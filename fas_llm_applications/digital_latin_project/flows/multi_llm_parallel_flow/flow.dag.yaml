@@ -1,0 +1,83 @@
+inputs:
+  system_prompt_id:
+    type: string
+    default: S2.2A
+  user_prompt_id:
+    type: string
+    default: U1.0
+  llm_model_id:
+    type: string
+    default: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+  dynamic_template_variables:
+    type: object
+    default: {}
+  flow_name:
+    type: string
+    default: multi_llm_parallel_flow
+  is_rag_flow:
+    type: bool
+    default: false
+  batch_id:
+    type: string
+    default: smoke_test_2_run_1
+  test_case_no:
+    type: int
+    default: 30
+outputs:
+  final_response:
+    type: string
+    reference: ${multi_llm_node.output.response_text}
+  invocation_status:
+    type: bool
+    reference: ${multi_llm_node.output.status}}
+  report_status:
+    type: string
+    value: ${report_generator_node.output.status}
+    reference: ${multi_llm_report_node.output.status}
+  report_path:
+    type: string
+    value: ${report_generator_node.output.report_path}
+    reference: ${multi_llm_report_node.output.report_path}
+  report_id:
+    type: int
+    value: ${report_generator_node.output.report_id}
+    reference: ${multi_llm_report_node.output.report_id}
+nodes:
+- name: prompt_selector_node
+  type: python
+  source:
+    type: code
+    path: ../../tools/prompt_selector_tool.py
+  inputs:
+    system_prompt_id: ${inputs.system_prompt_id}
+    user_prompt_id: ${inputs.user_prompt_id}
+- name: multi_llm_node
+  type: python
+  source:
+    type: code
+    path: nodes/multi_llm_invocation.py
+  inputs:
+    user_prompt_template_path: ${prompt_selector_node.output.user_prompt_template_path}
+    system_prompt_template_path: ${prompt_selector_node.output.system_prompt_template_path}
+    model_id: ${inputs.llm_model_id}
+    selector_template_variables: ${prompt_selector_node.output.template_variables}
+    dynamic_template_variables: ${inputs.dynamic_template_variables}
+    system_prompt_id: ${inputs.system_prompt_id}
+    user_prompt_id: ${inputs.user_prompt_id}
+- name: multi_llm_report_node
+  type: python
+  source:
+    type: code
+    path: ../../scripts/generate_report.py
+  inputs:
+    llm_model_id: ${multi_llm_node.output.model_id_used}
+    system_prompt_used: ${multi_llm_node.output.system_prompt_used}
+    user_prompt_used: ${multi_llm_node.output.user_prompt_used}
+    llm_invocation_output: ${multi_llm_node.output.full_api_response}
+    llm_run_time: ${multi_llm_node.output.llm_run_time}
+    flow_name: ${inputs.flow_name}
+    is_rag_flow: ${inputs.is_rag_flow}
+    batch_id: ${inputs.batch_id}
+    system_prompt_id: ${multi_llm_node.output.system_prompt_id}
+    user_prompt_id: ${multi_llm_node.output.user_prompt_id}
+    test_case_no: ${inputs.test_case_no}
