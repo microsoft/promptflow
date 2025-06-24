@@ -15,14 +15,14 @@ dotenv_file_path = os.path.join(flow_root_dir, '.env')
 
 sys.path.insert(0, '/Users/kevingray/codebase/harvard-atg/promptflow')
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv # ruff: noqa: E402
 
 print("Current sys.path:", sys.path, file=sys.stderr)
-from fas_llm_applications._connections_manager_.aws_connection_utils import ensure_promptflow_aws_connection
-from fas_llm_applications._connections_manager_.gemini_connection_utils import ensure_promptflow_gemini_connection
-from fas_llm_applications._connections_manager_.common_secrets_loader import get_env_var
-from fas_llm_applications._connections_manager_.keyring_utils import verify_keyring
-from fas_llm_applications._connections_manager_.client_utils import get_pf_client
+from fas_llm_applications._connections_manager_.aws_connection_utils import ensure_promptflow_aws_connection # ruff: noqa: E402
+from fas_llm_applications._connections_manager_.gemini_connection_utils import ensure_promptflow_gemini_connection # ruff: noqa: E402
+from fas_llm_applications._connections_manager_.common_secrets_loader import get_env_var # ruff: noqa: E402
+from fas_llm_applications._connections_manager_.keyring_utils import verify_keyring # ruff: noqa: E402
+from fas_llm_applications._connections_manager_.client_utils import get_pf_client # ruff: noqa: E402
 
 AWS_CONNECTION_NAME = "bedrock_connection"
 GEMINI_CONNECTION_NAME = "gemini_connection"
