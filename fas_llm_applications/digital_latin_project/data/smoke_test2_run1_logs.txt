@@ -1,0 +1,975 @@
+2025-06-16 16:15:18 +0000   52875 execution.bulk     INFO     Current thread is not main thread, skip signal handler registration in BatchEngine.
+2025-06-16 16:15:19 +0000   52875 execution.bulk     INFO     Set process count to 4 by taking the minimum value among the factors of {'default_worker_count': 4, 'row_count': 30}.
+2025-06-16 16:15:23 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(0) start execution.
+2025-06-16 16:15:23 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(1) start execution.
+2025-06-16 16:15:23 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(2) start execution.
+2025-06-16 16:15:23 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(3) start execution.
+2025-06-16 16:15:23 +0000   53048 execution          WARNING  [multi_llm_node in line 0 (index starts from 0)] stderr> DEBUG: invoked model_id: us.deepseek.r1-v1:0
+2025-06-16 16:15:23 +0000   53058 execution          WARNING  [multi_llm_node in line 2 (index starts from 0)] stderr> DEBUG: invoked model_id: us.deepseek.r1-v1:0
+2025-06-16 16:15:23 +0000   53052 execution          WARNING  [multi_llm_node in line 3 (index starts from 0)] stderr> DEBUG: invoked model_id: us.deepseek.r1-v1:0
+2025-06-16 16:15:23 +0000   53066 execution          WARNING  [multi_llm_node in line 1 (index starts from 0)] stderr> DEBUG: invoked model_id: us.deepseek.r1-v1:0
+2025-06-16 16:15:23 +0000   53058 execution          WARNING  [multi_llm_node in line 2 (index starts from 0)] stderr> DEBUG: The: us.deepseek.r1-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:23 +0000   53058 execution          WARNING  [multi_llm_node in line 2 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:23 +0000   53058 execution          WARNING  [multi_llm_node in line 2 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:23 +0000   53058 execution          WARNING  [multi_llm_node in line 2 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:23 +0000   53048 execution          WARNING  [multi_llm_node in line 0 (index starts from 0)] stderr> DEBUG: The: us.deepseek.r1-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:23 +0000   53048 execution          WARNING  [multi_llm_node in line 0 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:23 +0000   53048 execution          WARNING  [multi_llm_node in line 0 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:23 +0000   53048 execution          WARNING  [multi_llm_node in line 0 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:23 +0000   53066 execution          WARNING  [multi_llm_node in line 1 (index starts from 0)] stderr> DEBUG: The: us.deepseek.r1-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:23 +0000   53066 execution          WARNING  [multi_llm_node in line 1 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:23 +0000   53066 execution          WARNING  [multi_llm_node in line 1 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:23 +0000   53066 execution          WARNING  [multi_llm_node in line 1 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:23 +0000   53052 execution          WARNING  [multi_llm_node in line 3 (index starts from 0)] stderr> DEBUG: The: us.deepseek.r1-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:23 +0000   53052 execution          WARNING  [multi_llm_node in line 3 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:23 +0000   53052 execution          WARNING  [multi_llm_node in line 3 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:23 +0000   53052 execution          WARNING  [multi_llm_node in line 3 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:24 +0000   53052 execution          WARNING  [multi_llm_node in line 3 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:24 +0000   53052 execution          WARNING  [multi_llm_node in line 3 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:24 +0000   53052 execution          WARNING  [multi_llm_node in line 3 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:24 +0000   53048 execution          WARNING  [multi_llm_node in line 0 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:24 +0000   53048 execution          WARNING  [multi_llm_node in line 0 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:24 +0000   53048 execution          WARNING  [multi_llm_node in line 0 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:24 +0000   53066 execution          WARNING  [multi_llm_node in line 1 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:24 +0000   53066 execution          WARNING  [multi_llm_node in line 1 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:24 +0000   53066 execution          WARNING  [multi_llm_node in line 1 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:24 +0000   53058 execution          WARNING  [multi_llm_node in line 2 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:24 +0000   53058 execution          WARNING  [multi_llm_node in line 2 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:24 +0000   53058 execution          WARNING  [multi_llm_node in line 2 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:25 +0000   53052 execution          WARNING  [multi_llm_node in line 3 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:25 +0000   53052 execution          WARNING  [multi_llm_node in line 3 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:25 +0000   53052 execution          WARNING  [multi_llm_node in line 3 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:25 +0000   53048 execution          WARNING  [multi_llm_node in line 0 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:25 +0000   53048 execution          WARNING  [multi_llm_node in line 0 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:25 +0000   53048 execution          WARNING  [multi_llm_node in line 0 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:25 +0000   53058 execution          WARNING  [multi_llm_node in line 2 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:25 +0000   53066 execution          WARNING  [multi_llm_node in line 1 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:25 +0000   53058 execution          WARNING  [multi_llm_node in line 2 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:25 +0000   53066 execution          WARNING  [multi_llm_node in line 1 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:25 +0000   53058 execution          WARNING  [multi_llm_node in line 2 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:25 +0000   53066 execution          WARNING  [multi_llm_node in line 1 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:26 +0000   53066 execution          WARNING  [multi_llm_node in line 1 (index starts from 0)] stderr> Invoking Bedrock model: us.deepseek.r1-v1:0 in region us-east-1
+2025-06-16 16:15:26 +0000   53048 execution          WARNING  [multi_llm_node in line 0 (index starts from 0)] stderr> Invoking Bedrock model: us.deepseek.r1-v1:0 in region us-east-1
+2025-06-16 16:15:26 +0000   53052 execution          WARNING  [multi_llm_node in line 3 (index starts from 0)] stderr> Invoking Bedrock model: us.deepseek.r1-v1:0 in region us-east-1
+2025-06-16 16:15:26 +0000   53058 execution          WARNING  [multi_llm_node in line 2 (index starts from 0)] stderr> Invoking Bedrock model: us.deepseek.r1-v1:0 in region us-east-1
+2025-06-16 16:15:32 +0000   53048 execution          WARNING  [multi_llm_report_node in line 0 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2A__U1.0_2025-06-16_16-15-32_e43a1d7f
+2025-06-16 16:15:32 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(0) completed.
+2025-06-16 16:15:32 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(4) start execution.
+2025-06-16 16:15:32 +0000   53048 execution          WARNING  [multi_llm_node in line 4 (index starts from 0)] stderr> DEBUG: invoked model_id: us.deepseek.r1-v1:0
+2025-06-16 16:15:32 +0000   53048 execution          WARNING  [multi_llm_node in line 4 (index starts from 0)] stderr> DEBUG: The: us.deepseek.r1-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:32 +0000   53048 execution          WARNING  [multi_llm_node in line 4 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:32 +0000   53048 execution          WARNING  [multi_llm_node in line 4 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:32 +0000   53048 execution          WARNING  [multi_llm_node in line 4 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:33 +0000   53066 execution          WARNING  [multi_llm_report_node in line 1 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2B__U1.0_2025-06-16_16-15-33_dc8368ab
+2025-06-16 16:15:33 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(1) completed.
+2025-06-16 16:15:33 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(5) start execution.
+2025-06-16 16:15:33 +0000   53066 execution          WARNING  [multi_llm_node in line 5 (index starts from 0)] stderr> DEBUG: invoked model_id: us.deepseek.r1-v1:0
+2025-06-16 16:15:33 +0000   53066 execution          WARNING  [multi_llm_node in line 5 (index starts from 0)] stderr> DEBUG: The: us.deepseek.r1-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:33 +0000   53066 execution          WARNING  [multi_llm_node in line 5 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:33 +0000   53066 execution          WARNING  [multi_llm_node in line 5 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:33 +0000   53066 execution          WARNING  [multi_llm_node in line 5 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:33 +0000   53048 execution          WARNING  [multi_llm_node in line 4 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:33 +0000   53048 execution          WARNING  [multi_llm_node in line 4 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:33 +0000   53048 execution          WARNING  [multi_llm_node in line 4 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:33 +0000   53066 execution          WARNING  [multi_llm_node in line 5 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:33 +0000   53066 execution          WARNING  [multi_llm_node in line 5 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:33 +0000   53066 execution          WARNING  [multi_llm_node in line 5 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:33 +0000   53048 execution          WARNING  [multi_llm_node in line 4 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:33 +0000   53048 execution          WARNING  [multi_llm_node in line 4 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:33 +0000   53048 execution          WARNING  [multi_llm_node in line 4 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:33 +0000   53048 execution          WARNING  [multi_llm_node in line 4 (index starts from 0)] stderr> Invoking Bedrock model: us.deepseek.r1-v1:0 in region us-east-1
+2025-06-16 16:15:33 +0000   53066 execution          WARNING  [multi_llm_node in line 5 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:33 +0000   53066 execution          WARNING  [multi_llm_node in line 5 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:33 +0000   53066 execution          WARNING  [multi_llm_node in line 5 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:33 +0000   53066 execution          WARNING  [multi_llm_node in line 5 (index starts from 0)] stderr> Invoking Bedrock model: us.deepseek.r1-v1:0 in region us-east-1
+2025-06-16 16:15:35 +0000   53058 execution          WARNING  [multi_llm_report_node in line 2 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2C__U1.0_2025-06-16_16-15-35_d2ba01b7
+2025-06-16 16:15:35 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(2) completed.
+2025-06-16 16:15:35 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(6) start execution.
+2025-06-16 16:15:35 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:35 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-3-7-sonnet-20250219-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:35 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:35 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:35 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:35 +0000   52875 execution.bulk     INFO     Finished 3 / 30 lines.
+2025-06-16 16:15:35 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 5.35 seconds. Estimated time for incomplete lines: 144.45 seconds.
+2025-06-16 16:15:35 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:35 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:35 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:35 +0000   53052 execution          WARNING  [multi_llm_report_node in line 3 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2A__U1.0_2025-06-16_16-15-35_94b9e2d0
+2025-06-16 16:15:35 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(3) completed.
+2025-06-16 16:15:35 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(7) start execution.
+2025-06-16 16:15:35 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:35 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-3-7-sonnet-20250219-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:35 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:35 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:35 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:36 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:36 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:36 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:36 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:36 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:36 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:36 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> The claude model is us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:36 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-3-7-sonnet-20250219-v1:0 in region us-east-1
+2025-06-16 16:15:36 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:36 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:36 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:36 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> The claude model is us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:36 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-3-7-sonnet-20250219-v1:0 in region us-east-1
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_report_node in line 5 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2C__U1.0_2025-06-16_16-15-40_3face118
+2025-06-16 16:15:40 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(5) completed.
+2025-06-16 16:15:40 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(8) start execution.
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-3-7-sonnet-20250219-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> The claude model is us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-3-7-sonnet-20250219-v1:0 in region us-east-1
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_report_node in line 6 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2A__U1.0_2025-06-16_16-15-41_c5c01461
+2025-06-16 16:15:41 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(6) completed.
+2025-06-16 16:15:41 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(9) start execution.
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-3-7-sonnet-20250219-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:41 +0000   52875 execution.bulk     INFO     Finished 6 / 30 lines.
+2025-06-16 16:15:41 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 3.68 seconds. Estimated time for incomplete lines: 88.32 seconds.
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:42 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:42 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:42 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:42 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> The claude model is us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:42 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-3-7-sonnet-20250219-v1:0 in region us-east-1
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_report_node in line 7 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2B__U1.0_2025-06-16_16-15-43_8c8917ab
+2025-06-16 16:15:43 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(7) completed.
+2025-06-16 16:15:43 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(10) start execution.
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-3-7-sonnet-20250219-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> The claude model is us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-3-7-sonnet-20250219-v1:0 in region us-east-1
+2025-06-16 16:15:43 +0000   53048 execution          WARNING  [multi_llm_report_node in line 4 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2B__U1.0_2025-06-16_16-15-43_9ef32b49
+2025-06-16 16:15:43 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(4) completed.
+2025-06-16 16:15:43 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(11) start execution.
+2025-06-16 16:15:43 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:43 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-3-7-sonnet-20250219-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:43 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:43 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:43 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> The claude model is us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-3-7-sonnet-20250219-v1:0 in region us-east-1
+2025-06-16 16:15:47 +0000   53058 execution          WARNING  [multi_llm_report_node in line 9 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2A__U1.0_2025-06-16_16-15-47_5eaae349
+2025-06-16 16:15:47 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(9) completed.
+2025-06-16 16:15:47 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(12) start execution.
+2025-06-16 16:15:47 +0000   53058 execution          WARNING  [multi_llm_node in line 12 (index starts from 0)] stderr> DEBUG: invoked model_id: gemini-2.5-pro-preview-05-06
+2025-06-16 16:15:47 +0000   53058 execution          WARNING  [multi_llm_node in line 12 (index starts from 0)] stderr> DEBUG: Invoking Gemini model: gemini-2.5-pro-preview-05-06 via https://go.apis.huit.harvard.edu/ais-google-gemini/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent
+2025-06-16 16:15:47 +0000   52875 execution.bulk     INFO     Finished 9 / 30 lines.
+2025-06-16 16:15:47 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 3.12 seconds. Estimated time for incomplete lines: 65.52 seconds.
+2025-06-16 16:15:49 +0000   53052 execution          WARNING  [multi_llm_report_node in line 10 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2B__U1.0_2025-06-16_16-15-49_5113b097
+2025-06-16 16:15:49 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(10) completed.
+2025-06-16 16:15:49 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(13) start execution.
+2025-06-16 16:15:49 +0000   53052 execution          WARNING  [multi_llm_node in line 13 (index starts from 0)] stderr> DEBUG: invoked model_id: gemini-2.5-pro-preview-05-06
+2025-06-16 16:15:49 +0000   53052 execution          WARNING  [multi_llm_node in line 13 (index starts from 0)] stderr> DEBUG: Invoking Gemini model: gemini-2.5-pro-preview-05-06 via https://go.apis.huit.harvard.edu/ais-google-gemini/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent
+2025-06-16 16:15:57 +0000   53066 execution          WARNING  [multi_llm_report_node in line 8 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2C__U1.0_2025-06-16_16-15-57_049d373b
+2025-06-16 16:15:57 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(8) completed.
+2025-06-16 16:15:57 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(14) start execution.
+2025-06-16 16:15:57 +0000   53066 execution          WARNING  [multi_llm_node in line 14 (index starts from 0)] stderr> DEBUG: invoked model_id: gemini-2.5-pro-preview-05-06
+2025-06-16 16:15:57 +0000   53066 execution          WARNING  [multi_llm_node in line 14 (index starts from 0)] stderr> DEBUG: Invoking Gemini model: gemini-2.5-pro-preview-05-06 via https://go.apis.huit.harvard.edu/ais-google-gemini/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent
+2025-06-16 16:16:03 +0000   53048 execution          WARNING  [multi_llm_report_node in line 11 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2C__U1.0_2025-06-16_16-16-03_77fe5950
+2025-06-16 16:16:03 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(11) completed.
+2025-06-16 16:16:03 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(15) start execution.
+2025-06-16 16:16:03 +0000   53048 execution          WARNING  [multi_llm_node in line 15 (index starts from 0)] stderr> DEBUG: invoked model_id: gemini-2.5-pro-preview-05-06
+2025-06-16 16:16:03 +0000   53048 execution          WARNING  [multi_llm_node in line 15 (index starts from 0)] stderr> DEBUG: Invoking Gemini model: gemini-2.5-pro-preview-05-06 via https://go.apis.huit.harvard.edu/ais-google-gemini/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent
+2025-06-16 16:16:04 +0000   52875 execution.bulk     INFO     Finished 12 / 30 lines.
+2025-06-16 16:16:04 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 3.68 seconds. Estimated time for incomplete lines: 66.24 seconds.
+2025-06-16 16:16:19 +0000   52875 execution.bulk     INFO     [Process Pool] [Active processes: 4 / 4]
+2025-06-16 16:16:19 +0000   52875 execution.bulk     INFO     [Lines] [Finished: 12] [Processing: 4] [Pending: 14]
+2025-06-16 16:16:19 +0000   52875 execution.bulk     INFO     Processing Lines: line 12 (Process name(ForkProcess-2:3)-Process id(53058)-Line number(12)), line 13 (Process name(ForkProcess-2:2)-Process id(53052)-Line number(13)), line 14 (Process name(ForkProcess-2:4)-Process id(53066)-Line number(14)), line 15 (Process name(ForkProcess-2:1)-Process id(53048)-Line number(15)).
+2025-06-16 16:17:09 +0000   53058 execution          WARNING  [multi_llm_report_node in line 12 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2A__U1.0_2025-06-16_16-17-09_1a271425
+2025-06-16 16:17:09 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(12) completed.
+2025-06-16 16:17:09 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(16) start execution.
+2025-06-16 16:17:09 +0000   53058 execution          WARNING  [multi_llm_node in line 16 (index starts from 0)] stderr> DEBUG: invoked model_id: gemini-2.5-pro-preview-05-06
+2025-06-16 16:17:09 +0000   53058 execution          WARNING  [multi_llm_node in line 16 (index starts from 0)] stderr> DEBUG: Invoking Gemini model: gemini-2.5-pro-preview-05-06 via https://go.apis.huit.harvard.edu/ais-google-gemini/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent
+2025-06-16 16:17:19 +0000   52875 execution.bulk     INFO     [Process Pool] [Active processes: 4 / 4]
+2025-06-16 16:17:19 +0000   52875 execution.bulk     INFO     [Lines] [Finished: 13] [Processing: 4] [Pending: 13]
+2025-06-16 16:17:19 +0000   52875 execution.bulk     INFO     Processing Lines: line 13 (Process name(ForkProcess-2:2)-Process id(53052)-Line number(13)), line 14 (Process name(ForkProcess-2:4)-Process id(53066)-Line number(14)), line 15 (Process name(ForkProcess-2:1)-Process id(53048)-Line number(15)), line 16 (Process name(ForkProcess-2:3)-Process id(53058)-Line number(16)).
+2025-06-16 16:17:23 +0000   53052 execution          WARNING  [multi_llm_report_node in line 13 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2B__U1.0_2025-06-16_16-17-23_48f4ca12
+2025-06-16 16:17:23 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(13) completed.
+2025-06-16 16:17:23 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(17) start execution.
+2025-06-16 16:17:23 +0000   53052 execution          WARNING  [multi_llm_node in line 17 (index starts from 0)] stderr> DEBUG: invoked model_id: gemini-2.5-pro-preview-05-06
+2025-06-16 16:17:23 +0000   53052 execution          WARNING  [multi_llm_node in line 17 (index starts from 0)] stderr> DEBUG: Invoking Gemini model: gemini-2.5-pro-preview-05-06 via https://go.apis.huit.harvard.edu/ais-google-gemini/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_report_node in line 15 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2A__U1.0_2025-06-16_16-17-24_c6de5716
+2025-06-16 16:17:24 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(15) completed.
+2025-06-16 16:17:24 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(18) start execution.
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-sonnet-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:17:25 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:17:25 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:17:25 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:17:25 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> The claude model is us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:25 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-sonnet-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:17:25 +0000   52875 execution.bulk     INFO     Finished 15 / 30 lines.
+2025-06-16 16:17:25 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 8.37 seconds. Estimated time for incomplete lines: 125.55 seconds.
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_report_node in line 18 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2A__U1.0_2025-06-16_16-17-30_f6a6aa57
+2025-06-16 16:17:30 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(18) completed.
+2025-06-16 16:17:30 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(19) start execution.
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-sonnet-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:17:31 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:17:31 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:17:31 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:17:31 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> The claude model is us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:31 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-sonnet-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_report_node in line 14 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2C__U1.0_2025-06-16_16-17-32_dcdfc73d
+2025-06-16 16:17:32 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(14) completed.
+2025-06-16 16:17:32 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(20) start execution.
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-sonnet-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:17:33 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:17:33 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:17:33 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:17:33 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> The claude model is us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:33 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-sonnet-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_report_node in line 19 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2B__U1.0_2025-06-16_16-17-36_b107ccad
+2025-06-16 16:17:36 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(19) completed.
+2025-06-16 16:17:36 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(21) start execution.
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-sonnet-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:17:36 +0000   52875 execution.bulk     INFO     Finished 18 / 30 lines.
+2025-06-16 16:17:36 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 7.59 seconds. Estimated time for incomplete lines: 91.08 seconds.
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> The claude model is us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-sonnet-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_report_node in line 21 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2A__U1.0_2025-06-16_16-17-42_992dfe30
+2025-06-16 16:17:42 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(21) completed.
+2025-06-16 16:17:42 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(22) start execution.
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-sonnet-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:17:43 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:17:43 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:17:43 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:17:43 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> The claude model is us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:43 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-sonnet-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_report_node in line 22 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2B__U1.0_2025-06-16_16-17-48_f0932293
+2025-06-16 16:17:48 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(22) completed.
+2025-06-16 16:17:48 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(23) start execution.
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-sonnet-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_report_node in line 20 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2C__U1.0_2025-06-16_16-17-48_60c90630
+2025-06-16 16:17:48 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(20) completed.
+2025-06-16 16:17:48 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(24) start execution.
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-opus-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:17:48 +0000   52875 execution.bulk     INFO     Finished 21 / 30 lines.
+2025-06-16 16:17:48 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 7.08 seconds. Estimated time for incomplete lines: 63.72 seconds.
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:17:49 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:17:49 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:17:49 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:17:49 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> The claude model is us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:49 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-sonnet-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:17:49 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:17:49 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:17:49 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:17:49 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> The claude model is us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:17:49 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-opus-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_report_node in line 23 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2C__U1.0_2025-06-16_16-18-06_3bad097e
+2025-06-16 16:18:06 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(23) completed.
+2025-06-16 16:18:06 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(25) start execution.
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-opus-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> The claude model is us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-opus-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_report_node in line 24 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2A__U1.0_2025-06-16_16-18-11_40e203aa
+2025-06-16 16:18:11 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(24) completed.
+2025-06-16 16:18:11 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(26) start execution.
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-opus-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:18:12 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:18:12 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:18:12 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:18:12 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> The claude model is us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:12 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-opus-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:18:19 +0000   52875 execution.bulk     INFO     [Process Pool] [Active processes: 4 / 4]
+2025-06-16 16:18:19 +0000   52875 execution.bulk     INFO     [Lines] [Finished: 23] [Processing: 4] [Pending: 3]
+2025-06-16 16:18:19 +0000   52875 execution.bulk     INFO     Processing Lines: line 16 (Process name(ForkProcess-2:3)-Process id(53058)-Line number(16)), line 17 (Process name(ForkProcess-2:2)-Process id(53052)-Line number(17)), line 25 (Process name(ForkProcess-2:1)-Process id(53048)-Line number(25)), line 26 (Process name(ForkProcess-2:4)-Process id(53066)-Line number(26)).
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_report_node in line 16 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2B__U1.0_2025-06-16_16-18-28_6c91d823
+2025-06-16 16:18:28 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(16) completed.
+2025-06-16 16:18:28 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(27) start execution.
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-opus-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:18:28 +0000   52875 execution.bulk     INFO     Finished 24 / 30 lines.
+2025-06-16 16:18:28 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 7.87 seconds. Estimated time for incomplete lines: 47.22 seconds.
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> The claude model is us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-opus-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_report_node in line 25 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2B__U1.0_2025-06-16_16-18-43_bb8a53dc
+2025-06-16 16:18:43 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(25) completed.
+2025-06-16 16:18:43 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(28) start execution.
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-opus-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> The claude model is us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-opus-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:19:08 +0000   53058 execution          WARNING  [multi_llm_report_node in line 27 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2A__U1.0_2025-06-16_16-19-08_820c7cfb
+2025-06-16 16:19:08 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(27) completed.
+2025-06-16 16:19:08 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(29) start execution.
+2025-06-16 16:19:08 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:19:08 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-opus-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:19:08 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:19:08 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:19:08 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:19:10 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:19:10 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:19:10 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:19:11 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:19:11 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:19:11 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:19:11 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> The claude model is us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:19:11 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-opus-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:19:18 +0000   53048 execution          WARNING  [multi_llm_report_node in line 28 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2B__U1.0_2025-06-16_16-19-18_a52c9bee
+2025-06-16 16:19:18 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(28) completed.
+2025-06-16 16:19:19 +0000   52875 execution.bulk     INFO     Finished 27 / 30 lines.
+2025-06-16 16:19:19 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 8.87 seconds. Estimated time for incomplete lines: 26.61 seconds.
+2025-06-16 16:19:19 +0000   52875 execution.bulk     INFO     [Process Pool] [Active processes: 4 / 4]
+2025-06-16 16:19:19 +0000   52875 execution.bulk     INFO     [Lines] [Finished: 27] [Processing: 3] [Pending: 0]
+2025-06-16 16:19:19 +0000   52875 execution.bulk     INFO     Processing Lines: line 17 (Process name(ForkProcess-2:2)-Process id(53052)-Line number(17)), line 26 (Process name(ForkProcess-2:4)-Process id(53066)-Line number(26)), line 29 (Process name(ForkProcess-2:3)-Process id(53058)-Line number(29)).
+2025-06-16 16:20:42 +0000   53052 execution          WARNING  [multi_llm_report_node in line 17 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2C__U1.0_2025-06-16_16-20-42_293909eb
+2025-06-16 16:20:42 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(17) completed.
+2025-06-16 16:20:51 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> Bedrock Client Error: Model is getting throttled. Try your request again.
+2025-06-16 16:20:51 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(29) completed.
+2025-06-16 16:21:33 +0000   52875 execution.bulk     INFO     [Process Pool] [Active processes: 4 / 4]
+2025-06-16 16:21:33 +0000   52875 execution.bulk     INFO     [Lines] [Finished: 29] [Processing: 1] [Pending: 0]
+2025-06-16 16:21:33 +0000   52875 execution.bulk     INFO     Processing Lines: line 26 (Process name(ForkProcess-2:4)-Process id(53066)-Line number(26)).
+2025-06-16 16:21:46 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> Bedrock Client Error: Model is getting throttled. Try your request again.
+2025-06-16 16:21:46 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(26) completed.
+2025-06-16 16:21:46 +0000   52875 execution.bulk     INFO     Finished 30 / 30 lines.
+2025-06-16 16:21:46 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 12.89 seconds. Estimated time for incomplete lines: 0.0 seconds.
+2025-06-16 16:21:46 +0000   52875 execution.bulk     INFO     The thread monitoring the process [53048-ForkProcess-2:1] will be terminated.
+2025-06-16 16:21:46 +0000   52875 execution.bulk     INFO     The thread monitoring the process [53058-ForkProcess-2:3] will be terminated.
+2025-06-16 16:21:46 +0000   52875 execution.bulk     INFO     The thread monitoring the process [53066-ForkProcess-2:4] will be terminated.
+2025-06-16 16:21:46 +0000   52875 execution.bulk     INFO     The thread monitoring the process [53052-ForkProcess-2:2] will be terminated.
+2025-06-16 16:21:46 +0000   53066 execution.bulk     INFO     The process [53066] has received a terminate signal.
+2025-06-16 16:21:46 +0000   53058 execution.bulk     INFO     The process [53058] has received a terminate signal.
+2025-06-16 16:21:46 +0000   53048 execution.bulk     INFO     The process [53048] has received a terminate signal.
+2025-06-16 16:21:46 +0000   53052 execution.bulk     INFO     The process [53052] has received a terminate signal.
+2025-06-16 16:21:47 +0000   52875 execution          ERROR    2/30 flow run failed, indexes: [26,29], exception of index 26: Flow execution failed. Invalid property 'model_id_used' when accessing the node 'multi_llm_node'. Please check the property and try again.
+
+
+arts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:36 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:36 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:36 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> The claude model is us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:36 +0000   53058 execution          WARNING  [multi_llm_node in line 6 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-3-7-sonnet-20250219-v1:0 in region us-east-1
+2025-06-16 16:15:36 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:36 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:36 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:36 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> The claude model is us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:36 +0000   53052 execution          WARNING  [multi_llm_node in line 7 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-3-7-sonnet-20250219-v1:0 in region us-east-1
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_report_node in line 5 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2C__U1.0_2025-06-16_16-15-40_3face118
+2025-06-16 16:15:40 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(5) completed.
+2025-06-16 16:15:40 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(8) start execution.
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-3-7-sonnet-20250219-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> The claude model is us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:40 +0000   53066 execution          WARNING  [multi_llm_node in line 8 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-3-7-sonnet-20250219-v1:0 in region us-east-1
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_report_node in line 6 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2A__U1.0_2025-06-16_16-15-41_c5c01461
+2025-06-16 16:15:41 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(6) completed.
+2025-06-16 16:15:41 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(9) start execution.
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-3-7-sonnet-20250219-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:41 +0000   52875 execution.bulk     INFO     Finished 6 / 30 lines.
+2025-06-16 16:15:41 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 3.68 seconds. Estimated time for incomplete lines: 88.32 seconds.
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:41 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:42 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:42 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:42 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:42 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> The claude model is us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:42 +0000   53058 execution          WARNING  [multi_llm_node in line 9 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-3-7-sonnet-20250219-v1:0 in region us-east-1
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_report_node in line 7 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2B__U1.0_2025-06-16_16-15-43_8c8917ab
+2025-06-16 16:15:43 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(7) completed.
+2025-06-16 16:15:43 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(10) start execution.
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-3-7-sonnet-20250219-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> The claude model is us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:43 +0000   53052 execution          WARNING  [multi_llm_node in line 10 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-3-7-sonnet-20250219-v1:0 in region us-east-1
+2025-06-16 16:15:43 +0000   53048 execution          WARNING  [multi_llm_report_node in line 4 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2B__U1.0_2025-06-16_16-15-43_9ef32b49
+2025-06-16 16:15:43 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(4) completed.
+2025-06-16 16:15:43 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(11) start execution.
+2025-06-16 16:15:43 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:43 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-3-7-sonnet-20250219-v1:0 entered Claude / Deepseek else
+2025-06-16 16:15:43 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:15:43 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:15:43 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> The claude model is us.anthropic.claude-3-7-sonnet-20250219-v1:0
+2025-06-16 16:15:44 +0000   53048 execution          WARNING  [multi_llm_node in line 11 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-3-7-sonnet-20250219-v1:0 in region us-east-1
+2025-06-16 16:15:47 +0000   53058 execution          WARNING  [multi_llm_report_node in line 9 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2A__U1.0_2025-06-16_16-15-47_5eaae349
+2025-06-16 16:15:47 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(9) completed.
+2025-06-16 16:15:47 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(12) start execution.
+2025-06-16 16:15:47 +0000   53058 execution          WARNING  [multi_llm_node in line 12 (index starts from 0)] stderr> DEBUG: invoked model_id: gemini-2.5-pro-preview-05-06
+2025-06-16 16:15:47 +0000   53058 execution          WARNING  [multi_llm_node in line 12 (index starts from 0)] stderr> DEBUG: Invoking Gemini model: gemini-2.5-pro-preview-05-06 via https://go.apis.huit.harvard.edu/ais-google-gemini/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent
+2025-06-16 16:15:47 +0000   52875 execution.bulk     INFO     Finished 9 / 30 lines.
+2025-06-16 16:15:47 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 3.12 seconds. Estimated time for incomplete lines: 65.52 seconds.
+2025-06-16 16:15:49 +0000   53052 execution          WARNING  [multi_llm_report_node in line 10 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2B__U1.0_2025-06-16_16-15-49_5113b097
+2025-06-16 16:15:49 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(10) completed.
+2025-06-16 16:15:49 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(13) start execution.
+2025-06-16 16:15:49 +0000   53052 execution          WARNING  [multi_llm_node in line 13 (index starts from 0)] stderr> DEBUG: invoked model_id: gemini-2.5-pro-preview-05-06
+2025-06-16 16:15:49 +0000   53052 execution          WARNING  [multi_llm_node in line 13 (index starts from 0)] stderr> DEBUG: Invoking Gemini model: gemini-2.5-pro-preview-05-06 via https://go.apis.huit.harvard.edu/ais-google-gemini/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent
+2025-06-16 16:15:57 +0000   53066 execution          WARNING  [multi_llm_report_node in line 8 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2C__U1.0_2025-06-16_16-15-57_049d373b
+2025-06-16 16:15:57 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(8) completed.
+2025-06-16 16:15:57 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(14) start execution.
+2025-06-16 16:15:57 +0000   53066 execution          WARNING  [multi_llm_node in line 14 (index starts from 0)] stderr> DEBUG: invoked model_id: gemini-2.5-pro-preview-05-06
+2025-06-16 16:15:57 +0000   53066 execution          WARNING  [multi_llm_node in line 14 (index starts from 0)] stderr> DEBUG: Invoking Gemini model: gemini-2.5-pro-preview-05-06 via https://go.apis.huit.harvard.edu/ais-google-gemini/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent
+2025-06-16 16:16:03 +0000   53048 execution          WARNING  [multi_llm_report_node in line 11 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2C__U1.0_2025-06-16_16-16-03_77fe5950
+2025-06-16 16:16:03 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(11) completed.
+2025-06-16 16:16:03 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(15) start execution.
+2025-06-16 16:16:03 +0000   53048 execution          WARNING  [multi_llm_node in line 15 (index starts from 0)] stderr> DEBUG: invoked model_id: gemini-2.5-pro-preview-05-06
+2025-06-16 16:16:03 +0000   53048 execution          WARNING  [multi_llm_node in line 15 (index starts from 0)] stderr> DEBUG: Invoking Gemini model: gemini-2.5-pro-preview-05-06 via https://go.apis.huit.harvard.edu/ais-google-gemini/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent
+2025-06-16 16:16:04 +0000   52875 execution.bulk     INFO     Finished 12 / 30 lines.
+2025-06-16 16:16:04 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 3.68 seconds. Estimated time for incomplete lines: 66.24 seconds.
+2025-06-16 16:16:19 +0000   52875 execution.bulk     INFO     [Process Pool] [Active processes: 4 / 4]
+2025-06-16 16:16:19 +0000   52875 execution.bulk     INFO     [Lines] [Finished: 12] [Processing: 4] [Pending: 14]
+2025-06-16 16:16:19 +0000   52875 execution.bulk     INFO     Processing Lines: line 12 (Process name(ForkProcess-2:3)-Process id(53058)-Line number(12)), line 13 (Process name(ForkProcess-2:2)-Process id(53052)-Line number(13)), line 14 (Process name(ForkProcess-2:4)-Process id(53066)-Line number(14)), line 15 (Process name(ForkProcess-2:1)-Process id(53048)-Line number(15)).
+2025-06-16 16:17:09 +0000   53058 execution          WARNING  [multi_llm_report_node in line 12 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2A__U1.0_2025-06-16_16-17-09_1a271425
+2025-06-16 16:17:09 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(12) completed.
+2025-06-16 16:17:09 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(16) start execution.
+2025-06-16 16:17:09 +0000   53058 execution          WARNING  [multi_llm_node in line 16 (index starts from 0)] stderr> DEBUG: invoked model_id: gemini-2.5-pro-preview-05-06
+2025-06-16 16:17:09 +0000   53058 execution          WARNING  [multi_llm_node in line 16 (index starts from 0)] stderr> DEBUG: Invoking Gemini model: gemini-2.5-pro-preview-05-06 via https://go.apis.huit.harvard.edu/ais-google-gemini/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent
+2025-06-16 16:17:19 +0000   52875 execution.bulk     INFO     [Process Pool] [Active processes: 4 / 4]
+2025-06-16 16:17:19 +0000   52875 execution.bulk     INFO     [Lines] [Finished: 13] [Processing: 4] [Pending: 13]
+2025-06-16 16:17:19 +0000   52875 execution.bulk     INFO     Processing Lines: line 13 (Process name(ForkProcess-2:2)-Process id(53052)-Line number(13)), line 14 (Process name(ForkProcess-2:4)-Process id(53066)-Line number(14)), line 15 (Process name(ForkProcess-2:1)-Process id(53048)-Line number(15)), line 16 (Process name(ForkProcess-2:3)-Process id(53058)-Line number(16)).
+2025-06-16 16:17:23 +0000   53052 execution          WARNING  [multi_llm_report_node in line 13 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2B__U1.0_2025-06-16_16-17-23_48f4ca12
+2025-06-16 16:17:23 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(13) completed.
+2025-06-16 16:17:23 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(17) start execution.
+2025-06-16 16:17:23 +0000   53052 execution          WARNING  [multi_llm_node in line 17 (index starts from 0)] stderr> DEBUG: invoked model_id: gemini-2.5-pro-preview-05-06
+2025-06-16 16:17:23 +0000   53052 execution          WARNING  [multi_llm_node in line 17 (index starts from 0)] stderr> DEBUG: Invoking Gemini model: gemini-2.5-pro-preview-05-06 via https://go.apis.huit.harvard.edu/ais-google-gemini/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_report_node in line 15 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2A__U1.0_2025-06-16_16-17-24_c6de5716
+2025-06-16 16:17:24 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(15) completed.
+2025-06-16 16:17:24 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(18) start execution.
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-sonnet-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:17:24 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:17:25 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:17:25 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:17:25 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:17:25 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> The claude model is us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:25 +0000   53048 execution          WARNING  [multi_llm_node in line 18 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-sonnet-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:17:25 +0000   52875 execution.bulk     INFO     Finished 15 / 30 lines.
+2025-06-16 16:17:25 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 8.37 seconds. Estimated time for incomplete lines: 125.55 seconds.
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_report_node in line 18 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2A__U1.0_2025-06-16_16-17-30_f6a6aa57
+2025-06-16 16:17:30 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(18) completed.
+2025-06-16 16:17:30 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(19) start execution.
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-sonnet-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:17:30 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:17:31 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:17:31 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:17:31 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:17:31 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> The claude model is us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:31 +0000   53048 execution          WARNING  [multi_llm_node in line 19 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-sonnet-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_report_node in line 14 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2C__U1.0_2025-06-16_16-17-32_dcdfc73d
+2025-06-16 16:17:32 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(14) completed.
+2025-06-16 16:17:32 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(20) start execution.
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-sonnet-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:17:32 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:17:33 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:17:33 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:17:33 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:17:33 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> The claude model is us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:33 +0000   53066 execution          WARNING  [multi_llm_node in line 20 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-sonnet-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_report_node in line 19 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2B__U1.0_2025-06-16_16-17-36_b107ccad
+2025-06-16 16:17:36 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(19) completed.
+2025-06-16 16:17:36 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(21) start execution.
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-sonnet-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:17:36 +0000   52875 execution.bulk     INFO     Finished 18 / 30 lines.
+2025-06-16 16:17:36 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 7.59 seconds. Estimated time for incomplete lines: 91.08 seconds.
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> The claude model is us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:36 +0000   53048 execution          WARNING  [multi_llm_node in line 21 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-sonnet-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_report_node in line 21 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2A__U1.0_2025-06-16_16-17-42_992dfe30
+2025-06-16 16:17:42 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(21) completed.
+2025-06-16 16:17:42 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(22) start execution.
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-sonnet-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:17:42 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:17:43 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:17:43 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:17:43 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:17:43 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> The claude model is us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:43 +0000   53048 execution          WARNING  [multi_llm_node in line 22 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-sonnet-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_report_node in line 22 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2B__U1.0_2025-06-16_16-17-48_f0932293
+2025-06-16 16:17:48 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(22) completed.
+2025-06-16 16:17:48 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(23) start execution.
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-sonnet-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_report_node in line 20 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2C__U1.0_2025-06-16_16-17-48_60c90630
+2025-06-16 16:17:48 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(20) completed.
+2025-06-16 16:17:48 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(24) start execution.
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-opus-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:17:48 +0000   52875 execution.bulk     INFO     Finished 21 / 30 lines.
+2025-06-16 16:17:48 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 7.08 seconds. Estimated time for incomplete lines: 63.72 seconds.
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:17:48 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:17:48 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:17:49 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:17:49 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:17:49 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:17:49 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> The claude model is us.anthropic.claude-sonnet-4-20250514-v1:0
+2025-06-16 16:17:49 +0000   53048 execution          WARNING  [multi_llm_node in line 23 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-sonnet-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:17:49 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:17:49 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:17:49 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:17:49 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> The claude model is us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:17:49 +0000   53066 execution          WARNING  [multi_llm_node in line 24 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-opus-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_report_node in line 23 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2C__U1.0_2025-06-16_16-18-06_3bad097e
+2025-06-16 16:18:06 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(23) completed.
+2025-06-16 16:18:06 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(25) start execution.
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-opus-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> The claude model is us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:06 +0000   53048 execution          WARNING  [multi_llm_node in line 25 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-opus-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_report_node in line 24 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2A__U1.0_2025-06-16_16-18-11_40e203aa
+2025-06-16 16:18:11 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(24) completed.
+2025-06-16 16:18:11 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(26) start execution.
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-opus-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:18:11 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:18:12 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:18:12 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:18:12 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:18:12 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> The claude model is us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:12 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-opus-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:18:19 +0000   52875 execution.bulk     INFO     [Process Pool] [Active processes: 4 / 4]
+2025-06-16 16:18:19 +0000   52875 execution.bulk     INFO     [Lines] [Finished: 23] [Processing: 4] [Pending: 3]
+2025-06-16 16:18:19 +0000   52875 execution.bulk     INFO     Processing Lines: line 16 (Process name(ForkProcess-2:3)-Process id(53058)-Line number(16)), line 17 (Process name(ForkProcess-2:2)-Process id(53052)-Line number(17)), line 25 (Process name(ForkProcess-2:1)-Process id(53048)-Line number(25)), line 26 (Process name(ForkProcess-2:4)-Process id(53066)-Line number(26)).
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_report_node in line 16 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2B__U1.0_2025-06-16_16-18-28_6c91d823
+2025-06-16 16:18:28 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(16) completed.
+2025-06-16 16:18:28 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(27) start execution.
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-opus-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:18:28 +0000   52875 execution.bulk     INFO     Finished 24 / 30 lines.
+2025-06-16 16:18:28 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 7.87 seconds. Estimated time for incomplete lines: 47.22 seconds.
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> The claude model is us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:28 +0000   53058 execution          WARNING  [multi_llm_node in line 27 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-opus-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_report_node in line 25 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S1.2B__U1.0_2025-06-16_16-18-43_bb8a53dc
+2025-06-16 16:18:43 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(25) completed.
+2025-06-16 16:18:43 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(28) start execution.
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-opus-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> The claude model is us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:18:43 +0000   53048 execution          WARNING  [multi_llm_node in line 28 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-opus-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:19:08 +0000   53058 execution          WARNING  [multi_llm_report_node in line 27 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2A__U1.0_2025-06-16_16-19-08_820c7cfb
+2025-06-16 16:19:08 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(27) completed.
+2025-06-16 16:19:08 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(29) start execution.
+2025-06-16 16:19:08 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> DEBUG: invoked model_id: us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:19:08 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> DEBUG: The: us.anthropic.claude-opus-4-20250514-v1:0 entered Claude / Deepseek else
+2025-06-16 16:19:08 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> 
+--- DEBUG: Inside verify_keyring ---
+2025-06-16 16:19:08 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> DEBUG: PYTHON_KEYRING_BACKEND env var: keyrings.cryptfile.cryptfile.CryptFileKeyring
+2025-06-16 16:19:08 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> DEBUG: KEYRING_CRYPTFILE_PASSWORD found (first 5 chars): YHJEG...
+2025-06-16 16:19:10 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> DEBUG: CryptFileKeyring instance created and keyring_key set.
+2025-06-16 16:19:10 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> DEBUG: Keyring backend programmatically set to CryptFileKeyring.
+2025-06-16 16:19:10 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> Active keyring backend after set_keyring(): keyrings.cryptfile.cryptfile.CryptFileKeyring (priority: 2.5)
+2025-06-16 16:19:11 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> Stored password for aws_user in my_promptflow_app: ********************
+2025-06-16 16:19:11 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> Password retrieved successfully: True
+2025-06-16 16:19:11 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> Keyring verification successful!
+2025-06-16 16:19:11 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> The claude model is us.anthropic.claude-opus-4-20250514-v1:0
+2025-06-16 16:19:11 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> Invoking Bedrock model: us.anthropic.claude-opus-4-20250514-v1:0 in region us-east-1
+2025-06-16 16:19:18 +0000   53048 execution          WARNING  [multi_llm_report_node in line 28 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2B__U1.0_2025-06-16_16-19-18_a52c9bee
+2025-06-16 16:19:18 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:1)-Process id(53048)-Line number(28) completed.
+2025-06-16 16:19:19 +0000   52875 execution.bulk     INFO     Finished 27 / 30 lines.
+2025-06-16 16:19:19 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 8.87 seconds. Estimated time for incomplete lines: 26.61 seconds.
+2025-06-16 16:19:19 +0000   52875 execution.bulk     INFO     [Process Pool] [Active processes: 4 / 4]
+2025-06-16 16:19:19 +0000   52875 execution.bulk     INFO     [Lines] [Finished: 27] [Processing: 3] [Pending: 0]
+2025-06-16 16:19:19 +0000   52875 execution.bulk     INFO     Processing Lines: line 17 (Process name(ForkProcess-2:2)-Process id(53052)-Line number(17)), line 26 (Process name(ForkProcess-2:4)-Process id(53066)-Line number(26)), line 29 (Process name(ForkProcess-2:3)-Process id(53058)-Line number(29)).
+2025-06-16 16:20:42 +0000   53052 execution          WARNING  [multi_llm_report_node in line 17 (index starts from 0)] stderr> DEBUG: No custom run_id provided. Auto-generated descriptive run_id: auto_multi_llm_parallel_flow_S2.2C__U1.0_2025-06-16_16-20-42_293909eb
+2025-06-16 16:20:42 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:2)-Process id(53052)-Line number(17) completed.
+2025-06-16 16:20:51 +0000   53058 execution          WARNING  [multi_llm_node in line 29 (index starts from 0)] stderr> Bedrock Client Error: Model is getting throttled. Try your request again.
+2025-06-16 16:20:51 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:3)-Process id(53058)-Line number(29) completed.
+2025-06-16 16:21:33 +0000   52875 execution.bulk     INFO     [Process Pool] [Active processes: 4 / 4]
+2025-06-16 16:21:33 +0000   52875 execution.bulk     INFO     [Lines] [Finished: 29] [Processing: 1] [Pending: 0]
+2025-06-16 16:21:33 +0000   52875 execution.bulk     INFO     Processing Lines: line 26 (Process name(ForkProcess-2:4)-Process id(53066)-Line number(26)).
+2025-06-16 16:21:46 +0000   53066 execution          WARNING  [multi_llm_node in line 26 (index starts from 0)] stderr> Bedrock Client Error: Model is getting throttled. Try your request again.
+2025-06-16 16:21:46 +0000   52875 execution.bulk     INFO     Process name(ForkProcess-2:4)-Process id(53066)-Line number(26) completed.
+2025-06-16 16:21:46 +0000   52875 execution.bulk     INFO     Finished 30 / 30 lines.
+2025-06-16 16:21:46 +0000   52875 execution.bulk     INFO     Average execution time for completed lines: 12.89 seconds. Estimated time for incomplete lines: 0.0 seconds.
+2025-06-16 16:21:46 +0000   52875 execution.bulk     INFO     The thread monitoring the process [53048-ForkProcess-2:1] will be terminated.
+2025-06-16 16:21:46 +0000   52875 execution.bulk     INFO     The thread monitoring the process [53058-ForkProcess-2:3] will be terminated.
+2025-06-16 16:21:46 +0000   52875 execution.bulk     INFO     The thread monitoring the process [53066-ForkProcess-2:4] will be terminated.
+2025-06-16 16:21:46 +0000   52875 execution.bulk     INFO     The thread monitoring the process [53052-ForkProcess-2:2] will be terminated.
+2025-06-16 16:21:46 +0000   53066 execution.bulk     INFO     The process [53066] has received a terminate signal.
+2025-06-16 16:21:46 +0000   53058 execution.bulk     INFO     The process [53058] has received a terminate signal.
+2025-06-16 16:21:46 +0000   53048 execution.bulk     INFO     The process [53048] has received a terminate signal.
+2025-06-16 16:21:46 +0000   53052 execution.bulk     INFO     The process [53052] has received a terminate signal.
+2025-06-16 16:21:47 +0000   52875 execution          ERROR    2/30 flow run failed, indexes: [26,29], exception of index 26: Flow execution failed. Invalid property 'model_id_used' when accessing the node 'multi_llm_node'. Please check the property and try again.
+======= Run Summary =======
+
+Run name: "data_default_20250616_161503_084000"
+Run status: "Completed"
+Start time: "2025-06-16 16:15:17.134770+00:00"
+Duration: "0:06:30.453847"
+Output path: "/root/.promptflow/.runs/data_default_20250616_161503_084000"
+
+
+
+{
+    "name": "data_default_20250616_161503_084000",
+    "created_on": "2025-06-16T16:15:17.134770+00:00",
+    "status": "Completed",
+    "display_name": "data_variant_0_202506161615",
+    "description": null,
+    "tags": null,
+    "properties": {
+        "flow_path": "/workspaces/promptflow/fas_llm_applications/digital_latin_project/flows/multi_llm_parallel_flow",
+        "output_path": "/root/.promptflow/.runs/data_default_20250616_161503_084000",
+        "column_mapping": {
+            "system_prompt_id": "${data.system_prompt_id}",
+            "user_prompt_id": "${data.user_prompt_id}",
+            "llm_model_id": "${data.llm_model_id}",
+            "dynamic_template_variables": "${data.dynamic_template_variables}",
+            "flow_name": "${data.flow_name}",
+            "is_rag_flow": "${data.is_rag_flow}",
+            "batch_id": "${data.batch_id}",
+            "test_case_no": "${data.test_case_no}"
+        },
+        "system_metrics": {
+            "total_tokens": 0,
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "duration": 389.012411
+        }
+    },
+    "flow_name": "multi_llm_parallel_flow",
+    "data": "/workspaces/promptflow/fas_llm_applications/digital_latin_project/data/digital latin_promptflow_variant_testing - smoke_test_2_run_1.csv",
+    "output": "/root/.promptflow/.runs/data_default_20250616_161503_084000/flow_outputs",
+    "error": {
+        "message": "Failed to run 2/30 lines. First error message is: Flow execution failed. Invalid property 'model_id_used' when accessing the node 'multi_llm_node'. Please check the property and try again.",
+        "messageFormat": "",
+        "messageParameters": {},
+        "referenceCode": "Runtime",
+        "code": "UserError",
+        "innerError": {
+            "code": "SDKError",
+            "innerError": {
+                "code": "BulkRunException",
+                "innerError": null
+            }
+        },
+        "additionalInfo": [
+            {
+                "type": "BulkRunErrors",
+                "info": {
+                    "errors": [
+                        {
+                            "line_number": 26,
+                            "error": {
+                                "message": "Flow execution failed. Invalid property 'model_id_used' when accessing the node 'multi_llm_node'. Please check the property and try again.",
+                                "messageFormat": "Flow execution failed. Invalid property '{property}' when accessing the node '{node_name}'. Please check the property and try again.",
+                                "messageParameters": {
+                                    "property": "model_id_used",
+                                    "node_name": "multi_llm_node"
+                                },
+                                "referenceCode": "Unknown",
+                                "code": "UserError",
+                                "innerError": {
+                                    "code": "NodeReferenceError",
+                                    "innerError": {
+                                        "code": "InvalidReferenceProperty",
+                                        "innerError": null
+                                    }
+                                },
+                                "debugInfo": {
+                                    "type": "InvalidReferenceProperty",
+                                    "message": "Flow execution failed. Invalid property 'model_id_used' when accessing the node 'multi_llm_node'. Please check the property and try again.",
+                                    "stackTrace": "\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/flow_executor.py\", line 1034, in _exec\n    output, aggregation_inputs = self._exec_inner_with_trace(\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/flow_executor.py\", line 937, in _exec_inner_with_trace\n    output, nodes_outputs = self._traverse_nodes(inputs, context)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/flow_executor.py\", line 1215, in _traverse_nodes\n    nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/flow_executor.py\", line 1270, in _submit_to_scheduler\n    return scheduler.execute(self._line_timeout_sec)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_flow_nodes_scheduler.py\", line 131, in execute\n    raise e\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_flow_nodes_scheduler.py\", line 113, in execute\n    self._dag_manager.complete_nodes(self._collect_outputs(completed_futures))\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_flow_nodes_scheduler.py\", line 160, in _collect_outputs\n    each_node_result = each_future.result()\n  File \"/usr/local/lib/python3.9/concurrent/futures/_base.py\", line 439, in result\n    return self.__get_result()\n  File \"/usr/local/lib/python3.9/concurrent/futures/_base.py\", line 391, in __get_result\n    raise self._exception\n  File \"/usr/local/lib/python3.9/concurrent/futures/thread.py\", line 58, in run\n    result = self.fn(*self.args, **self.kwargs)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_flow_nodes_scheduler.py\", line 176, in _exec_single_node_in_thread\n    kwargs = dag_manager.get_node_valid_inputs(node, f)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_dag_manager.py\", line 77, in get_node_valid_inputs\n    results[name] = self._get_node_dependency_value(i)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_dag_manager.py\", line 151, in _get_node_dependency_value\n    return _input_assignment_parser.parse_value(node_dependency, self._completed_nodes_outputs, self._flow_inputs)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_input_assignment_parser.py\", line 55, in parse_value\n    return parse_node_property(i.value, nodes_outputs[i.value], i.property)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_input_assignment_parser.py\", line 105, in parse_node_property\n    raise InvalidReferenceProperty(message_format=message_format, property=property, node_name=node_name) from e\n",
+                                    "innerException": {
+                                        "type": "KeyError",
+                                        "message": "'model_id_used'",
+                                        "stackTrace": "Traceback (most recent call last):\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_input_assignment_parser.py\", line 96, in parse_node_property\n    val = val[part]\n",
+                                        "innerException": null
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "line_number": 29,
+                            "error": {
+                                "message": "Flow execution failed. Invalid property 'model_id_used' when accessing the node 'multi_llm_node'. Please check the property and try again.",
+                                "messageFormat": "Flow execution failed. Invalid property '{property}' when accessing the node '{node_name}'. Please check the property and try again.",
+                                "messageParameters": {
+                                    "property": "model_id_used",
+                                    "node_name": "multi_llm_node"
+                                },
+                                "referenceCode": "Unknown",
+                                "code": "UserError",
+                                "innerError": {
+                                    "code": "NodeReferenceError",
+                                    "innerError": {
+                                        "code": "InvalidReferenceProperty",
+                                        "innerError": null
+                                    }
+                                },
+                                "debugInfo": {
+                                    "type": "InvalidReferenceProperty",
+                                    "message": "Flow execution failed. Invalid property 'model_id_used' when accessing the node 'multi_llm_node'. Please check the property and try again.",
+                                    "stackTrace": "\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/flow_executor.py\", line 1034, in _exec\n    output, aggregation_inputs = self._exec_inner_with_trace(\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/flow_executor.py\", line 937, in _exec_inner_with_trace\n    output, nodes_outputs = self._traverse_nodes(inputs, context)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/flow_executor.py\", line 1215, in _traverse_nodes\n    nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/flow_executor.py\", line 1270, in _submit_to_scheduler\n    return scheduler.execute(self._line_timeout_sec)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_flow_nodes_scheduler.py\", line 131, in execute\n    raise e\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_flow_nodes_scheduler.py\", line 113, in execute\n    self._dag_manager.complete_nodes(self._collect_outputs(completed_futures))\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_flow_nodes_scheduler.py\", line 160, in _collect_outputs\n    each_node_result = each_future.result()\n  File \"/usr/local/lib/python3.9/concurrent/futures/_base.py\", line 439, in result\n    return self.__get_result()\n  File \"/usr/local/lib/python3.9/concurrent/futures/_base.py\", line 391, in __get_result\n    raise self._exception\n  File \"/usr/local/lib/python3.9/concurrent/futures/thread.py\", line 58, in run\n    result = self.fn(*self.args, **self.kwargs)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_flow_nodes_scheduler.py\", line 176, in _exec_single_node_in_thread\n    kwargs = dag_manager.get_node_valid_inputs(node, f)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_dag_manager.py\", line 77, in get_node_valid_inputs\n    results[name] = self._get_node_dependency_value(i)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_dag_manager.py\", line 151, in _get_node_dependency_value\n    return _input_assignment_parser.parse_value(node_dependency, self._completed_nodes_outputs, self._flow_inputs)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_input_assignment_parser.py\", line 55, in parse_value\n    return parse_node_property(i.value, nodes_outputs[i.value], i.property)\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_input_assignment_parser.py\", line 105, in parse_node_property\n    raise InvalidReferenceProperty(message_format=message_format, property=property, node_name=node_name) from e\n",
+                                    "innerException": {
+                                        "type": "KeyError",
+                                        "message": "'model_id_used'",
+                                        "stackTrace": "Traceback (most recent call last):\n  File \"/workspaces/promptflow/.venv/lib/python3.9/site-packages/promptflow/executor/_input_assignment_parser.py\", line 96, in parse_node_property\n    val = val[part]\n",
+                                        "innerException": null
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "debugInfo": {
+            "type": "BulkRunException",
+            "message": "Failed to run 2/30 lines. First error message is: Flow execution failed. Invalid property 'model_id_used' when accessing the node 'multi_llm_node'. Please check the property and try again.",
+            "stackTrace": "Traceback (most recent call last):\n",
+            "innerException": null
+        }
+    }
+}
+(.venv) root@fc0bfa6b0193:/workspaces/promptflow/fas_llm_applications/digital_latin_project/flows/multi_llm_parallel_flow# 

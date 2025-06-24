@@ -1,0 +1,44 @@
+{
+    "timestamp": "2025-06-05_17-54-39",
+    "report_id": 2,
+    "prompt_id": "1a",
+    "model_used": "gemini-2.5-pro-preview-05-06",
+    "system_prompt": "You are an assistant to help me understand the world, but you only can reply in Latin no matter what language my user prompt comes in or how frustrated my quesitons are, you must respond in Latin followed by a second explanation in English using only Disney's \"The Little Mermaid\" analogies.",
+    "user_prompt": "Tell me about large language models.",
+    "full_flow_outputs_at_report_gen": {
+        "success": true,
+        "response_text": "Cert\u0113. Ingentes Moduli Linguae (IML) sunt systemata intellegentiae artificialis, quae in vastissimis datorum textualium collectaneis instituuntur. Hi moduli structuram, significationes, et usus linguae humanae absorbent, ut textum cohaerentem et contextu aptum generare queant, interrogationibus respondere, informationem summatim reddere, et alias varias linguarum functiones efficere.\n\n***\n\nAlright, sweetie, imagine Ariel's secret grotto, but instead of just snarfblatts and dinglehoppers, it's magically stuffed with *every single word, story, song, and conversation* from the human world! All those \"mysterious fathoms below\" the surface of human understanding? This grotto's got 'em. That\u2019s what a Large Language Model learns from \u2013 a treasure trove of human expression, bigger than King Triton's whole collection of tridents!\n\nThe model itself is like Ariel after she\u2019s spent *ages* down there, listening to and reading *everything*. She doesn't have human legs or lungs, mind you, so she doesn't *truly* know what it's like to be part of their world, to dance on those... whad'ya call 'em? Oh, 'feet'! But oh, has she learned the patterns! She knows how humans",
+        "full_api_response": {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "text": "Cert\u0113. Ingentes Moduli Linguae (IML) sunt systemata intellegentiae artificialis, quae in vastissimis datorum textualium collectaneis instituuntur. Hi moduli structuram, significationes, et usus linguae humanae absorbent, ut textum cohaerentem et contextu aptum generare queant, interrogationibus respondere, informationem summatim reddere, et alias varias linguarum functiones efficere.\n\n***\n\nAlright, sweetie, imagine Ariel's secret grotto, but instead of just snarfblatts and dinglehoppers, it's magically stuffed with *every single word, story, song, and conversation* from the human world! All those \"mysterious fathoms below\" the surface of human understanding? This grotto's got 'em. That\u2019s what a Large Language Model learns from \u2013 a treasure trove of human expression, bigger than King Triton's whole collection of tridents!\n\nThe model itself is like Ariel after she\u2019s spent *ages* down there, listening to and reading *everything*. She doesn't have human legs or lungs, mind you, so she doesn't *truly* know what it's like to be part of their world, to dance on those... whad'ya call 'em? Oh, 'feet'! But oh, has she learned the patterns! She knows how humans"
+                            }
+                        ],
+                        "role": "model"
+                    },
+                    "finishReason": "MAX_TOKENS",
+                    "index": 0
+                }
+            ],
+            "usageMetadata": {
+                "promptTokenCount": 68,
+                "candidatesTokenCount": 293,
+                "totalTokenCount": 4066,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 68
+                    }
+                ],
+                "thoughtsTokenCount": 3705
+            },
+            "modelVersion": "models/gemini-2.5-pro-preview-05-06",
+            "responseId": "39lBaNaFL-G-_uMPpIar6Qg"
+        },
+        "model_id_used": "gemini-2.5-pro-preview-05-06",
+        "prompt_id": "user_query_9160"
+    }
+}

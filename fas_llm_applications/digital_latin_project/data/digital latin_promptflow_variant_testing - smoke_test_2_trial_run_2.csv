@@ -1,0 +1,9 @@
+test_case_no,system_prompt_id,user_prompt_id,llm_model_id,flow_name,is_rag_flow,batch_id,dynamic_template_variables
+1,S1.2C,U1.0,us.deepseek.r1-v1:0,multi_llm_parallel_flow,FALSE,smoke_test_2_trial_run_2,{}
+2,S2.2C,U1.0,us.anthropic.claude-3-7-sonnet-20250219-v1:0,multi_llm_parallel_flow,FALSE,smoke_test_2_trial_run_2,{}
+3,S1.2C,U1.0,gemini-2.5-pro-preview-05-06,multi_llm_parallel_flow,FALSE,smoke_test_2_trial_run_2,{}
+4,S1.2A,U1.0,us.anthropic.claude-4-0-sonnet-20250219-v1:0,multi_llm_parallel_flow,FALSE,smoke_test_2_trial_run_2,{}
+5,S1.2B,U1.0,us.anthropic.claude-4-0-sonnet-20250219-v1:0,multi_llm_parallel_flow,FALSE,smoke_test_2_trial_run_2,{}
+6,S1.2C,U1.0,us.anthropic.claude-4-0-sonnet-20250219-v1:0,multi_llm_parallel_flow,FALSE,smoke_test_2_trial_run_2,{}
+7,S2.2B,U1.0,us.anthropic.claude-4-0-opus-20250219-v1:0,multi_llm_parallel_flow,FALSE,smoke_test_2_trial_run_2,{}
+8,S2.2C,U1.0,us.anthropic.claude-4-0-opus-20250219-v1:0,multi_llm_parallel_flow,FALSE,smoke_test_2_trial_run_2,{}

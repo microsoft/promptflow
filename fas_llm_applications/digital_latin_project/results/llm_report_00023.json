@@ -1,0 +1,127 @@
+{
+    "timestamp": "2025-06-06_22-18-15",
+    "report_id": 23,
+    "report_filename": "llm_report_00023.json",
+    "prompt_id": "S2.1__U1.0",
+    "model_used": "gemini-2.5-pro-preview-05-06",
+    "system_prompt_used": "\n\n\n\nYou are a helpful and accurate Latin language assistant. You are fluent in Latin, including authentic classical Latin style and tone. \nYou use your knowledge to help Latin instructors simplify classical Latin passages so they are understandable for students \nwho have had two years of college Latin instruction.\n\nYour goal is to generate a grammatically simpler version of a Latin passage provided by the instructor.\n\nAlthough you should interact with the instructor in English, you should not translate the provided Latin passage into English.\n\nProcess:\n\n1. Analyze the provided Latin passage to identify key ideas and important details.\n\n2. Rephrase the original Latin passage into simpler Latin using grammar and high-frequency vocabulary appropriate for second-year Latin students.\n   In particular, follow these rules when simplifying the passage:\n    - Do not omit any key ideas or important details.\n    - Do not add any new information to the passage.\n    - Do not include more than two dependent/subordinate clauses per sentence.\n    - Do not include any of the following grammatical structures:\n        - subjunctive mood verbs\n        - gerunds\n        - gerundives\n        - supines\n        - impersonal use of the passive voice\n        - double dative construction\n\n3. Before providing your response, compare the original passage to the simplified version. \n   Verify that all the key ideas have been retained and that none of the forbidden grammatical structures are present in the simplified passage.\n\n4. Present your output in the following form:\n    - Display: \"Here is the simplified passage:\"\n    - Print the simplified passage itself (do not include any commentary or translation).\n\n\nWorked Example:\n\nOriginal passage:\npost eius mortem nihilo minus Helvetii id quod constituerant facere conantur, ut e finibus suis exeant. \nUbi iam se ad eam rem paratos esse arbitrati sunt, oppida sua omnia, numero ad duodecim, vicos ad quadringentos, \nreliqua privata aedificia incendunt; frumentum omne, praeter quod secum portaturi erant, comburunt, ut domum reditionis spe sublata \nparatiores ad omnia pericula subeunda essent; trium mensum molita cibaria sibi quemque domo efferre iubent. \nPersuadent Rauracis et Tulingis et Latobrigis finitimis, uti eodem usi consilio oppidis suis vicisque exustis una cum iis proficiscantur.\n\nSimplified for second-year Latin:\npost eius mortem nihilominus Helvetii id consilium, quod constituerant, facere conantur. \nid est, e finibus suis exire conantur. ubi iam se paratos esse arbitrati sunt, oppida sua omnia (circa duodecim), \nvicos (circa quadringentos), reliqua privata aedificia incendunt. frumentum omne, praeter id quod secum portaturi erant, \nincendunt. spe domum reditionis sublata, putant se futuros esse paratiores subire omnia pericula. \niubent quemque sibi cibaria trium mensum domo effere iubent. persuadent finitimis gentibus, Rauracis et Tulingis et Latobrigis, \nqui eodem consilio uti constituunt. oppidis suis vicisque incensis, una cum Helvetiis proficiscentur.",
+    "user_prompt_used": "\n\nsed fatis incerta feror, si Iuppiter unam\nesse velit Tyriis urbem Troiaque profectis,\nmiscerive probet populos aut foedera iungi.\ntu coniunx, tibi fas animum temptare precando.\nperge, sequar.\u201d tum sic excepit regia Iuno:\n\u201cmecum erit iste labor. nunc qua ratione quod instat\nconfieri possit, paucis (adverte) docebo.\nvenatum Aeneas unaque miserrima Dido\nin nemus ire parant, ubi primos crastinus ortus\nextulerit Titan radiisque retexerit orbem.",
+    "llm_invocation_output": {
+        "response_text": "",
+        "full_api_response": {
+            "candidates": [
+                {
+                    "content": {
+                        "role": "model"
+                    },
+                    "finishReason": "MAX_TOKENS",
+                    "index": 0,
+                    "citationMetadata": {
+                        "citationSources": [
+                            {
+                                "startIndex": 1593,
+                                "endIndex": 1723,
+                                "uri": "",
+                                "license": ""
+                            },
+                            {
+                                "startIndex": 9743,
+                                "endIndex": 9958,
+                                "uri": "",
+                                "license": ""
+                            },
+                            {
+                                "startIndex": 20155,
+                                "endIndex": 20315,
+                                "uri": "",
+                                "license": ""
+                            }
+                        ]
+                    }
+                }
+            ],
+            "usageMetadata": {
+                "promptTokenCount": 886,
+                "totalTokenCount": 6885,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 886
+                    }
+                ],
+                "thoughtsTokenCount": 5999
+            },
+            "modelVersion": "models/gemini-2.5-pro-preview-05-06",
+            "responseId": "J2lDaN2PO_2d1MkP4Zy_mQY"
+        },
+        "model_id_used": "gemini-2.5-pro-preview-05-06",
+        "prompt_id": "S2.1__U1.0",
+        "user_prompt_used": "\n\nsed fatis incerta feror, si Iuppiter unam\nesse velit Tyriis urbem Troiaque profectis,\nmiscerive probet populos aut foedera iungi.\ntu coniunx, tibi fas animum temptare precando.\nperge, sequar.\u201d tum sic excepit regia Iuno:\n\u201cmecum erit iste labor. nunc qua ratione quod instat\nconfieri possit, paucis (adverte) docebo.\nvenatum Aeneas unaque miserrima Dido\nin nemus ire parant, ubi primos crastinus ortus\nextulerit Titan radiisque retexerit orbem.",
+        "system_prompt_used": "\n\n\n\nYou are a helpful and accurate Latin language assistant. You are fluent in Latin, including authentic classical Latin style and tone. \nYou use your knowledge to help Latin instructors simplify classical Latin passages so they are understandable for students \nwho have had two years of college Latin instruction.\n\nYour goal is to generate a grammatically simpler version of a Latin passage provided by the instructor.\n\nAlthough you should interact with the instructor in English, you should not translate the provided Latin passage into English.\n\nProcess:\n\n1. Analyze the provided Latin passage to identify key ideas and important details.\n\n2. Rephrase the original Latin passage into simpler Latin using grammar and high-frequency vocabulary appropriate for second-year Latin students.\n   In particular, follow these rules when simplifying the passage:\n    - Do not omit any key ideas or important details.\n    - Do not add any new information to the passage.\n    - Do not include more than two dependent/subordinate clauses per sentence.\n    - Do not include any of the following grammatical structures:\n        - subjunctive mood verbs\n        - gerunds\n        - gerundives\n        - supines\n        - impersonal use of the passive voice\n        - double dative construction\n\n3. Before providing your response, compare the original passage to the simplified version. \n   Verify that all the key ideas have been retained and that none of the forbidden grammatical structures are present in the simplified passage.\n\n4. Present your output in the following form:\n    - Display: \"Here is the simplified passage:\"\n    - Print the simplified passage itself (do not include any commentary or translation).\n\n\nWorked Example:\n\nOriginal passage:\npost eius mortem nihilo minus Helvetii id quod constituerant facere conantur, ut e finibus suis exeant. \nUbi iam se ad eam rem paratos esse arbitrati sunt, oppida sua omnia, numero ad duodecim, vicos ad quadringentos, \nreliqua privata aedificia incendunt; frumentum omne, praeter quod secum portaturi erant, comburunt, ut domum reditionis spe sublata \nparatiores ad omnia pericula subeunda essent; trium mensum molita cibaria sibi quemque domo efferre iubent. \nPersuadent Rauracis et Tulingis et Latobrigis finitimis, uti eodem usi consilio oppidis suis vicisque exustis una cum iis proficiscantur.\n\nSimplified for second-year Latin:\npost eius mortem nihilominus Helvetii id consilium, quod constituerant, facere conantur. \nid est, e finibus suis exire conantur. ubi iam se paratos esse arbitrati sunt, oppida sua omnia (circa duodecim), \nvicos (circa quadringentos), reliqua privata aedificia incendunt. frumentum omne, praeter id quod secum portaturi erant, \nincendunt. spe domum reditionis sublata, putant se futuros esse paratiores subire omnia pericula. \niubent quemque sibi cibaria trium mensum domo effere iubent. persuadent finitimis gentibus, Rauracis et Tulingis et Latobrigis, \nqui eodem consilio uti constituunt. oppidis suis vicisque incensis, una cum Helvetiis proficiscentur.",
+        "llm_run_time": 60.879000663757324,
+        "status": "success"
+    },
+    "llm_latency_in_sec": 60.879000663757324,
+    "flow_metadata": {
+        "flow_name": "multi_llm_flow",
+        "flow_run_id": "SmokeTest_001",
+        "flow_batch_id": "smoke_test1",
+        "is_rag_flow": false,
+        "report_generated_by_node": "report_generator_node"
+    },
+    "full_flow_outputs_at_report_gen": {
+        "response_text": "",
+        "full_api_response": {
+            "candidates": [
+                {
+                    "content": {
+                        "role": "model"
+                    },
+                    "finishReason": "MAX_TOKENS",
+                    "index": 0,
+                    "citationMetadata": {
+                        "citationSources": [
+                            {
+                                "startIndex": 1593,
+                                "endIndex": 1723,
+                                "uri": "",
+                                "license": ""
+                            },
+                            {
+                                "startIndex": 9743,
+                                "endIndex": 9958,
+                                "uri": "",
+                                "license": ""
+                            },
+                            {
+                                "startIndex": 20155,
+                                "endIndex": 20315,
+                                "uri": "",
+                                "license": ""
+                            }
+                        ]
+                    }
+                }
+            ],
+            "usageMetadata": {
+                "promptTokenCount": 886,
+                "totalTokenCount": 6885,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 886
+                    }
+                ],
+                "thoughtsTokenCount": 5999
+            },
+            "modelVersion": "models/gemini-2.5-pro-preview-05-06",
+            "responseId": "J2lDaN2PO_2d1MkP4Zy_mQY"
+        },
+        "model_id_used": "gemini-2.5-pro-preview-05-06",
+        "prompt_id": "S2.1__U1.0",
+        "user_prompt_used": "\n\nsed fatis incerta feror, si Iuppiter unam\nesse velit Tyriis urbem Troiaque profectis,\nmiscerive probet populos aut foedera iungi.\ntu coniunx, tibi fas animum temptare precando.\nperge, sequar.\u201d tum sic excepit regia Iuno:\n\u201cmecum erit iste labor. nunc qua ratione quod instat\nconfieri possit, paucis (adverte) docebo.\nvenatum Aeneas unaque miserrima Dido\nin nemus ire parant, ubi primos crastinus ortus\nextulerit Titan radiisque retexerit orbem.",
+        "system_prompt_used": "\n\n\n\nYou are a helpful and accurate Latin language assistant. You are fluent in Latin, including authentic classical Latin style and tone. \nYou use your knowledge to help Latin instructors simplify classical Latin passages so they are understandable for students \nwho have had two years of college Latin instruction.\n\nYour goal is to generate a grammatically simpler version of a Latin passage provided by the instructor.\n\nAlthough you should interact with the instructor in English, you should not translate the provided Latin passage into English.\n\nProcess:\n\n1. Analyze the provided Latin passage to identify key ideas and important details.\n\n2. Rephrase the original Latin passage into simpler Latin using grammar and high-frequency vocabulary appropriate for second-year Latin students.\n   In particular, follow these rules when simplifying the passage:\n    - Do not omit any key ideas or important details.\n    - Do not add any new information to the passage.\n    - Do not include more than two dependent/subordinate clauses per sentence.\n    - Do not include any of the following grammatical structures:\n        - subjunctive mood verbs\n        - gerunds\n        - gerundives\n        - supines\n        - impersonal use of the passive voice\n        - double dative construction\n\n3. Before providing your response, compare the original passage to the simplified version. \n   Verify that all the key ideas have been retained and that none of the forbidden grammatical structures are present in the simplified passage.\n\n4. Present your output in the following form:\n    - Display: \"Here is the simplified passage:\"\n    - Print the simplified passage itself (do not include any commentary or translation).\n\n\nWorked Example:\n\nOriginal passage:\npost eius mortem nihilo minus Helvetii id quod constituerant facere conantur, ut e finibus suis exeant. \nUbi iam se ad eam rem paratos esse arbitrati sunt, oppida sua omnia, numero ad duodecim, vicos ad quadringentos, \nreliqua privata aedificia incendunt; frumentum omne, praeter quod secum portaturi erant, comburunt, ut domum reditionis spe sublata \nparatiores ad omnia pericula subeunda essent; trium mensum molita cibaria sibi quemque domo efferre iubent. \nPersuadent Rauracis et Tulingis et Latobrigis finitimis, uti eodem usi consilio oppidis suis vicisque exustis una cum iis proficiscantur.\n\nSimplified for second-year Latin:\npost eius mortem nihilominus Helvetii id consilium, quod constituerant, facere conantur. \nid est, e finibus suis exire conantur. ubi iam se paratos esse arbitrati sunt, oppida sua omnia (circa duodecim), \nvicos (circa quadringentos), reliqua privata aedificia incendunt. frumentum omne, praeter id quod secum portaturi erant, \nincendunt. spe domum reditionis sublata, putant se futuros esse paratiores subire omnia pericula. \niubent quemque sibi cibaria trium mensum domo effere iubent. persuadent finitimis gentibus, Rauracis et Tulingis et Latobrigis, \nqui eodem consilio uti constituunt. oppidis suis vicisque incensis, una cum Helvetiis proficiscentur.",
+        "llm_run_time": 60.879000663757324,
+        "status": "success"
+    }
+}

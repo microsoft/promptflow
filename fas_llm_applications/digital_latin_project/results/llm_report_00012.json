@@ -1,0 +1,95 @@
+{
+    "timestamp": "2025-06-06_00-34-41",
+    "report_id": 12,
+    "report_filename": "llm_report_00012.json",
+    "prompt_id": "SophisticatedSummary_V1",
+    "model_used": "gemini-2.5-pro-preview-05-06",
+    "system_prompt_used": "\n\n\n\nYou are a helpful and objective AI assistant. Your primary goal is to assist users with their requests accurately and efficiently. Adhere to the instructions provided in the user's prompt.",
+    "user_prompt_used": "\n\n\n\nHello AI! I need your expert assistance with summarization.\n\n**Introduction:**\nPlease read the following document carefully and prepare a concise, yet comprehensive summary. Focus on capturing the main ideas and key arguments without unnecessary details.\n\n**Document Content (for summarization):**\n```text\nThe quick brown fox jumps over the lazy dog. This sentence is often used to demonstrate typefaces or as a typing exercise because it contains all 26 letters of the English alphabet.",
+    "llm_invocation_output": {
+        "response_text": "Okay, I've read the document. Here's a concise summary:\n\nThe sentence \"The quick brown fox jumps over the lazy dog\" is a pangram, meaning it contains all 26 letters of the English alphabet. Due to this characteristic, it is frequently used for demonstrating typefaces and as a typing exercise.",
+        "full_api_response": {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "text": "Okay, I've read the document. Here's a concise summary:\n\nThe sentence \"The quick brown fox jumps over the lazy dog\" is a pangram, meaning it contains all 26 letters of the English alphabet. Due to this characteristic, it is frequently used for demonstrating typefaces and as a typing exercise."
+                            }
+                        ],
+                        "role": "model"
+                    },
+                    "finishReason": "STOP",
+                    "index": 0
+                }
+            ],
+            "usageMetadata": {
+                "promptTokenCount": 135,
+                "candidatesTokenCount": 67,
+                "totalTokenCount": 318,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 135
+                    }
+                ],
+                "thoughtsTokenCount": 116
+            },
+            "modelVersion": "models/gemini-2.5-pro-preview-05-06",
+            "responseId": "oTdCaIOZA5_B1MkP2fLr0Qs"
+        },
+        "model_id_used": "gemini-2.5-pro-preview-05-06",
+        "prompt_id": "SophisticatedSummary_V1",
+        "user_prompt_used": "\n\n\n\nHello AI! I need your expert assistance with summarization.\n\n**Introduction:**\nPlease read the following document carefully and prepare a concise, yet comprehensive summary. Focus on capturing the main ideas and key arguments without unnecessary details.\n\n**Document Content (for summarization):**\n```text\nThe quick brown fox jumps over the lazy dog. This sentence is often used to demonstrate typefaces or as a typing exercise because it contains all 26 letters of the English alphabet.",
+        "system_prompt_used": "\n\n\n\nYou are a helpful and objective AI assistant. Your primary goal is to assist users with their requests accurately and efficiently. Adhere to the instructions provided in the user's prompt.",
+        "llm_run_time": 3.1290934085845947,
+        "status": "success"
+    },
+    "llm_latency_in_sec": 3.1290934085845947,
+    "flow_metadata": {
+        "flow_name": "SummaryFlow",
+        "flow_run_id": null,
+        "flow_batch_id": "None",
+        "is_rag_flow": false,
+        "report_generated_by_node": "report_generator_node"
+    },
+    "full_flow_outputs_at_report_gen": {
+        "response_text": "Okay, I've read the document. Here's a concise summary:\n\nThe sentence \"The quick brown fox jumps over the lazy dog\" is a pangram, meaning it contains all 26 letters of the English alphabet. Due to this characteristic, it is frequently used for demonstrating typefaces and as a typing exercise.",
+        "full_api_response": {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "text": "Okay, I've read the document. Here's a concise summary:\n\nThe sentence \"The quick brown fox jumps over the lazy dog\" is a pangram, meaning it contains all 26 letters of the English alphabet. Due to this characteristic, it is frequently used for demonstrating typefaces and as a typing exercise."
+                            }
+                        ],
+                        "role": "model"
+                    },
+                    "finishReason": "STOP",
+                    "index": 0
+                }
+            ],
+            "usageMetadata": {
+                "promptTokenCount": 135,
+                "candidatesTokenCount": 67,
+                "totalTokenCount": 318,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 135
+                    }
+                ],
+                "thoughtsTokenCount": 116
+            },
+            "modelVersion": "models/gemini-2.5-pro-preview-05-06",
+            "responseId": "oTdCaIOZA5_B1MkP2fLr0Qs"
+        },
+        "model_id_used": "gemini-2.5-pro-preview-05-06",
+        "prompt_id": "SophisticatedSummary_V1",
+        "user_prompt_used": "\n\n\n\nHello AI! I need your expert assistance with summarization.\n\n**Introduction:**\nPlease read the following document carefully and prepare a concise, yet comprehensive summary. Focus on capturing the main ideas and key arguments without unnecessary details.\n\n**Document Content (for summarization):**\n```text\nThe quick brown fox jumps over the lazy dog. This sentence is often used to demonstrate typefaces or as a typing exercise because it contains all 26 letters of the English alphabet.",
+        "system_prompt_used": "\n\n\n\nYou are a helpful and objective AI assistant. Your primary goal is to assist users with their requests accurately and efficiently. Adhere to the instructions provided in the user's prompt.",
+        "llm_run_time": 3.1290934085845947,
+        "status": "success"
+    }
+}

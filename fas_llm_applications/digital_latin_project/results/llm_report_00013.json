@@ -1,0 +1,95 @@
+{
+    "timestamp": "2025-06-06_00-34-41",
+    "report_id": 13,
+    "report_filename": "llm_report_00013.json",
+    "prompt_id": "SophisticatedSummary_V1",
+    "model_used": "gemini-2.5-pro-preview-05-06",
+    "system_prompt_used": "\n\n\n\nYou are a helpful and objective AI assistant. Your primary goal is to assist users with their requests accurately and efficiently. Adhere to the instructions provided in the user's prompt.",
+    "user_prompt_used": "\n\n\n\nHello AI! I need your expert assistance with summarization.\n\n**Introduction:**\nPlease read the following document carefully and prepare a concise, yet comprehensive summary. Focus on capturing the main ideas and key arguments without unnecessary details.\n\n**Document Content (for summarization):**\n```text\nThe sun is a star, and Earth is the third planet from the sun.",
+    "llm_invocation_output": {
+        "response_text": "Okay, I've read the document. Here's a concise summary:\n\nThe document states that the sun is a star and identifies Earth as the third planet in orbit around it.",
+        "full_api_response": {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "text": "Okay, I've read the document. Here's a concise summary:\n\nThe document states that the sun is a star and identifies Earth as the third planet in orbit around it."
+                            }
+                        ],
+                        "role": "model"
+                    },
+                    "finishReason": "STOP",
+                    "index": 0
+                }
+            ],
+            "usageMetadata": {
+                "promptTokenCount": 114,
+                "candidatesTokenCount": 38,
+                "totalTokenCount": 278,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 114
+                    }
+                ],
+                "thoughtsTokenCount": 126
+            },
+            "modelVersion": "models/gemini-2.5-pro-preview-05-06",
+            "responseId": "oTdCaLixCpWu1MkP4uyQiAY"
+        },
+        "model_id_used": "gemini-2.5-pro-preview-05-06",
+        "prompt_id": "SophisticatedSummary_V1",
+        "user_prompt_used": "\n\n\n\nHello AI! I need your expert assistance with summarization.\n\n**Introduction:**\nPlease read the following document carefully and prepare a concise, yet comprehensive summary. Focus on capturing the main ideas and key arguments without unnecessary details.\n\n**Document Content (for summarization):**\n```text\nThe sun is a star, and Earth is the third planet from the sun.",
+        "system_prompt_used": "\n\n\n\nYou are a helpful and objective AI assistant. Your primary goal is to assist users with their requests accurately and efficiently. Adhere to the instructions provided in the user's prompt.",
+        "llm_run_time": 3.245281457901001,
+        "status": "success"
+    },
+    "llm_latency_in_sec": 3.245281457901001,
+    "flow_metadata": {
+        "flow_name": "SummaryFlow",
+        "flow_run_id": null,
+        "flow_batch_id": "None",
+        "is_rag_flow": false,
+        "report_generated_by_node": "report_generator_node"
+    },
+    "full_flow_outputs_at_report_gen": {
+        "response_text": "Okay, I've read the document. Here's a concise summary:\n\nThe document states that the sun is a star and identifies Earth as the third planet in orbit around it.",
+        "full_api_response": {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "text": "Okay, I've read the document. Here's a concise summary:\n\nThe document states that the sun is a star and identifies Earth as the third planet in orbit around it."
+                            }
+                        ],
+                        "role": "model"
+                    },
+                    "finishReason": "STOP",
+                    "index": 0
+                }
+            ],
+            "usageMetadata": {
+                "promptTokenCount": 114,
+                "candidatesTokenCount": 38,
+                "totalTokenCount": 278,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 114
+                    }
+                ],
+                "thoughtsTokenCount": 126
+            },
+            "modelVersion": "models/gemini-2.5-pro-preview-05-06",
+            "responseId": "oTdCaLixCpWu1MkP4uyQiAY"
+        },
+        "model_id_used": "gemini-2.5-pro-preview-05-06",
+        "prompt_id": "SophisticatedSummary_V1",
+        "user_prompt_used": "\n\n\n\nHello AI! I need your expert assistance with summarization.\n\n**Introduction:**\nPlease read the following document carefully and prepare a concise, yet comprehensive summary. Focus on capturing the main ideas and key arguments without unnecessary details.\n\n**Document Content (for summarization):**\n```text\nThe sun is a star, and Earth is the third planet from the sun.",
+        "system_prompt_used": "\n\n\n\nYou are a helpful and objective AI assistant. Your primary goal is to assist users with their requests accurately and efficiently. Adhere to the instructions provided in the user's prompt.",
+        "llm_run_time": 3.245281457901001,
+        "status": "success"
+    }
+}
