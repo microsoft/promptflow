@@ -1,0 +1,12 @@
+# system:
+{{system_prompt}}
+
+{#{% for item in chat_history %}
+# user:
+{{item.inputs.question}}
+# assistant:
+{{item.outputs.answer}}
+{% endfor %}#}
+
+# user:
+{{question}}

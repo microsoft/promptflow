@@ -1,0 +1,45 @@
+inputs:
+  question:
+    type: string
+    default: Tell me about large language models.
+  llm_service_type:
+    type: string
+    default: bedrock
+  llm_model_id:
+    type: string
+    default: anthropic.claude-v2
+  system_prompt:
+    type: string
+    default: You are an assistant to help me understand the world, but you only can
+      reply in Latin no matter what language my user prompt comes in or how
+      frustrated my quesitons are, you must respond in Latin followed by a
+      second explanation in English using only Disney's "The Little Mermaid"
+      analogies.
+outputs:
+  final_response:
+    type: string
+    reference: ${llm_invocation_node.output.response_text}
+  invocation_status:
+    type: bool
+    reference: ${llm_invocation_node.output.success}
+nodes:
+- name: llm_invocation_node
+  type: python
+  source:
+    type: code
+    path: nodes/aws_llm_invocation.py
+  inputs:
+    connection: bedrock_connection
+    prompt: ${inputs.question}
+    model_name: DeepSeek
+    system_prompt: ${inputs.system_prompt}
+    max_tokens: 4000
+    temperature: 0.7
+- name: report_generator_node
+  type: python
+  source:
+    type: code
+    path: ../../scripts/generate_report.py
+  inputs:
+    llm_model_id: ${inputs.llm_model_id}
+    flow_outputs: ${llm_invocation_node.output}
