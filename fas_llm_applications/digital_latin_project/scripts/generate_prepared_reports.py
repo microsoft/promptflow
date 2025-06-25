@@ -112,6 +112,9 @@ def process_report(report_id, verbose=True):
         content = extract_content(data)
         input_tokens = usage_token(data, "promptTokenCount", "input_tokens")
         output_tokens = usage_token(data, "candidatesTokenCount", "output_tokens")
+        thought_tokens = usage_token(data, "thoughtsTokenCount", "")
+        total_token_reported = usage_token(data, "totalTokenCount", "")
+        total_tokens = int(total_token_reported) if total_token_reported else input_tokens + output_tokens
         md = f"""\
 Timestamp: {data.get("timestamp", "")}
 Report ID: {data.get("report_id", "")}
@@ -122,13 +125,16 @@ Model Used: {data.get("model_used", "")}
 System Prompt ID: {sys_id}
 User Prompt ID: {user_id}
 
+Input Tokens: {input_tokens}
+Output Tokens: {output_tokens}
+Reasoning Tokens: {thought_tokens}
+Total Tokens: {total_tokens}
+
+LLM Latency (in seconds): {data.get("llm_latency_in_sec", "")}
+
 Flow Name: {data.get("flow_metadata", {}).get("flow_name", "")}
 Flow Run ID: {data.get("flow_metadata", {}).get("flow_run_id", "")}
 Is RAG Flow: {data.get("flow_metadata", {}).get("is_rag_flow", "")}
-
-Input Tokens: {input_tokens}
-Output Tokens: {output_tokens}
-LLM Latency (in seconds): {data.get("llm_latency_in_sec", "")}
 
 Content:
 

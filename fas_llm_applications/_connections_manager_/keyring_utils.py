@@ -29,12 +29,12 @@ def verify_keyring():
 
     # Verify Keyring back end path
     if python_keyring_backend_env != expected_backend_path:
-        raise ValueError(f"WARNING: PYTHON_KEYRING_BACKEND is not set to the recommended path. Expected: {expected_backend_path}. Found: {python_keyring_backend_env}", file=sys.stderr)
+        raise RuntimeError(f"PYTHON_KEYRING_BACKEND must be {expected_backend_path}, got {python_keyring_backend_env}", file=sys.stderr)
 
     # Get the master password from the environment variable
     master_password = os.environ.get("KEYRING_CRYPTFILE_PASSWORD")
     if not master_password:
-        raise ValueError("KEYRING_CRYPTFILE_PASSWORD environment variable not set or is empty.")
+        raise RuntimeError("KEYRING_CRYPTFILE_PASSWORD environment variable not set or is empty.")
 
     # Create the CryptFileKeyring instance and assign the master password directly
     # This prevents the interactive prompt.
@@ -47,7 +47,7 @@ def verify_keyring():
     # Tests keyring is set
     active_keyring = keyring.get_keyring()
     if active_keyring != kr:
-        raise ValueError("Error: Active keyring backend found is not set to the recommended value. Found: {active_keyring}")
+        raise RuntimeError("Error: Active keyring backend found is not set to the recommended value. Found: {active_keyring}")
 
     # Test storing and retrieving a password
     service_name = "my_promptflow_app"

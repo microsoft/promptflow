@@ -10,11 +10,9 @@ from promptflow.connections import CustomConnection
 from fas_llm_applications._connections_manager_.aws_connection_utils import (
     ensure_promptflow_aws_connection,
 )
-from fas_llm_applications._connections_manager_.gemini_connection_utils import (
-    ensure_promptflow_gemini_connection,
-)
 from fas_llm_applications._connections_manager_.common_secrets_loader import get_env_var
 from fas_llm_applications._connections_manager_.client_utils import get_pf_client
+from fas_llm_applications._connections_manager_.keyring_utils import verify_keyring
 from jinja2 import (
     Environment,
     FileSystemLoader,
@@ -101,6 +99,10 @@ def invoke_llm(
 
     try:
         # Attempt to get connections from the Promptflow Client
+        
+        # Keyring holds sensitive config parameters for connection
+        # verifying keyring to sensure it is working in the active session
+        verify_keyring()
         pf_client = get_promptflow_client()
         all_connections = pf_client.connections.list()
         if all_connections:

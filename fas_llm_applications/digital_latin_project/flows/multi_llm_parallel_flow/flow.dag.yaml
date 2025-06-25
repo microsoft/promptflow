@@ -7,7 +7,7 @@ inputs:
     default: U1.0
   llm_model_id:
     type: string
-    default: us.anthropic.claude-3-7-sonnet-20250219-v1:0
+    default: gemini-2.5-pro-preview-05-06
   dynamic_template_variables:
     type: object
     default: {}
@@ -19,7 +19,7 @@ inputs:
     default: false
   batch_id:
     type: string
-    default: smoke_test_2_run_1
+    default: invocation_clean_up_test
   test_case_no:
     type: int
     default: 30
