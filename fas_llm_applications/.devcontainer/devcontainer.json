@@ -1,0 +1,40 @@
+{
+  "name": "Promptflow-FAS_LLM_Applications-Python39",
+  "context": ".",
+  "dockerFile": "Dockerfile",
+  "runArgs": [
+    "-v",
+    "/var/run/docker.sock:/var/run/docker.sock"
+  ],
+	"postStartCommand": "/bin/bash -c 'set -e; eval \"$(python digital_latin_project/scripts/load_env_to_shell.py)\" && PYTHON_ENV_SOURCE_CMD=\"eval \\\"\\$(python digital_latin_project/scripts/load_env_to_shell.py)\\\"\" && grep -qF \"${PYTHON_ENV_SOURCE_CMD}\" ~/.bashrc || echo \"${PYTHON_ENV_SOURCE_CMD}\" >> ~/.bashrc && python _connections_manager_/setup_all_shared_connections.py'",
+  "postCreateCommand": "pip install -r requirements.txt",
+  "remoteEnv": {
+    "HOST_PROJECT_PATH": "${localWorkspaceFolder}",
+    "PYTHONPATH": "/workspaces/promptflow:${containerEnv:PYTHONPATH}"
+  },
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "README.md",
+        "examples/README.md"
+      ]
+    },
+    "vscode": {
+      "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash",
+        "python.pythonPath": "${containerWorkspaceFolder}/.venv/bin/python",
+        "python.terminal.activateEnvironment": true // Automatically activate venv in terminal
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.vscode-ai",
+        "ms-toolsai.jupyter",
+        "redhat.vscode-yaml",
+        "prompt-flow.prompt-flow"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/azure-cli:1": {}
+  }
+}
