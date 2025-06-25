@@ -1,0 +1,39 @@
+{
+    "timestamp": "2025-06-24_23-52-32",
+    "report_id": 120,
+    "report_filename": "llm_report_00120.json",
+    "test_batch_id": "smoke_test_2_run_1",
+    "test_case_no": 30,
+    "system_prompt_id": "S2.2A",
+    "user_prompt_id": "U1.0",
+    "model_used": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+    "system_prompt_used": "\n\n\n\nYou are a helpful and accurate Latin language assistant. You are fluent in Latin, including authentic classical Latin style and tone, and you have an expert understanding of Latin grammatical structures. You use your knowledge to help Latin instructors simplify classical Latin passages so they are understandable for students who have finished two years of college Latin.\n\nYour goal is to generate a grammatically simpler version of a Latin passage provided by the instructor.\n\nAlthough you should interact with the instructor in English, you should not translate the provided Latin passage into English.\n\nHere is the process you should follow:\n\n1. Analyze the provided Latin text to identify key ideas and important details. Make sure to identify important context so you can preserve it in the simplified passage. Pay particular attention to dialog, noting who is speaking, who they are speaking to, and the subjects and objects of each statement.\n2. Rephrase the original Latin in the passage into simpler Latin, using grammar and high-frequency vocabulary appropriate for second-year Latin students. In particular, follow these rules when simplifying the passage:\n    - Do not omit any key ideas or important details.\n    - Retain all of the important context from the original passage.\n    - Do not add any new information to the passage. \n    - Do not include more than two dependent/subordinate clauses per sentence.\n    - If the original passage includes any of the following forbidden grammatical structures, replace them with simpler structures that are not forbidden:\n        - subjunctive mood verbs\n        - gerunds\n        - gerundives\n        - supines\n        - impersonal use of the passive voice\n        - double dative construction\n    - When you simplify the passage, do not add any of the forbidden grammatical structures listed above. \n3. Before providing your response, compare the original passage to the simplified version. Verify that all the key ideas and context have been retained. Pay special attention to dialog, making sure that the speaker, listener, subjects, and objects of all dialog are the same as in the original passage. If they are not, revise the simplified passage so it preserves the key ideas and context from the original passage.\n4. Before providing your response, check the simplified passage and confirm that it does not contain any of the forbidden grammatical structures listed above. If the passage still contains any of the forbidden grammatical structures, rephrase those parts of the passage so they do not use any of the forbidden structures.\n5. Present your output in the following form:\n    - Display, \"Here is the simplified passage:\"\n    - Print the simplified passage. Do not include any commentary or translation.\n\n\nWorked Example:\n\nHere is an example of an appropriate simplification. The original passage was: \"post eius mortem nihilo minus Helvetii id quod constituerant facere conantur, ut e finibus suis exeant. Ubi iam se ad eam rem paratos esse arbitrati sunt, oppida sua omnia, numero ad duodecim, vicos ad quadringentos, reliqua privata aedificia incendunt;  frumentum omne, praeter quod secum portaturi erant, comburunt, ut domum reditionis spe sublata paratiores ad omnia pericula subeunda essent; trium mensum molita cibaria sibi quemque domo efferre iubent. Persuadent Rauracis et Tulingis et Latobrigis finitimis, uti eodem usi consilio oppidis suis vicisque exustis una cum iis proficiscantur\".\n\nHere is a simplified version of this passage that is appropriate for second-year Latin students: \"post eius mortem nihilominus Helvetii id consilium, quod constituerant, facere conantur. id est, e finibus suis exire conantur. ubi iam se paratos esse arbitrati sunt, oppida sua omnia (circa duodecim), vicos (circa quadringentos), reliqua privata aedificia incendunt.  frumentum omne, praeter id quod secum portaturi erant, incendunt.  spe domum reditionis sublata, putant se futuros esse paratiores subire omnia pericula. iubent quemque sibi cibaria trium mensum domo effere iubent. persuadent finitimis gentibus, Rauracis et Tulingis et Latobrigis, qui eodem consilio uti constituunt. oppidis suis vicisque incensis, una cum Helvetiis proficiscentur\".",
+    "user_prompt_used": "\n\nsed fatis incerta feror, si Iuppiter unam\nesse velit Tyriis urbem Troiaque profectis,\nmiscerive probet populos aut foedera iungi.\ntu coniunx, tibi fas animum temptare precando.\nperge, sequar.\u201d tum sic excepit regia Iuno:\n\u201cmecum erit iste labor. nunc qua ratione quod instat\nconfieri possit, paucis (adverte) docebo.\nvenatum Aeneas unaque miserrima Dido\nin nemus ire parant, ubi primos crastinus ortus\nextulerit Titan radiisque retexerit orbem.",
+    "llm_invocation_output": {
+        "id": "msg_bdrk_016mzN9E21M4pGSJHTYz5iUw",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-3-7-sonnet-20250219",
+        "content": [
+            {
+                "type": "text",
+                "text": "Here is the simplified passage:\n\nsed fatis incerta feror. nescio utrum Iuppiter vult Tyriis et Troianis unam urbem esse, an vult populos misceri et foedera iungi. tu es meus coniunx, et tu potes animum Iovis temptare tuis precibus. perge, et ego te sequar.\" tum regina Iuno sic respondit: \"iste labor erit mecum. nunc docebo te paucis verbis quomodo id facere possumus. audi me! Aeneas et infelix Dido parant ire venatum in nemus. ibunt quando dies crastinus veniet et sol illuminabit terram suis radiis."
+            }
+        ],
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "usage": {
+            "input_tokens": 1219,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 180
+        }
+    },
+    "llm_latency_in_sec": 22.802114486694336,
+    "flow_metadata": {
+        "flow_name": "multi_llm_parallel_flow",
+        "flow_run_id": "auto_multi_llm_parallel_flow_S2.2A__U1.0_2025-06-24_23-52-32_aa5fdf90",
+        "is_rag_flow": false,
+        "report_generated_by_node": "report_generator_node"
+    }
+}
