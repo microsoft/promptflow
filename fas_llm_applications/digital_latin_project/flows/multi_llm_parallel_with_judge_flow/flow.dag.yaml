@@ -7,7 +7,7 @@ inputs:
     default: U1.0
   llm_model_id:
     type: string
-    default: gemini-2.5-pro-preview-05-06
+    default: us.anthropic.claude-3-7-sonnet-20250219-v1:0
   dynamic_template_variables:
     type: object
     default: {}
@@ -19,10 +19,10 @@ inputs:
     default: false
   batch_id:
     type: string
-    default: test_setup_3_7.1.2025
+    default: smoke_test_2_run_1
   test_case_no:
     type: int
-    default: 4
+    default: 30
 outputs:
   final_response:
     type: string
@@ -64,6 +64,12 @@ nodes:
     dynamic_template_variables: ${inputs.dynamic_template_variables}
     system_prompt_id: ${inputs.system_prompt_id}
     user_prompt_id: ${inputs.user_prompt_id}
+- name: llm_judge_evaluation_node
+  type: python
+  source:
+    type: code
+    path: llm_judge_evaluation_node.py
+  inputs: {}
 - name: multi_llm_report_node
   type: python
   source:

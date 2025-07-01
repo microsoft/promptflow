@@ -1,7 +1,9 @@
 import os
+import pandas as pd
 from promptflow.core import tool
 from fas_llm_applications.digital_latin_project.utilities.prompt_registry_util import get_system_prompt, get_user_prompt
 from typing import Dict, Any
+from pathlib import Path
 
 PROMPT_TEMPLATES_BASE_PATH = "fas_llm_applications/digital_latin_project/prompts/"
 
@@ -39,14 +41,29 @@ def prompt_selector(
 
         # TODO: Additional prompt configurations to be added for the judge as LLM prompts
 
-        # Build Prompt Config
+        # Create empty dictionary for template variables
+        template_variables = {}
+
+        # Gather template variables from prompt data
+        ## Path to prompt data
+        prompt_data_base_path = "fas_llm_applications/digital_latin_project/data/prompt_data"
+
+        ## For each file in the prompt data file path, use the file name to add a key in the dictionary
+        for file_path in Path(prompt_data_base_path).glob("*.csv"):
+            # Use the file name (without extensions) as key
+            key = file_path.stem  #example dcc_words from dcc_words.csv
+
+            # Add a value as the file content (converted to text)
+            data_frame = pd.read_csv(file_path)
+            text_data = data_frame.to_csv(index=False)
+            print(f"For `{key}` data, value 10 character preview: [`{text_data[:10]}`]")
+            template_variables[key] = data_frame.to_csv(index=False)
+
+        ## Build Prompt Config
         prompt_config = {
             "system_prompt_template_path": os.path.join(SYSTEM_PROMPT_DIR, system_prompt_filename), # Now in 'system' subfolder
             "user_prompt_template_path": os.path.join(USER_PROMPT_DIR, user_prompt_filename), # Now in 'user' subfolder
-            "template_variables": {
-                "context": None,
-                "question": None
-            }
+            "template_variables": template_variables
         }
         return prompt_config
     

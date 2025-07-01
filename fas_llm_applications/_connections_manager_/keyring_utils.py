@@ -29,7 +29,7 @@ def verify_keyring():
 
     # Verify Keyring back end path
     if python_keyring_backend_env != expected_backend_path:
-        raise ValueError(f"WARNING: PYTHON_KEYRING_BACKEND is not set to the recommended path. Expected: {expected_backend_path}. Found: {python_keyring_backend_env}", file=sys.stderr)
+        raise ValueError(f"WARNING: PYTHON_KEYRING_BACKEND is not set to the recommended path. Expected: {expected_backend_path}. Found: {python_keyring_backend_env}")
 
     # Get the master password from the environment variable
     master_password = os.environ.get("KEYRING_CRYPTFILE_PASSWORD")

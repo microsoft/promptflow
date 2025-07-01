@@ -3,6 +3,8 @@
   "context": ".",
   "dockerFile": "Dockerfile",
   "runArgs": [
+    "--env-file",
+    "${localWorkspaceFolder}/digital_latin_project/.env",
     "-v",
     "/var/run/docker.sock:/var/run/docker.sock"
   ],

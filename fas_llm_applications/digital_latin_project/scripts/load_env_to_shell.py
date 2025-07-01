@@ -20,28 +20,31 @@ import sys
 import os
 from dotenv import dotenv_values
 
-fas_llm_applications_parent_dir= os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-sys.path.insert(0, fas_llm_applications_parent_dir)
-solution_root_for_env = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-dotenv_path = os.path.join(solution_root_for_env, ".env")
+def load_environment_variables():
+    fas_llm_applications_parent_dir= os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+    sys.path.insert(0, fas_llm_applications_parent_dir)
+    solution_root_for_env = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    dotenv_path = os.path.join(solution_root_for_env, ".env")
 
-if not os.path.exists(dotenv_path):
-    print(f"ERROR (load_env_to_shell.py): .env file not found at {dotenv_path}", file=sys.stderr) # Print to stderr
-    sys.exit(1)
+    if not os.path.exists(dotenv_path):
+        print(f"ERROR (load_env_to_shell.py): .env file not found at {dotenv_path}", file=sys.stderr) # Print to stderr
+        sys.exit(1)
 
-# Load values from .env without affecting current Python process's os.environ
-# We want to print them for the *shell*, not load them here.
-config = dotenv_values(dotenv_path=dotenv_path)
+    # Load values from .env without affecting current Python process's os.environ
+    # We want to print them for the *shell*, not load them here.
+    config = dotenv_values(dotenv_path=dotenv_path)
 
 
-if not config:
-    print(f"WARNING: No environment variables found in .env file at {dotenv_path}", file=sys.stderr)
-    sys.exit(0) # Exit gracefully if no vars are found, but don't error out the shell
+    if not config:
+        print(f"WARNING: No environment variables found in .env file at {dotenv_path}", file=sys.stderr)
+        sys.exit(0) # Exit gracefully if no vars are found, but don't error out the shell
 
-# Iterate through the loaded config and print export commands
-for key, value in config.items():
-    if value is not None:
-        # Quote values to handle spaces or special characters
-        print(f'export {key}="{value}"')
+    # Iterate through the loaded config and print export commands
+    for key, value in config.items():
+        if value is not None:
+            # Quote values to handle spaces or special characters
+            print(f'export {key}="{value}"')
 
-print(f"Finished exporting environment variables.", file=sys.stderr)
+    print(f"Finished exporting environment variables.", file=sys.stderr)
+
+load_environment_variables()

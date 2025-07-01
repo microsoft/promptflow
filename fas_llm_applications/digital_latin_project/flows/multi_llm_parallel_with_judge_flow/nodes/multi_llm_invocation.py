@@ -15,7 +15,6 @@ from fas_llm_applications._connections_manager_.gemini_connection_utils import (
 )
 from fas_llm_applications._connections_manager_.common_secrets_loader import get_env_var
 from fas_llm_applications._connections_manager_.client_utils import get_pf_client
-from fas_llm_applications._connections_manager_.keyring_utils import verify_keyring # ruff: noqa: E402
 from jinja2 import (
     Environment,
     FileSystemLoader,
@@ -68,10 +67,7 @@ def invoke_llm(
     """
     print(f"Rendering prompts from templates in {PROJECT_ROOT_FOR_TEMPLATES}")
 
-    # Merge template variables within the Python tool, ** operator unpacks dictionarys
-    # Result is single dictionary with key words from both dictionaries on same level,
-    # In python packing merges, the rightmost (later or last) dictionaries will always win
-    # in python unpacking merges
+    # Merge template variables within the Python tool
     merged_template_variables = {
         **selector_template_variables,
         **dynamic_template_variables,
@@ -104,12 +100,6 @@ def invoke_llm(
         return {"error": f"Failed to render Jinja template(s): {e}", "status": "failed"}
 
     try:
-        # Verify keyring to ensure keyring is set up and available
-        # This eliminates the need to provide the keyring password
-        # interactively
-        has_existing_connection = False
-        print(f"Identifying connections for model_id: {model_id}")
-        verify_keyring()
         # Attempt to get connections from the Promptflow Client
         pf_client = get_promptflow_client()
         all_connections = pf_client.connections.list()
@@ -124,7 +114,7 @@ def invoke_llm(
             print("No connections found on PF Client")
     except Exception as e:
         print(
-            f"Error: An error occured when checking Promptflow Client for connections: {e}"
+            "Error: An error occured when checking Promptflow Client for connections: {e}"
         )
         print("Will build connections instead")
         pass
@@ -132,9 +122,8 @@ def invoke_llm(
     if "gemini" in model_id.lower():
 
         try:
-            print("Getting Gemini Connections...")
             # Get gemini connection from PF Client
-            if (has_existing_connection and
+            if (
                 GEMINI_CONNECTION in connections_list
                 and pf_client.connections.get(name=GEMINI_CONNECTION).configs.get(
                     "base_url"
@@ -216,21 +205,19 @@ def invoke_llm(
 
     else:
         try:
-            print("Getting Bedrock Connections...")
-            # Get bedrock connection from PF Client'
-            if (has_existing_connection and
+            # Get bedrock connection from PF Client
+            if (
                 BEDROCK_CONNECTION in connections_list
                 and pf_client.connections.get(name=BEDROCK_CONNECTION).configs.get(
                     "region_name"
                 )
                 == DEFAULT_REGION
             ):
-                print("Found Bedrock Connection")
                 bedrock_connection = pf_client.connections.get(name=BEDROCK_CONNECTION)
 
             else:
-                # Create new bedrock connection 
-                bedrock_connection = create_aws_connection()
+                # Create new bedrock connection
+                bedrock_connection = create_gemini_connection()
 
             # Retrieve AWS credentials and region from the PromptFlow CustomConnection
             aws_access_key_id = bedrock_connection.secrets.get("aws_access_key_id")
@@ -242,12 +229,11 @@ def invoke_llm(
             )  # Default to us-east-1 if not specified
 
             if not aws_access_key_id or not aws_secret_access_key:
-                raise Exception(
+                raise ValueError(
                     "AWS access_key_id or secret_access_key not found in the Bedrock connection."
                 )
 
             # Initialize Bedrock Runtime client
-            print("Calling bedrock")
             bedrock_runtime = boto3.client(
                 service_name="bedrock-runtime",
                 region_name=aws_region,
@@ -337,12 +323,10 @@ def invoke_llm(
             end_time = time.time()
             duration = end_time - start_time  # Duration in seconds
 
-            print('text_response', llm_text_response)
-
             llm_node_invocation_output = {
                 "system_prompt_id": system_prompt_id,
                 "user_prompt_id": user_prompt_id,
-                "model_id_used": model_id if type(model_id) == str else "PROBLEM",
+                "model_id_used": model_id,
                 "response_text": llm_text_response,
                 "full_api_response": full_api_response,
                 "user_prompt_used": rendered_user_prompt,  # Return the RENDERED user prompt
@@ -365,45 +349,36 @@ def invoke_llm(
 
 def create_aws_connection() -> CustomConnection:
 
-    print("Creating a new Bedrock connection")
+    aws_access_key = get_env_var("AWS_AI_WORKFLOW_CORE_DEV_ID")
+    aws_secret_key = get_env_var("AWS_AI_WORKFLOW_CORE_DEV_SECRET")
+    aws_region = get_env_var("AWS_DEFAULT_REGION") or "us-east-1"
 
-    try:
-        aws_access_key = get_env_var("AWS_AI_WORKFLOW_CORE_DEV_ID")
-        aws_secret_key = get_env_var("AWS_AI_WORKFLOW_CORE_DEV_SECRET")
-        aws_region = get_env_var("AWS_DEFAULT_REGION") or "us-east-1"
-
-        connection = ensure_promptflow_aws_connection(
-            access_key=aws_access_key,
-            secret_key=aws_secret_key,
-            region=aws_region,
-            connection_name=BEDROCK_CONNECTION,
-            service_name=BEDROCK_SERVICE_NAME,
-        )
-    except Exception as e:
-        raise Exception(f"An error occurred while creating the Gemini connection: {e}")
+    connection = ensure_promptflow_aws_connection(
+        access_key=aws_access_key,
+        secret_key=aws_secret_key,
+        region=aws_region,
+        connection_name=BEDROCK_CONNECTION,
+        service_name=BEDROCK_SERVICE_NAME,
+    )
     return connection
 
 
 def create_gemini_connection() -> CustomConnection:
 
-    print("create new gemini connection")
-    try: 
-        api_key = get_env_var("GEMINI_API_KEY")
-        base_url = get_env_var("GEMINI_BASE_URL")
+    api_key = get_env_var("GEMINI_API_KEY")
+    base_url = get_env_var("GEMINI_BASE_URL")
 
-        # Create the connection object with desired properties
-        connection = CustomConnection(
-            name=GEMINI_CONNECTION,
-            secrets={
-                "api_key": api_key
-            },  # The 'api_key' will be accessed by gemini_llm_invocation.py
-            configs={
-                "base_url": base_url
-            },  # The 'base_url' will be accessed by gemin_llm_invocation.py
-            description=f"HUIT AI Services Gemini API Connection via {base_url}",
-        )
-    except Exception as e:
-        raise Exception(f"An error occurred while creating the Gemini connection: {e}")
+    # Create the connection object with desired properties
+    connection = CustomConnection(
+        name=GEMINI_CONNECTION,
+        secrets={
+            "api_key": api_key
+        },  # The 'api_key' will be accessed by gemini_llm_invocation.py
+        configs={
+            "base_url": base_url
+        },  # The 'base_url' will be accessed by gemin_llm_invocation.py
+        description=f"HUIT AI Services Gemini API Connection via {base_url}",
+    )
     return connection
 
 
