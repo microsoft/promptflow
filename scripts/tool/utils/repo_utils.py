@@ -8,7 +8,7 @@ from pathlib import Path
 import requests
 
 scripts_dir = os.path.join(os.getcwd(), "scripts")
-index_url = "https://azuremlsdktestpypi.azureedge.net/test-promptflow/promptflow-tools"
+index_url = "https://fdnpromptflow.azureedge.net/test-promptflow/promptflow-tools"
 ado_promptflow_repo_url_format = "https://{0}@dev.azure.com/msdata/Vienna/_git/PromptFlow"
 
 
@@ -63,7 +63,7 @@ def create_remote_branch_in_ADO_with_new_tool_pkg_version(
     shutil.copy(source_file, destination_folder)
 
     new_lines = [
-        f"--extra-index-url https://azuremlsdktestpypi.azureedge.net/{blob_prefix}\n",
+        f"--extra-index-url https://fdnpromptflow.azureedge.net/{blob_prefix}\n",
         f"promptflow_tools=={tool_pkg_version}\n",
     ]
     replace_lines_from_file_under_hint(
