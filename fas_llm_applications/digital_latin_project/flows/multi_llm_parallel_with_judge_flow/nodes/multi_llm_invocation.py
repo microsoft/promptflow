@@ -151,11 +151,10 @@ def invoke_llm(
             payload = {
                 "contents": [  # Only user messages (and interleaved model messages) go here
                     {"role": "user", "parts": [{"text": rendered_user_prompt}]}
-                ]
-                # "generationConfig": { # Temporarily remove so we get default model content and behavior
-                #     "temperature": temperature,
-                #     "maxOutputTokens": max_tokens
-                # }
+                ],
+                "generationConfig": {
+                    "maxOutputTokens": 65536
+                }
             }
 
             if rendered_system_prompt:

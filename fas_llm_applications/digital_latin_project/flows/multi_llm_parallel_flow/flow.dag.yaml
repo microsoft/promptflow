@@ -1,10 +1,10 @@
 inputs:
   system_prompt_id:
     type: string
-    default: S2.2A
+    default: S1.3
   user_prompt_id:
     type: string
-    default: U1.0
+    default: U2.0
   llm_model_id:
     type: string
     default: gemini-2.5-pro-preview-05-06
@@ -19,10 +19,10 @@ inputs:
     default: false
   batch_id:
     type: string
-    default: test_setup_3_7.1.2025
+    default: smoke_test_3_run_4
   test_case_no:
     type: int
-    default: 4
+    default: 1
 outputs:
   final_response:
     type: string

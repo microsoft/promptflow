@@ -1,3 +1,0 @@
-test_case_no,system_prompt_id,user_prompt_id,llm_model_id,flow_name,is_rag_flow,batch_id,dynamic_template_variables
-27,S1.2C,U1.0,us.anthropic.claude-opus-4-20250514-v1:0,multi_llm_parallel_flow,FALSE,smoke_test_2_run_1,{}
-30,S2.2C,U1.0,us.anthropic.claude-opus-4-20250514-v1:0,multi_llm_parallel_flow,FALSE,smoke_test_2_run_1,{}

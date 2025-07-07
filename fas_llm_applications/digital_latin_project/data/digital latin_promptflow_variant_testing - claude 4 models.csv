@@ -1,6 +1,0 @@
-test_case_no,system_prompt_id,user_prompt_id,llm_model_id,flow_name,is_rag_flow,batch_id,dynamic_template_variables
-4,S1.2A,U1.0,anthropic.claude-sonnet-4-20250514-v1:0,multi_llm_parallel_flow,FALSE,smoke_test_2_trial_run_claude4_models_test2,{}
-5,S1.2B,U1.0,us.anthropic.claude-sonnet-4-20250514-v1:0,multi_llm_parallel_flow,FALSE,smoke_test_2_trial_run_claude4_models_test2,{}
-6,S1.2C,U1.0,anthropic.claude-sonnet-4-20250514-v1:0,multi_llm_parallel_flow,FALSE,smoke_test_2_trial_run_claude4_models_test2,{}
-7,S2.2B,U1.0,us.anthropic.claude-opus-4-20250514-v1:0,multi_llm_parallel_flow,FALSE,smoke_test_2_trial_run_claude4_models_test2,{}
-8,S2.2C,U1.0,us.anthropic.claude-opus-4-20250514-v1:0,multi_llm_parallel_flow,FALSE,smoke_test_2_trial_run_claude4_models_test2,{}

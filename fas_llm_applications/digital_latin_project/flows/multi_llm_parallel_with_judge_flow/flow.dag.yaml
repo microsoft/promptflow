@@ -1,89 +1,44 @@
 inputs:
-  system_prompt_id:
+  judge_prompt_id:
     type: string
-    default: S2.2A
-  user_prompt_id:
+    default: J2.1
+  judge_user_prompt_id:
     type: string
-    default: U1.0
+    default: ju1.0
   llm_model_id:
     type: string
-    default: us.anthropic.claude-3-7-sonnet-20250219-v1:0
-  dynamic_template_variables:
-    type: object
-    default: {}
-  flow_name:
-    type: string
-    default: multi_llm_parallel_flow
-  is_rag_flow:
-    type: bool
-    default: false
-  batch_id:
-    type: string
-    default: smoke_test_2_run_1
-  test_case_no:
+    default: gemini-2.5-pro
+  original_result_report_id:
     type: int
-    default: 30
+    default: 151
 outputs:
-  final_response:
+  evaluation_status:
     type: string
-    reference: ${multi_llm_node.output.response_text}
-  invocation_status:
-    type: bool
-    reference: ${multi_llm_node.output.status}}
-  report_status:
+    reference: ${llm_judge_evaluation_node.output.status}
+  evaluation_report_path:
     type: string
-    value: ${report_generator_node.output.status}
-    reference: ${multi_llm_report_node.output.status}
-  report_path:
-    type: string
-    value: ${report_generator_node.output.report_path}
-    reference: ${multi_llm_report_node.output.report_path}
-  report_id:
+    reference: ${llm_judge_evaluation_node.output.evaluation_report_path}
+  evaluation_report_id:
     type: int
-    value: ${report_generator_node.output.report_id}
-    reference: ${multi_llm_report_node.output.report_id}
+    reference: ${llm_judge_evaluation_node.output.evaluation_report_id}
 nodes:
-- name: prompt_selector_node
+- name: prompt_selector_tool
   type: python
   source:
     type: code
     path: ../../tools/prompt_selector_tool.py
   inputs:
-    system_prompt_id: ${inputs.system_prompt_id}
-    user_prompt_id: ${inputs.user_prompt_id}
-- name: multi_llm_node
-  type: python
-  source:
-    type: code
-    path: nodes/multi_llm_invocation.py
-  inputs:
-    user_prompt_template_path: ${prompt_selector_node.output.user_prompt_template_path}
-    system_prompt_template_path: ${prompt_selector_node.output.system_prompt_template_path}
-    model_id: ${inputs.llm_model_id}
-    selector_template_variables: ${prompt_selector_node.output.template_variables}
-    dynamic_template_variables: ${inputs.dynamic_template_variables}
-    system_prompt_id: ${inputs.system_prompt_id}
-    user_prompt_id: ${inputs.user_prompt_id}
+    judge_prompt_id: ${inputs.judge_prompt_id}
+    judge_user_prompt_id: ${inputs.judge_user_prompt_id}
+    report_id: ${inputs.original_result_report_id}
 - name: llm_judge_evaluation_node
   type: python
   source:
     type: code
     path: llm_judge_evaluation_node.py
-  inputs: {}
-- name: multi_llm_report_node
-  type: python
-  source:
-    type: code
-    path: ../../scripts/generate_report.py
   inputs:
-    llm_model_id: ${multi_llm_node.output.model_id_used}
-    system_prompt_used: ${multi_llm_node.output.system_prompt_used}
-    user_prompt_used: ${multi_llm_node.output.user_prompt_used}
-    llm_invocation_output: ${multi_llm_node.output.full_api_response}
-    llm_run_time: ${multi_llm_node.output.llm_run_time}
-    flow_name: ${inputs.flow_name}
-    is_rag_flow: ${inputs.is_rag_flow}
-    batch_id: ${inputs.batch_id}
-    system_prompt_id: ${multi_llm_node.output.system_prompt_id}
-    user_prompt_id: ${multi_llm_node.output.user_prompt_id}
-    test_case_no: ${inputs.test_case_no}
+    judge_prompt_template_path: ${prompt_selector_tool.output.judge_prompt_template_path}
+    judge_user_prompt_template_path: ${prompt_selector_tool.output.judge_user_prompt_template_path}
+    model_id: ${inputs.llm_model_id}
+    template_variables: ${prompt_selector_tool.output.template_variables}
+    original_llm_results_report_id: ${inputs.original_result_report_id}
