@@ -33,3 +33,4 @@ papermill>=2.5.0
 
 # test executor server in local
 uvicorn>=0.27.0
+urllib3>=2.5.0 # not directly required, pinned by Snyk to avoid a vulnerability
