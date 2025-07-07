@@ -1,0 +1,15 @@
+tests:
+  - name: multi_llm_flow_default_20250606_223705_542000
+    display_name: multi_llm_flow_${variant_id}_${timestamp}
+    flow: /workspaces/promptflow/fas_llm_applications/digital_latin_project/flows/multi_llm_flow
+    data: /workspaces/promptflow/fas_llm_applications/digital_latin_project/data/smoke_test.jsonl
+    column_mapping:
+      selected_prompt_id: ${data.selected_prompt_id}
+      dynamic_template_variables: ${data.dynamic_template_variables}
+      llm_model_id: ${data.llm_model_id}
+      temperature: ${data.temperature}
+      max_tokens: ${data.max_tokens}
+      run_id: ${data.run_id}
+      flow_name: ${data.flow_name}
+      is_rag_flow: ${data.is_rag_flow}
+      batch_id: ${data.batch_id}

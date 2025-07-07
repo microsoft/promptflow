@@ -1,0 +1,18 @@
+# my_llm_applications/customer_inquiry_solution/requirements.txt
+# This would be used if you're setting up the environment for the entire solution.
+promptflow
+promptflow-sdk # If you use PFClient for flow management/testing
+promptflow-tools
+boto3
+# google-generativeai # For Gemini
+python-dotenv
+# Add any other common packages like pandas, numpy, etc.
+# To manage connection secrets
+pycryptodome
+keyring
+keyrings.alt
+keyrings.cryptfile
+# To export the reports to google drive
+# google-api-python-client
+# google-auth-oauthlib
+# google-auth-httplib2

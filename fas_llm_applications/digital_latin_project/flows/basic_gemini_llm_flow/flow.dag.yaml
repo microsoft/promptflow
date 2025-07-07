@@ -1,0 +1,125 @@
+variants:
+- name: summary_variant
+  inputs:
+    selected_prompt_id: SophisticatedSummary_V1
+    dynamic_template_variables:
+      document_content: This is a document about the latest advances in AI ethics and
+        responsible development.
+      max_words_summary: 120
+      focus_areas:
+      - ethics
+      - AI development
+    llm_model_id: gemini-2.5-pro-preview-05-06
+  node: llm_invocation_node
+- name: qa_variant
+  inputs:
+    selected_prompt_id: SophisticatedQA_V1
+    dynamic_template_variables:
+      context: The capital of Italy is Rome. The Colosseum is a famous landmark there.
+      question: What is the capital of Italy?
+    llm_model_id: gemini-2.5-pro-preview-05-06
+  node: llm_invocation_node
+- name: creative_story_variant
+  inputs:
+    selected_prompt_id: CreativeStory_V1
+    dynamic_template_variables:
+      genre: epic fantasy
+      setting: a realm of floating islands
+      protagonist_name: Elara
+    temperature: 0.9
+    max_tokens: 800
+  node: llm_invocation_node
+- name: latin_little_mermaid
+  inputs:
+    selected_prompt_id: LatinLittleMermaid_V1
+    dynamic_template_variables:
+      context: None
+      question: None
+    temperature: 0.9
+    max_tokens: 800
+  node: llm_invocation_node
+inputs:
+  selected_prompt_id:
+    type: string
+    default: LatinLittleMermaid_V1
+  dynamic_template_variables:
+    type: object
+    default: {}
+  llm_model_id:
+    type: string
+    default: gemini-2.5-pro-preview-05-06
+  temperature:
+    type: double
+    default: 0.7
+  max_tokens:
+    type: int
+    default: 4000
+  run_id:
+    type: string
+    default: ""
+  flow_name:
+    type: string
+    default: basic_gemini_flow
+  is_rag_flow:
+    type: bool
+    default: false
+  batch_id:
+    type: string
+    default: ""
+outputs:
+  final_response:
+    type: string
+    reference: ${llm_gemini_invocation_node.output.response_text}
+  invocation_status:
+    type: bool
+    reference: ${llm_gemini_invocation_node.output.status}}
+  report_status:
+    type: string
+    value: ${report_generator_node.output.status}
+    reference: ${report_generator_node.output.status}
+  report_path:
+    type: string
+    value: ${report_generator_node.output.report_path}
+    reference: ${report_generator_node.output.report_path}
+  report_id:
+    type: int
+    value: ${report_generator_node.output.report_id}
+    reference: ${report_generator_node.output.report_id}
+nodes:
+- name: prompt_selector_node
+  type: python
+  source:
+    type: code
+    path: ../../tools/prompt_selector_tool.py
+  inputs:
+    prompt_id: ${inputs.selected_prompt_id}
+- name: llm_gemini_invocation_node
+  type: python
+  source:
+    type: code
+    path: nodes/gemini_llm_invocation.py
+  inputs:
+    connection: gemini_connection
+    user_prompt_template_path: ${prompt_selector_node.output.user_prompt_template_path}
+    system_prompt_template_path: ${prompt_selector_node.output.system_prompt_template_path}
+    prompt_id: ${inputs.selected_prompt_id}
+    model_id: ${inputs.llm_model_id}
+    temperature: ${inputs.temperature}
+    max_tokens: ${inputs.max_tokens}
+    selector_template_variables: ${prompt_selector_node.output.template_variables}
+    dynamic_template_variables: ${inputs.dynamic_template_variables}
+- name: report_generator_node
+  type: python
+  source:
+    type: code
+    path: ../../scripts/generate_report.py
+  inputs:
+    llm_model_id: ${llm_gemini_invocation_node.output.model_id_used}
+    prompt_id: ${llm_gemini_invocation_node.output.prompt_id}
+    flow_name: ${inputs.flow_name}
+    is_rag_flow: ${inputs.is_rag_flow}
+    flow_outputs: ${llm_gemini_invocation_node.output}
+    user_prompt_used: ${llm_gemini_invocation_node.output.user_prompt_used}}
+    system_prompt_used: ${llm_gemini_invocation_node.output.system_prompt_used}}
+    llm_invocation_output: ${llm_gemini_invocation_node.output}
+    llm_run_time: ${llm_gemini_invocation_node.output.llm_run_time}

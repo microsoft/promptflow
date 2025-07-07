@@ -1,0 +1,40 @@
+{
+  "name": "Promptflow-Python39",
+  "context": ".",
+  "dockerFile": "Dockerfile",
+  "runArgs": [
+    "-v",
+    "/var/run/docker.sock:/var/run/docker.sock"
+  ],
+	"postStartCommand": "/bin/bash -c 'set -e; rm -f ~/.promptflow/pf.sqlite && eval \"$(python ../scripts/load_env_to_shell.py)\" && PYTHON_ENV_SOURCE_CMD=\"eval \\\"\\$(python ../scripts/load_env_to_shell.py)\\\"\" && grep -qF \"${PYTHON_ENV_SOURCE_CMD}\" ~/.bashrc || echo \"${PYTHON_ENV_SOURCE_CMD}\" >> ~/.bashrc && python fas_llm_applications/_connections_manager_/setup_all_shared_connections.py'",
+  "postCreateCommand": "pip install -r fas_llm_applications/digital_latin_project/requirements.txt",
+  "remoteEnv": {
+    "HOST_PROJECT_PATH": "${localWorkspaceFolder}",
+    "PYTHONPATH": "/workspaces/promptflow:${containerEnv:PYTHONPATH}"
+  },
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "README.md",
+        "examples/README.md"
+      ]
+    },
+    "vscode": {
+      "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.vscode-ai",
+        "ms-toolsai.jupyter",
+        "redhat.vscode-yaml",
+        "prompt-flow.prompt-flow"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/azure-cli:1": {}
+  },
+  // "containerEnv": {} Locally, .env file can be added here.  
+  // In Github Codespaces, leave this commented out or removed as secure env variables will be loaded from .env file or Github Secure variables
+}

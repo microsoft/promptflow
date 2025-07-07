@@ -1,0 +1,95 @@
+{
+    "timestamp": "2025-06-06_00-38-49",
+    "report_id": 15,
+    "report_filename": "llm_report_00015.json",
+    "prompt_id": "SophisticatedQA_V1",
+    "model_used": "gemini-2.5-pro-preview-05-06",
+    "system_prompt_used": "\n\n\n\nYou are an advanced, highly precise AI assistant specializing in factual question answering based on provided context. Your goal is to extract relevant information directly from the text and answer user queries accurately and concisely.\n\n**Core Directives:**\n1.  **Strict Context Adherence:** Only use information explicitly present in the `[CONTEXT]` section to answer the question. Do not bring in outside knowledge.\n2.  **Conciseness:** Provide the most direct answer possible.\n3.  **Ambiguity Handling:** If the question cannot be answered from the provided `[CONTEXT]`, state clearly: \"I cannot answer this question based on the provided context.\"\n4.  **Tone:** Maintain a helpful and informative tone.\n\n**Constraints:**\n* Avoid making assumptions or inferring information not directly stated.\n* Do not engage in conversational banter or unnecessary greetings.\n\n**Example of interaction:**\nUser: What is the capital of France?\nContext: Paris is the capital of France.\nAnswer: Paris.\n\n**All the things you must remember:** You are an expert in understanding nuanced language within technical texts and extracting precise answers. Do not hallucinate.",
+    "user_prompt_used": "\n\n\nGiven the following context, please answer the question.\n\n**Context:**\n```text\nLarge language models (LLMs) are deep learning models trained on vast amounts of text data. They can generate human-like text, answer questions, and perform various language tasks.",
+    "llm_invocation_output": {
+        "response_text": "Large language models (LLMs) are deep learning models trained on vast amounts of text data.",
+        "full_api_response": {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "text": "Large language models (LLMs) are deep learning models trained on vast amounts of text data."
+                            }
+                        ],
+                        "role": "model"
+                    },
+                    "finishReason": "STOP",
+                    "index": 0
+                }
+            ],
+            "usageMetadata": {
+                "promptTokenCount": 293,
+                "candidatesTokenCount": 19,
+                "totalTokenCount": 370,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 293
+                    }
+                ],
+                "thoughtsTokenCount": 58
+            },
+            "modelVersion": "models/gemini-2.5-pro-preview-05-06",
+            "responseId": "mThCaMa2BeGp1MkP38vx8As"
+        },
+        "model_id_used": "gemini-2.5-pro-preview-05-06",
+        "prompt_id": "SophisticatedQA_V1",
+        "user_prompt_used": "\n\n\nGiven the following context, please answer the question.\n\n**Context:**\n```text\nLarge language models (LLMs) are deep learning models trained on vast amounts of text data. They can generate human-like text, answer questions, and perform various language tasks.",
+        "system_prompt_used": "\n\n\n\nYou are an advanced, highly precise AI assistant specializing in factual question answering based on provided context. Your goal is to extract relevant information directly from the text and answer user queries accurately and concisely.\n\n**Core Directives:**\n1.  **Strict Context Adherence:** Only use information explicitly present in the `[CONTEXT]` section to answer the question. Do not bring in outside knowledge.\n2.  **Conciseness:** Provide the most direct answer possible.\n3.  **Ambiguity Handling:** If the question cannot be answered from the provided `[CONTEXT]`, state clearly: \"I cannot answer this question based on the provided context.\"\n4.  **Tone:** Maintain a helpful and informative tone.\n\n**Constraints:**\n* Avoid making assumptions or inferring information not directly stated.\n* Do not engage in conversational banter or unnecessary greetings.\n\n**Example of interaction:**\nUser: What is the capital of France?\nContext: Paris is the capital of France.\nAnswer: Paris.\n\n**All the things you must remember:** You are an expert in understanding nuanced language within technical texts and extracting precise answers. Do not hallucinate.",
+        "llm_run_time": 1.7341091632843018,
+        "status": "success"
+    },
+    "llm_latency_in_sec": 1.7341091632843018,
+    "flow_metadata": {
+        "flow_name": "QAFlow",
+        "flow_run_id": null,
+        "flow_batch_id": "None",
+        "is_rag_flow": true,
+        "report_generated_by_node": "report_generator_node"
+    },
+    "full_flow_outputs_at_report_gen": {
+        "response_text": "Large language models (LLMs) are deep learning models trained on vast amounts of text data.",
+        "full_api_response": {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "text": "Large language models (LLMs) are deep learning models trained on vast amounts of text data."
+                            }
+                        ],
+                        "role": "model"
+                    },
+                    "finishReason": "STOP",
+                    "index": 0
+                }
+            ],
+            "usageMetadata": {
+                "promptTokenCount": 293,
+                "candidatesTokenCount": 19,
+                "totalTokenCount": 370,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 293
+                    }
+                ],
+                "thoughtsTokenCount": 58
+            },
+            "modelVersion": "models/gemini-2.5-pro-preview-05-06",
+            "responseId": "mThCaMa2BeGp1MkP38vx8As"
+        },
+        "model_id_used": "gemini-2.5-pro-preview-05-06",
+        "prompt_id": "SophisticatedQA_V1",
+        "user_prompt_used": "\n\n\nGiven the following context, please answer the question.\n\n**Context:**\n```text\nLarge language models (LLMs) are deep learning models trained on vast amounts of text data. They can generate human-like text, answer questions, and perform various language tasks.",
+        "system_prompt_used": "\n\n\n\nYou are an advanced, highly precise AI assistant specializing in factual question answering based on provided context. Your goal is to extract relevant information directly from the text and answer user queries accurately and concisely.\n\n**Core Directives:**\n1.  **Strict Context Adherence:** Only use information explicitly present in the `[CONTEXT]` section to answer the question. Do not bring in outside knowledge.\n2.  **Conciseness:** Provide the most direct answer possible.\n3.  **Ambiguity Handling:** If the question cannot be answered from the provided `[CONTEXT]`, state clearly: \"I cannot answer this question based on the provided context.\"\n4.  **Tone:** Maintain a helpful and informative tone.\n\n**Constraints:**\n* Avoid making assumptions or inferring information not directly stated.\n* Do not engage in conversational banter or unnecessary greetings.\n\n**Example of interaction:**\nUser: What is the capital of France?\nContext: Paris is the capital of France.\nAnswer: Paris.\n\n**All the things you must remember:** You are an expert in understanding nuanced language within technical texts and extracting precise answers. Do not hallucinate.",
+        "llm_run_time": 1.7341091632843018,
+        "status": "success"
+    }
+}

@@ -1,0 +1,44 @@
+inputs:
+  judge_prompt_id:
+    type: string
+    default: J2.1
+  judge_user_prompt_id:
+    type: string
+    default: ju1.0
+  llm_model_id:
+    type: string
+    default: gemini-2.5-pro
+  original_result_report_id:
+    type: int
+    default: 151
+outputs:
+  evaluation_status:
+    type: string
+    reference: ${llm_judge_evaluation_node.output.status}
+  evaluation_report_path:
+    type: string
+    reference: ${llm_judge_evaluation_node.output.evaluation_report_path}
+  evaluation_report_id:
+    type: int
+    reference: ${llm_judge_evaluation_node.output.evaluation_report_id}
+nodes:
+- name: prompt_selector_tool
+  type: python
+  source:
+    type: code
+    path: ../../tools/prompt_selector_tool.py
+  inputs:
+    judge_prompt_id: ${inputs.judge_prompt_id}
+    judge_user_prompt_id: ${inputs.judge_user_prompt_id}
+    report_id: ${inputs.original_result_report_id}
+- name: llm_judge_evaluation_node
+  type: python
+  source:
+    type: code
+    path: llm_judge_evaluation_node.py
+  inputs:
+    judge_prompt_template_path: ${prompt_selector_tool.output.judge_prompt_template_path}
+    judge_user_prompt_template_path: ${prompt_selector_tool.output.judge_user_prompt_template_path}
+    model_id: ${inputs.llm_model_id}
+    template_variables: ${prompt_selector_tool.output.template_variables}
+    original_llm_results_report_id: ${inputs.original_result_report_id}
