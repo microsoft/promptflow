@@ -1,5 +1,17 @@
 # promptflow-core package
 
+## v1.18.1 (2025.6.10)
+
+### Bugs fixed
+
+- Fixed a bug that could allow for arbitrary code execution
+
+## v1.18.0 (2025.4.29)
+
+### Bugs fixed
+
+- Resolved an issue that allows an attacker to cause an RCE by setting specific environment variables
+
 ## v1.17.2 (2025.1.23)
 
 ### Bugs fixed

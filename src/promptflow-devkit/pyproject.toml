@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-devkit"
-version = "1.17.0.dev0"
+version = "1.18.0"
 description = "Prompt flow devkit"
 include = [
   "promptflow/_sdk/_service/static/*",
@@ -40,7 +40,7 @@ packages = [
 "Bug Reports" = "https://github.com/microsoft/promptflow/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.9.7 || >3.9.7,<3.13"
+python = ">=3.9,<3.9.7 || >3.9.7,<3.14"
 promptflow-core = "<2.0.0"
 httpx = ">=0.25.1"  # used to send http requests asynchronously
 sqlalchemy = ">=1.4.48,<3.0.0"  # sqlite requirements
@@ -61,7 +61,7 @@ pyarrow = { version = ">=14.0.1,<15.0.0", optional = true }  # used to read parq
 pillow = ">=10.1.0,<11.1.0"  # used to generate icon data URI for package tool
 opentelemetry-exporter-otlp-proto-http = ">=1.22.0,<2.0.0"  # trace support
 flask-restx = ">=1.2.0,<2.0.0"  # PFS Swagger
-flask-cors = ">=5.0.0,<6.0.0"  # handle PFS CORS
+flask-cors = ">=6.0.0,<7.0.0"  # handle PFS CORS
 pyinstaller = { version = ">=5.13.2", optional = true}  # used to package the CLI tool
 streamlit = { version = ">=1.26.0", optional = true}
 streamlit-quill = { version = "<0.1.0", optional = true}
