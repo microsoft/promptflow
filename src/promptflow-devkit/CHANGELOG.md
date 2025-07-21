@@ -1,5 +1,11 @@
 # promptflow-devkit package
 
+## v1.19.0 (2025.7.22)
+
+### Improvements
+
+- Storage account is updated.
+
 ## v1.18.0 (2025.6.10)
 
 ### Bugs fixed
