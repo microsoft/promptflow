@@ -1,5 +1,11 @@
 # Release History
 
+## v1.19.0 (2025.7.22)
+
+### Improvements
+
+- Storage account is updated.
+
 ## 1.6.1 (2025.6.10)
 
 - Fixed a bug that could allow for arbitrary code execution when parsing `tool_calls`
