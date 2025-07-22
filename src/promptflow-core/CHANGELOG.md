@@ -1,5 +1,11 @@
 # promptflow-core package
 
+## Unreleased
+
+### Bugs fixed
+
+- Added missing `os` import in `static_web_blueprint.py` ([#4042](https://github.com/microsoft/promptflow/issues/4042)).
+
 ## v1.18.1 (2025.6.10)
 
 ### Bugs fixed
