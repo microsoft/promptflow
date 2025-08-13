@@ -21,7 +21,7 @@ Default runtime image is continuously updated, and here we record the new featur
 - NA
 
 #### Bugs fixed
-- Update Ubuntu Image=22.04 to fix vulnerability
+- Update Ubuntu Image 22.04 to fix several security issues in libssh and Git
 
 ### 20250220.v2
 
