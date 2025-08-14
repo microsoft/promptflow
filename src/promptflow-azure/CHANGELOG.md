@@ -1,5 +1,11 @@
 # promptflow-azure package
 
+## v1.19.0 (2025.7.22)
+
+### Improvements
+
+- Storage account is updated.
+
 ## v1.17.0 (2025.1.8)
 
 ### Improvements
