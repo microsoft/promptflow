@@ -21,7 +21,7 @@ Default runtime image is continuously updated, and here we record the new featur
 - NA
 
 #### Bugs fixed
-- Remove aiohttp version constraint to fix security issue
+- Upgrade aiohttp>=3.12.14 to fix vulnerability
 
 ### 20250728.v1
 
