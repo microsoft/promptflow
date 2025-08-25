@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+from ._bert_score import BertScoreEvaluator
 from ._bleu import BleuScoreEvaluator
 from ._chat import ChatEvaluator
 from ._coherence import CoherenceEvaluator
@@ -26,6 +27,7 @@ from ._similarity import SimilarityEvaluator
 from ._xpia import IndirectAttackEvaluator
 
 __all__ = [
+    "BertScoreEvaluator",
     "CoherenceEvaluator",
     "F1ScoreEvaluator",
     "FluencyEvaluator",
