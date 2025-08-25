@@ -1,7 +1,7 @@
 import http
 import os
 import pathlib
-from typing import Any, Iterator, MutableMapping, Optional
+from typing import Any, AsyncIterator, Iterator, MutableMapping, Optional
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -95,27 +95,189 @@ class MockAsyncHttpResponse(AsyncHttpResponse):
         pass
 
     async def __aenter__(self) -> object:
-        raise NotImplementedError()
+        """
+        Async context manager entry point.
+        Returns self to allow the response object to be used in async with statements.
+        """
+        return self
 
     async def __aexit__(self, *args) -> None:
-        raise NotImplementedError()
+        """
+        Async context manager exit point.
+        Handles cleanup when exiting the async context manager.
+        """
+        await self.close()
 
     @property
     def url(self) -> str:
-        raise NotImplementedError()
+        """
+        Return the URL of the request that generated this response.
+        Uses the request object if available, otherwise returns a default URL.
+        """
+        if self._request and hasattr(self._request, 'url'):
+            return str(self._request.url)
+        return "https://mock.rai.service.url"
 
     @property
     def content(self) -> bytes:
-        raise NotImplementedError()
+        """
+        Return the response content as bytes.
+        Encodes the text content if available, otherwise returns empty bytes.
+        """
+        if self._text:
+            return self._text.encode('utf-8')
+        elif self._json:
+            import json
+            return json.dumps(self._json).encode('utf-8')
+        return b""
 
     async def read(self) -> bytes:
-        raise NotImplementedError()
+        """
+        Read the entire response content as bytes.
+        This is an async method that returns the same content as the content property.
+        """
+        return self.content
 
-    async def iter_bytes(self, **kwargs) -> Iterator[bytes]:
-        raise NotImplementedError()
+    async def iter_bytes(self, **kwargs) -> AsyncIterator[bytes]:
+        """
+        Iterate over the response content as chunks of bytes.
+        
+        :param chunk_size: Size of each chunk in bytes (default: 1024)
+        :type chunk_size: int
+        :return: AsyncIterator yielding byte chunks
+        :rtype: AsyncIterator[bytes]
+        """
+        chunk_size = kwargs.get('chunk_size', 1024)
+        content = self.content
+        for i in range(0, len(content), chunk_size):
+            yield content[i:i + chunk_size]
 
-    async def iter_raw(self, **kwargs) -> Iterator[bytes]:
-        raise NotImplementedError()
+    async def iter_raw(self, **kwargs) -> AsyncIterator[bytes]:
+        """
+        Iterate over the raw response content as chunks of bytes.
+        Similar to iter_bytes but represents the raw HTTP response body.
+        
+        :param chunk_size: Size of each chunk in bytes (default: 1024)
+        :type chunk_size: int
+        :return: AsyncIterator yielding raw byte chunks
+        :rtype: AsyncIterator[bytes]
+        """
+        # For mock purposes, iter_raw behaves the same as iter_bytes
+        async for chunk in self.iter_bytes(**kwargs):
+            yield chunk
+
+
+@pytest.mark.unittest
+class TestMockAsyncHttpResponse:
+    """Test cases for MockAsyncHttpResponse implementation."""
+    
+    def test_mock_response_initialization(self):
+        """Test that MockAsyncHttpResponse initializes correctly with various parameters."""
+        response = MockAsyncHttpResponse(
+            status_code=200,
+            text="test response",
+            json={"key": "value"},
+            headers={"Content-Type": "application/json"}
+        )
+        
+        assert response.status_code == 200
+        assert response.text() == "test response"
+        assert response.json() == {"key": "value"}
+        assert response.headers == {"Content-Type": "application/json"}
+
+    def test_content_property_with_text(self):
+        """Test content property returns correct bytes when text is provided."""
+        response = MockAsyncHttpResponse(status_code=200, text="hello world")
+        expected_content = b"hello world"
+        assert response.content == expected_content
+
+    def test_content_property_with_json(self):
+        """Test content property returns correct bytes when JSON is provided."""
+        json_data = {"message": "success", "code": 200}
+        response = MockAsyncHttpResponse(status_code=200, json=json_data)
+        import json
+        expected_content = json.dumps(json_data).encode('utf-8')
+        assert response.content == expected_content
+
+    def test_content_property_empty(self):
+        """Test content property returns empty bytes when no content is provided."""
+        response = MockAsyncHttpResponse(status_code=404)
+        assert response.content == b""
+
+    def test_url_property_with_request(self):
+        """Test url property returns correct URL when request is provided."""
+        from azure.core.rest import HttpRequest
+        request = HttpRequest("GET", "https://example.com/api/test")
+        response = MockAsyncHttpResponse(status_code=200, request=request)
+        assert response.url == "https://example.com/api/test"
+
+    def test_url_property_without_request(self):
+        """Test url property returns default URL when no request is provided."""
+        response = MockAsyncHttpResponse(status_code=200)
+        assert response.url == "https://mock.rai.service.url"
+
+    @pytest.mark.asyncio
+    async def test_async_context_manager(self):
+        """Test that MockAsyncHttpResponse works as an async context manager."""
+        response = MockAsyncHttpResponse(status_code=200, text="test")
+        
+        async with response as ctx_response:
+            assert ctx_response is response
+            assert ctx_response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_read_method(self):
+        """Test that read() method returns content as bytes."""
+        response = MockAsyncHttpResponse(status_code=200, text="async content")
+        content = await response.read()
+        assert content == b"async content"
+
+    @pytest.mark.asyncio
+    async def test_iter_bytes_default_chunk_size(self):
+        """Test iter_bytes with default chunk size."""
+        long_text = "a" * 2048  # Create text longer than default chunk size
+        response = MockAsyncHttpResponse(status_code=200, text=long_text)
+        
+        chunks = []
+        async for chunk in response.iter_bytes():
+            chunks.append(chunk)
+        
+        # Should have at least 2 chunks with default 1024 byte chunk size
+        assert len(chunks) >= 2
+        assert b"".join(chunks) == long_text.encode('utf-8')
+
+    @pytest.mark.asyncio
+    async def test_iter_bytes_custom_chunk_size(self):
+        """Test iter_bytes with custom chunk size."""
+        text = "hello world test content"
+        response = MockAsyncHttpResponse(status_code=200, text=text)
+        
+        chunks = []
+        async for chunk in response.iter_bytes(chunk_size=5):
+            chunks.append(chunk)
+        
+        # Should have multiple small chunks
+        assert len(chunks) > 1
+        assert all(len(chunk) <= 5 for chunk in chunks)
+        assert b"".join(chunks) == text.encode('utf-8')
+
+    @pytest.mark.asyncio
+    async def test_iter_raw_method(self):
+        """Test iter_raw method behaves like iter_bytes."""
+        text = "raw content test"
+        response = MockAsyncHttpResponse(status_code=200, text=text)
+        
+        raw_chunks = []
+        async for chunk in response.iter_raw(chunk_size=4):
+            raw_chunks.append(chunk)
+        
+        byte_chunks = []
+        async for chunk in response.iter_bytes(chunk_size=4):
+            byte_chunks.append(chunk)
+        
+        # iter_raw should behave the same as iter_bytes for mock purposes
+        assert raw_chunks == byte_chunks
+        assert b"".join(raw_chunks) == text.encode('utf-8')
 
 
 @pytest.mark.usefixtures("mock_project_scope")
