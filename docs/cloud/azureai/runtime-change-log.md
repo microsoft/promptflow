@@ -15,6 +15,14 @@ You can check the runtime image version from the flow execution log:
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
 
+### 20250831.v1
+
+#### New features
+- NA
+
+#### Bugs fixed
+- Update Ubuntu Image 22.04:latest to fix several security issues in Perl and SQLite
+
 ### 20250806.v3
 
 #### New features
