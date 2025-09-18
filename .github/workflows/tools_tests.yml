@@ -1,8 +1,5 @@
 name: tools_tests
 on:
-  # Triggers the workflow pull request events but only for the main branch
-  pull_request_target:
-    branches: [ main ]
   workflow_dispatch:
 env:
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow-tools
