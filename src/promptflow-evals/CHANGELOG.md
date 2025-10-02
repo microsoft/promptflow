@@ -1,6 +1,23 @@
 # Release History
 
-## v0.3.3 (Upcoming)
+## v0.3.5 (2025.6.10)
+
+### Bugs fixed
+
+- Fixed a bug that could allow for arbitrary code execution
+
+## v0.3.4 (2025-03-25)
+
+### Other Changes
+- Promptflow Evals package ([promptflow-evals](https://pypi.org/project/promptflow-evals/)) has been deprecated.
+- Please use new Azure AI Evaluation SDK ([azure-ai-evaluation](https://pypi.org/project/azure-ai-evaluation/)).
+- Please refer to [migration guide](https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/evaluation/azure-ai-evaluation/migration_guide.md) for guidance on upgrading.
+
+## v0.3.3 (2025-02-13)
+
+### Other Changes
+- Promptflow Evals package ([promptflow-evals](https://pypi.org/project/promptflow-evals/)) will be deprecated on 2025-03-20. Please use new Azure AI Evaluation SDK ([azure-ai-evaluation](https://pypi.org/project/azure-ai-evaluation/)). Please refer to [migration guide](https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/evaluation/azure-ai-evaluation/migration_guide.md) for guidance on upgrading.
+
 ### Features Added
 - Introduced `IndirectAttackSimulator` to simulate XPIA (cross domain prompt injected attack) jailbreak attacks on your AI system.
 - Introduced `IndirectAttackEvaluator` to evaluate content for the presence of XPIA (cross domain prompt injected attacks) injected into conversation or Q/A context to interrupt normal expected functionality by eliciting manipulated content, intrusion and attempting to gather information outside the scope of your AI system.

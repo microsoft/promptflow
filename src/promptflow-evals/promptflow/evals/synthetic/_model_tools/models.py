@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # pylint: skip-file
+import ast
 import asyncio
 import copy
 import logging
@@ -234,7 +235,7 @@ class OpenAICompletionsModel(LLMBase):
             stop = []
         # Else if stop sequence is given as a string (Ex: "["\n", "<im_end>"]"), convert
         elif type(stop) is str and stop.startswith("[") and stop.endswith("]"):
-            stop = eval(stop)
+            stop = ast.literal_eval(stop)
         elif type(stop) is str:
             stop = [stop]
         self.stop: List = stop  # type: ignore[assignment]

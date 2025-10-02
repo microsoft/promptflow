@@ -1,6 +1,16 @@
 # Release History
 
-## 1.5.0 (Upcoming)
+## 1.6.1 (2025.6.10)
+
+- Fixed a bug that could allow for arbitrary code execution when parsing `tool_calls`
+- Fixed a bug that could allow prompt injection
+
+## 1.6.0 (2025.02.19)
+
+### Bug fixed
+- Fix for jinja2 template rendering.
+
+## 1.5.0 (2025.01.29)
 
 ### Features Added
 - Add "detail" to "Azure OpenAI GPT-4 Turbo with Vision" and "OpenAI GPT-4V" tool inputs.

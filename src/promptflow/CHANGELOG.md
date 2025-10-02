@@ -1,5 +1,22 @@
 # Release History
 
+
+## v1.18.1 (2025.6.10)
+
+### Bugs fixed
+
+- Fixed a bug that could allow for arbitrary code execution
+
+## v1.18.0 (2025.4.29)
+
+### Improvements
+- Pre-commit pycln hook is upgraded to 2.5.0 version.
+- Pillow library dependency range updated to <11.1.0
+
+### Bugs fixed
+- Jinja template is going to use Sandbox Environment at rendering. With `PF_USE_SANDBOX_FOR_JINJA` set to false, sanbox environment is not used.
+- Resolved an issue that allows an attacker to cause an RCE by setting specific environment variables
+
 ## v1.17.1 (2025.1.13)
 
 ### Bugs Fixed
@@ -37,7 +54,7 @@
 
 ## v1.14.0 (2024.07.25)
 ### Improvements
-- [promptflow-devkit] Add `promptflow` to dockerfile when build flow with `python_requirements_txt` incase promptflow not exists in custom requirements.
+- [promptflow-devkit] Add `promptflow` to dockerfile when build flow with `python_requirements_txt` in case promptflow not exists in custom requirements.
 - [promptflow-core] Remove dependency on docutils package.
 
 ## v1.13.0 (2024.06.28)

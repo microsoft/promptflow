@@ -4,7 +4,7 @@
 
 import json
 import os
-from typing import Any, Mapping, Union
+from typing import Any, Dict, Mapping, Union
 
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter, JsonSerializedPromptflowException
@@ -69,8 +69,13 @@ def generate_error_response(ex: Union[dict, Exception]):
 
 
 def set_environment_variables(environment_variables: Mapping[str, Any]):
+    def filter_env_variables(environ: Dict[str, Any]) -> Dict[str, Any]:
+        """Remove problematic environment variables."""
+        deny_list = {"PYTHONWARNINGS", "BROWSER"}
+        return {k: v for k, v in environment_variables.items() if k not in deny_list}
+
     if isinstance(environment_variables, dict) and environment_variables:
-        os.environ.update(environment_variables)
+        os.environ.update(filter_env_variables(environment_variables))
 
 
 def enable_async_execution():
