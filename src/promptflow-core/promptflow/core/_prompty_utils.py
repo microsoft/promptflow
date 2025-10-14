@@ -43,7 +43,7 @@ from promptflow.exceptions import SystemErrorException, UserErrorException
 logger = LoggerFactory.get_logger(name=__name__)
 GPT4V_VERSION = "vision-preview"
 
-VALID_ROLES = ["system", "user", "assistant", "function", "tool"]
+VALID_ROLES = ["system", "user", "assistant", "function", "tool", "developer"]
 
 
 def update_dict_recursively(origin_dict, overwrite_dict):
