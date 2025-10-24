@@ -14,6 +14,13 @@ You can check the runtime image version from the flow execution log:
 
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
+### 20250929.v1
+ 
+#### New features
+- NA
+ 
+#### Bugs fixed
+- Ubuntu Security Notification for libxml2 Vulnerability (USN-7743-1)
 
 ### 20250831.v1
 
