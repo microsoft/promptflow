@@ -1,6 +1,6 @@
 # Release History
 
-## v1.18.2 (2025.12.2)
+## v1.18.2 (2025.12.4)
 
 ### Improvements
 
