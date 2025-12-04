@@ -36,7 +36,8 @@ packages = [
 [tool.poetry.dependencies]
 python = "<4.0,>=3.9"
 openai = "*"  # API injector for OpenAI traces
-opentelemetry-sdk = ">=1.22.0,<2.0.0"  # Open Telemetry dependency
+# opentelemetry-sdk==1.39.0 includes a breaking change that removes `LogData`
+opentelemetry-sdk = ">=1.22.0,<1.39.0"  # Open Telemetry dependency
 tiktoken = ">=0.4.0"  # get OpenAI token count for streaming scenario
 
 [tool.poetry.group.dev.dependencies]
