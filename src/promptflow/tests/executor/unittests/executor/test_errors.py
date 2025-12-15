@@ -75,7 +75,7 @@ def test_resolve_tool_error_with_no_PromptflowException_inner():
     assert exception.reference_code == "Executor"
 
 
-def test_missing_dependency_raises_import_error(monkeypatch):
+def test_missing_dependency_raises_import_error_gh_issue_4070(monkeypatch):
     """
     Ensure that when the specified dependency cannot be imported, importing
     TARGET_MODULE raises ImportError (i.e. the module doesn't silently swallow
