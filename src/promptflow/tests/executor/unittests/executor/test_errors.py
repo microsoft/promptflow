@@ -80,6 +80,8 @@ def test_missing_dependency_raises_import_error(monkeypatch):
     Ensure that when the specified dependency cannot be imported, importing
     TARGET_MODULE raises ImportError (i.e. the module doesn't silently swallow
     the failure with a bare `except Exception:`).
+
+    Written with the help of GitHub Copilot.
     """
     original_import = builtins.__import__
 
