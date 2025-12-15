@@ -18,7 +18,7 @@ try:
     from promptflow._sdk._load_functions import load_run as _load_run
     from promptflow._sdk._pf_client import PFClient as _PFClient
 except ImportError as e:
-    raise Exception(
+    raise ImportError(
         "Promptflow may not installed correctly. If you are upgrading from 'promptflow<1.8.0' to 'promptflow>=1.8.0', "
         "please run 'pip uninstall -y promptflow promptflow-core promptflow-devkit promptflow-azure', "
         "then 'pip install promptflow>=1.8.0'. Reach "
