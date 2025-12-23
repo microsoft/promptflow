@@ -15,6 +15,14 @@ You can check the runtime image version from the flow execution log:
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
 
+### 20251211.v2
+
+#### New features
+- NA
+
+#### Bugs fixed
+- Upgrade pip==25.3 go==1.24.9 mlflow>=3.6.0 to fix vulnerabilities
+
 ### 20251014.v1
 
 #### New features
