@@ -26,7 +26,7 @@ pf flow build --source ../../../flows/standard/web-classification --output dist 
 ## Deploy with Docker
 ### Build Docker image
 
-Like other Dockerfile, you need to build the image first. You can tag the image with any name you want. In this example, we use `promptflow-serve`.
+Like other Dockerfile, you need to build the image first. You can tag the image with any name you want. In this example, we use `web-classification-serve`.
 
 Run the command below to build image:
 
