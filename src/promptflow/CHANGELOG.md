@@ -1,5 +1,14 @@
 # Release History
 
+## v1.18.2 (Unreleased)
+
+### Improvements
+
+- Pin starlette to 0.49.*
+
+### Bugs fixed
+
+- Added some mitigations against SSRF possible when the executor service invokes `create_image_from_url`
 
 ## v1.18.1 (2025.6.10)
 

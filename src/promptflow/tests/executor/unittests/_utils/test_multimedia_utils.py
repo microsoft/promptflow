@@ -79,8 +79,9 @@ class TestImageProcessor:
         mime_type = f"image/{format}" if format != "jpg" else "image/jpeg"
         assert mime_type == image_from_base64._mime_type
 
+    @patch("promptflow._utils.multimedia_utils.AntiSSRF.validate_url", return_value=None)
     @patch("requests.get")
-    def test_create_image_from_url_with_mime_type(self, mock_get):
+    def test_create_image_from_url_with_mime_type(self, mock_get, mock_validate):
         url = "https://example.com/image.jpg"
         content = b"image content"
         mime_type = "image/jpeg"
@@ -92,8 +93,9 @@ class TestImageProcessor:
         assert image._mime_type == mime_type
         assert image.source_url == url
 
+    @patch("promptflow._utils.multimedia_utils.AntiSSRF.validate_url", return_value=None)
     @patch("requests.get")
-    def test_create_image_from_url_failure(self, mock_get):
+    def test_create_image_from_url_failure(self, mock_get, mock_validate):
         url = "https://example.com/image.jpg"
         message = "Failed to fetch image"
         code = 404
@@ -104,6 +106,25 @@ class TestImageProcessor:
 
         expected_message = f"Failed to fetch image from URL: {url}. Error code: {code}. Error message: {message}."
         assert str(ex.value) == expected_message
+
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "localhost",
+            "https://localhost",
+            "https://example.com@localhost",
+            "https://127.0.0.1",
+            "https://fbi.com",  # At time of writing, https://fbi.com has a DNS A record that resolves to 127.0.0.1
+            "127.0.0.1",
+            "::1",
+            "10.0.0.1",
+        ],
+    )
+    def test_create_image_from_url_with_invalid_uri(self, url):
+        with pytest.raises(InvalidImageInput) as ex:
+            ImageProcessor.create_image_from_url(url, "image/jpeg")
+
+        assert "Failed to fetch image from URL" in ex.value.message_format
 
 
 @pytest.mark.unittest
@@ -243,6 +264,7 @@ class TestBasicMultimediaProcessor:
         ## From url
         mocker.patch("promptflow._utils.multimedia_utils.ImageProcessor.is_url", return_value=True)
         mocker.patch("promptflow._utils.multimedia_utils.ImageProcessor.is_base64", return_value=False)
+        mocker.patch("promptflow._utils.multimedia_utils.AntiSSRF.validate_url", return_value=None)
         mocker.patch("requests.get", return_value=mocker.Mock(content=image_from_path, status_code=200))
         image_from_url = self.processor.create_image("Test")
         assert str(image_from_path) == str(image_from_url)
@@ -312,7 +334,7 @@ class TestBasicMultimediaProcessor:
             line_inputs = {"image": 0}
             self.processor.load_multimedia_data(inputs, line_inputs)
         assert (
-            "Failed to load image for input 'image': " "(InvalidImageInput) Unsupported image input type"
+            "Failed to load image for input 'image': (InvalidImageInput) Unsupported image input type"
         ) in ex.value.message
 
     def test_resolve_multimedia_data_recursively(self):
@@ -433,6 +455,7 @@ class TestOpenaiVisionMultimediaProcessor:
         ## From url
         mocker.patch("promptflow._utils.multimedia_utils.ImageProcessor.is_url", return_value=True)
         mocker.patch("promptflow._utils.multimedia_utils.ImageProcessor.is_base64", return_value=False)
+        mocker.patch("promptflow._utils.multimedia_utils.AntiSSRF.validate_url", return_value=None)
         mocker.patch("requests.get", return_value=mocker.Mock(content=image_from_path, status_code=200))
         image_from_url = self.processor.create_image("Test")
         assert str(image_from_path) == str(image_from_url)
@@ -502,7 +525,7 @@ class TestOpenaiVisionMultimediaProcessor:
             line_inputs = {"image": 0}
             self.processor.load_multimedia_data(inputs, line_inputs)
         assert (
-            "Failed to load image for input 'image': " "(InvalidImageInput) Unsupported image input type"
+            "Failed to load image for input 'image': (InvalidImageInput) Unsupported image input type"
         ) in ex.value.message
 
     def test_resolve_multimedia_data_recursively(self):

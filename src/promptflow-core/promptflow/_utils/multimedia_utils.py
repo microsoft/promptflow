@@ -12,6 +12,7 @@ import requests
 
 from promptflow._constants import MessageFormatType
 from promptflow._utils._errors import InvalidImageInput, InvalidMessageFormatType, LoadMultimediaDataError
+from promptflow._utils.anti_ssrf import AntiSSRF, AntiSSRFException
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image, PFBytes, Text
@@ -93,8 +94,30 @@ class ImageProcessor:
         return Image(image_bytes, mime_type=mime_type)
 
     @staticmethod
-    def create_image_from_url(url: str, mime_type: str = None):
-        response = requests.get(url)
+    def create_image_from_url(url: str, mime_type: str = None) -> Image:
+        anti_ssrf = AntiSSRF()
+        anti_ssrf.policy.set_allow_plain_text_http(True)
+
+        def block_redirect_if_ssrf(response: requests.Response, *args, **kwargs) -> None:
+            if not response.is_redirect:
+                return
+
+            anti_ssrf.validate_url(response.headers["Location"])
+
+        try:
+            anti_ssrf.validate_url(url)
+
+            # Use the requests "response" hook to allow us to inspect each response
+            # in a redirect chain.
+            # See: https://requests.readthedocs.io/en/latest/user/advanced/#event-hooks
+            response = requests.get(url, hooks={"response": block_redirect_if_ssrf})
+        except AntiSSRFException as e:
+            raise InvalidImageInput(
+                message_format="Failed to fetch image from URL: {url}.",
+                target=ErrorTarget.EXECUTOR,
+                url=url,
+            ) from e
+
         if response.status_code == 200:
             return Image(response.content, mime_type=mime_type, source_url=url)
         else:

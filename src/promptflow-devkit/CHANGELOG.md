@@ -1,5 +1,11 @@
 # promptflow-devkit package
 
+## v1.18.2 (Unreleased)
+
+### Improvements
+
+- Pillow library dependency range updated to <=11.3.0
+
 ## v1.18.0 (2025.6.10)
 
 ### Bugs fixed
