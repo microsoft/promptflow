@@ -15,6 +15,14 @@ You can check the runtime image version from the flow execution log:
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
 
+### 20251221.v1
+
+#### New features
+- NA
+
+#### Bugs fixed
+- update go==1.24.11, urlib3==2.6.0 to fix vulnerabilities
+
 ### 20251211.v2
 
 #### New features
