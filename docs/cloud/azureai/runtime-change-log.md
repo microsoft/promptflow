@@ -15,6 +15,14 @@ You can check the runtime image version from the flow execution log:
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
 
+### 20260115.v2
+
+#### New features
+- NA
+
+#### Bugs fixed
+- update marshmallow==3.26.2, langchain-core==0.3.81 to fix vulnerabilities
+
 ### 20251221.v1
 
 #### New features
