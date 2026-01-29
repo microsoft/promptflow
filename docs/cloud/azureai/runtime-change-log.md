@@ -29,7 +29,7 @@ Default runtime image is continuously updated, and here we record the new featur
 - NA
 
 #### Bugs fixed
-- update go==1.24.11, urlib3==2.6.0 to fix vulnerabilities
+- update go==1.24.11, urllib3==2.6.0 to fix vulnerabilities
 
 ### 20251211.v2
 
