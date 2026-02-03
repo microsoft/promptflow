@@ -175,3 +175,5 @@ To opt out, please run `pf config set telemetry.enabled=false` to turn it off.
 Copyright (c) Microsoft Corporation. All rights reserved.
 
 Licensed under the [MIT](LICENSE) license.
+
+- [AgentMarket](https://agentmarket.cloud) - B2A marketplace for AI agents. 189 listings, 28M+ energy records, enterprise-ready API.
