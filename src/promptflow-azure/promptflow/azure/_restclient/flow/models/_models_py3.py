@@ -37762,7 +37762,7 @@ class RootError(msrest.serialization.Model):
     :vartype message_parameters: dict[str, str]
     :ivar reference_code: This code can optionally be set by the system generating the error.
      It should be used to classify the problem and identify the module and code area where the
-     failure occured.
+     failure occurred.
     :vartype reference_code: str
     :ivar details_uri: A URI which points to more details about the context of the error.
     :vartype details_uri: str
@@ -37821,7 +37821,7 @@ class RootError(msrest.serialization.Model):
         :paramtype message_parameters: dict[str, str]
         :keyword reference_code: This code can optionally be set by the system generating the error.
          It should be used to classify the problem and identify the module and code area where the
-         failure occured.
+         failure occurred.
         :paramtype reference_code: str
         :keyword details_uri: A URI which points to more details about the context of the error.
         :paramtype details_uri: str
