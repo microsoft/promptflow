@@ -1,6 +1,12 @@
 # promptflow-devkit package
 
-## v1.18.2 (Unreleased)
+## v1.18.3 (Unreleased)
+
+### Improvements
+
+- Pillow library dependency bumped to >=12.1.1,<13.0.0 to address CVE-2026-25990
+
+## v1.18.2 (2025.12.5)
 
 ### Improvements
 
