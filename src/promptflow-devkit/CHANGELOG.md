@@ -1,6 +1,6 @@
 # promptflow-devkit package
 
-## v1.18.3 (Unreleased)
+## v1.18.3 (2026.2.25)
 
 ### Improvements
 
