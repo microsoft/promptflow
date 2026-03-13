@@ -60,8 +60,8 @@ hint_stop_before_upgrade = (
 def local_user_only(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        # Get the user name from request.
-        user = request.environ.get("REMOTE_USER") or request.headers.get("X-Remote-User")
+        # Only trust REMOTE_USER from the WSGI server environment, not client-supplied headers.
+        user = request.environ.get("REMOTE_USER")
         if user != getpass.getuser():
             abort(403)
         return func(*args, **kwargs)
