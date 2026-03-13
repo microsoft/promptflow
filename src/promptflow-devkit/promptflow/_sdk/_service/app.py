@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import logging
 import os
+import re
 import threading
 import time
 from logging.handlers import RotatingFileHandler
@@ -43,10 +44,13 @@ def root():
 def create_app():
     app = Flask(__name__)
 
-    # in normal case, we don't need to handle CORS for PFS
-    # as far as we know, local UX development might need to handle this
-    # as there might be different ports in that scenario
-    CORS(app)
+    # Restrict CORS to local origins only to prevent cross-origin attacks from
+    # arbitrary websites while still supporting local UX development scenarios
+    # where the UI may be served on a different port.
+    CORS(app, origins=[
+        re.compile(r"^https?://localhost(:\d+)?$"),
+        re.compile(r"^https?://127\.0\.0\.1(:\d+)?$"),
+    ])
 
     app.add_url_rule("/", view_func=root)
     app.add_url_rule("/heartbeat", view_func=heartbeat)
