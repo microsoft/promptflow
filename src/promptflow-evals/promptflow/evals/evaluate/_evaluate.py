@@ -192,7 +192,8 @@ def _validate_and_load_data(target, data, evaluators, output_path, azure_ai_proj
             raise ValueError("evaluation_name must be a string.")
 
     try:
-        initial_data_df = pd.read_json(data, lines=True)
+        encoding = kwargs.get('encoding', 'utf-8')
+    initial_data_df = pd.read_json(data, lines=True, encoding=encoding)
     except Exception as e:
         raise ValueError(
             f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}."
