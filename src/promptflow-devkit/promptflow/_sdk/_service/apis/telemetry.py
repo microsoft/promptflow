@@ -152,7 +152,7 @@ class Telemetry(Resource):
     @api.doc(description="Create telemetry record")
     @api.expect(telemetry_model)
     @local_user_only
-    @api.response(code=403, description="Telemetry is disabled or X-Remote-User is not set.")
+    @api.response(code=403, description="Telemetry is disabled or user is not the local user.")
     def post(self):
         from promptflow._sdk._telemetry import get_telemetry_logger, is_telemetry_enabled
         from promptflow._sdk._telemetry.activity import log_activity_end, log_activity_start

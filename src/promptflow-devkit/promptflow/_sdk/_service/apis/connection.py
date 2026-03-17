@@ -138,7 +138,7 @@ class ConnectionWithSecret(Resource):
     @api.response(code=200, description="Connection details with secret", model=dict_field)
     @local_user_only
     @api.response(
-        code=403, description="This service is available for local user only, please specify X-Remote-User in headers."
+        code=403, description="This service is available for local user only."
     )
     def get(self, name: str):
         args = working_directory_parser.parse_args()
