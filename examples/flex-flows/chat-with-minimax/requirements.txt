@@ -1,0 +1,4 @@
+promptflow
+promptflow-tools
+openai>=1.0.0
+python-dotenv

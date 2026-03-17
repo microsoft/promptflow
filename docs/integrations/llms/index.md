@@ -6,4 +6,5 @@ This section provides tutorials on incorporating alternative large language mode
 :maxdepth: 1
 :hidden:
 
+minimax
 ```

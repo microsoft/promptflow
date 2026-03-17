@@ -1,0 +1,31 @@
+---
+name: MiniMax Chat
+model:
+  api: chat
+  configuration:
+    type: openai
+    model: MiniMax-M2.5
+    base_url: https://api.minimax.io/v1
+  parameters:
+    temperature: 0.7
+    max_tokens: 1024
+inputs:
+  question:
+    type: string
+  chat_history:
+    type: list
+sample:
+  question: "What is Prompt flow?"
+  chat_history: []
+---
+
+system:
+You are a helpful assistant.
+
+{% for item in chat_history %}
+{{item.role}}:
+{{item.content}}
+{% endfor %}
+
+user:
+{{question}}

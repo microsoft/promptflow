@@ -1,0 +1,5 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
+name: minimax_connection
+type: open_ai
+api_key: "<user-input>"  # Your MiniMax API key from https://platform.minimaxi.com
+base_url: "https://api.minimax.io/v1"

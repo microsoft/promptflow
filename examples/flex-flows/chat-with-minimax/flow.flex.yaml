@@ -1,0 +1,12 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+entry: flow:ChatFlow
+sample:
+  inputs:
+    question: What is Prompt flow?
+  init:
+    model_config:
+      connection: minimax_connection
+      model: MiniMax-M2.5
+    max_total_token: 4096
+environment:
+  python_requirements_txt: requirements.txt
