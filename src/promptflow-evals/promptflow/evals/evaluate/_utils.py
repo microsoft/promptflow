@@ -43,8 +43,33 @@ def extract_workspace_triad_from_trace_provider(trace_provider: str):  # pylint:
 
 
 def load_jsonl(path):
-    with open(path, "r", encoding="utf-8") as f:
-        return [json.loads(line) for line in f.readlines()]
+    """Load jsonl file with BOM detection and fallback encodings."""
+    _FALLBACK_ENCODINGS = ["utf-8", "utf-8-sig", "latin-1", "cp1252"]
+
+    def _detect_encoding(file_path: str) -> str:
+        """Detect BOM markers to identify encoding, defaulting to utf-8."""
+        with open(file_path, "rb") as f:
+            raw = f.read(4)
+        if raw.startswith(b"\xef\xbb\xbf"):
+            return "utf-8-sig"
+        if raw.startswith(b"\xff\xfe") or raw.startswith(b"\xfe\xff"):
+            return "utf-16"
+        return "utf-8"
+
+    last_error = None
+    detected = _detect_encoding(path)
+    encodings = [detected] + [e for e in _FALLBACK_ENCODINGS if e.lower() != detected.lower()]
+    for encoding in encodings:
+        try:
+            with open(path, "r", encoding=encoding) as f:
+                return [json.loads(line) for line in f.readlines()]
+        except (UnicodeDecodeError, json.JSONDecodeError) as e:
+            last_error = e
+            continue
+
+    raise ValueError(
+        f"Failed to load data from {path}. Tried encodings: {encodings}. Error: {str(last_error)}."
+    ) from last_error
 
 
 def _azure_pf_client_and_triad(trace_destination):

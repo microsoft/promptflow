@@ -123,6 +123,16 @@ class TestEvaluate:
         assert "Failed to load data from " in exc_info.value.args[0]
         assert "Please validate it is a valid jsonl data" in exc_info.value.args[0]
 
+    def test_evaluate_utf8_sig_encoding(self):
+        """Test that utf-8-sig (BOM) encoded jsonl files load correctly. Fixes #3670."""
+        utf8sig_file = _get_file("utf8sig_test_data.jsonl")
+        # Should NOT raise - previously crashed with ValueError: Expected object or value
+        result = evaluate(
+            data=utf8sig_file,
+            evaluators={"f1": F1ScoreEvaluator()},
+        )
+        assert result is not None
+
     def test_evaluate_missing_required_inputs(self, missing_columns_jsonl_file):
         with pytest.raises(ValueError) as exc_info:
             evaluate(data=missing_columns_jsonl_file, evaluators={"g": F1ScoreEvaluator()})

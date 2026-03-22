@@ -191,8 +191,35 @@ def _validate_and_load_data(target, data, evaluators, output_path, azure_ai_proj
         if not isinstance(evaluation_name, str):
             raise ValueError("evaluation_name must be a string.")
 
+    def _detect_encoding(file_path: str) -> str:
+        """Detect BOM markers to identify encoding, defaulting to utf-8."""
+        with open(file_path, "rb") as f:
+            raw = f.read(4)
+        if raw.startswith(b"\xef\xbb\xbf"):
+            return "utf-8-sig"
+        if raw.startswith(b"\xff\xfe") or raw.startswith(b"\xfe\xff"):
+            return "utf-16"
+        return "utf-8"
+
+    _FALLBACK_ENCODINGS = ["utf-8", "utf-8-sig", "latin-1", "cp1252"]
+
     try:
-        initial_data_df = pd.read_json(data, lines=True)
+        detected = _detect_encoding(data) if isinstance(data, str) else "utf-8"
+        encodings = [detected] + [e for e in _FALLBACK_ENCODINGS if e.lower() != detected.lower()]
+        last_error = None
+        for encoding in encodings:
+            try:
+                initial_data_df = pd.read_json(data, lines=True, encoding=encoding)
+                break
+            except Exception as e:
+                last_error = e
+        else:
+            raise ValueError(
+                f"Failed to load data from {data}. Tried encodings: {encodings}. "
+                f"Please validate it is a valid jsonl data. Error: {str(last_error)}."
+            ) from last_error
+    except ValueError:
+        raise
     except Exception as e:
         raise ValueError(
             f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}."

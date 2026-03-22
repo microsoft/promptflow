@@ -12,6 +12,17 @@ from promptflow.exceptions import ErrorTarget, UserErrorException
 module_logger = logging.getLogger(__name__)
 
 
+def _detect_encoding(file_path: str) -> str:
+    """Detect BOM markers to identify encoding, defaulting to utf-8."""
+    with open(file_path, "rb") as f:
+        raw = f.read(4)
+    if raw.startswith(b"\xef\xbb\xbf"):
+        return "utf-8-sig"
+    if raw.startswith(b"\xff\xfe") or raw.startswith(b"\xfe\xff"):
+        return "utf-16"
+    return "utf-8"
+
+
 def _pd_read_file(local_path: str, logger: logging.Logger = None, max_rows_count: int = None) -> "DataFrame":
     import pandas as pd
 
@@ -34,7 +45,8 @@ def _pd_read_file(local_path: str, logger: logging.Logger = None, max_rows_count
     elif local_path.endswith(".json"):
         df = pd.read_json(local_path, dtype=dtype)
     elif local_path.endswith(".jsonl"):
-        df = pd.read_json(local_path, dtype=dtype, lines=True, nrows=max_rows_count)
+        encoding = _detect_encoding(local_path)
+        df = pd.read_json(local_path, dtype=dtype, lines=True, nrows=max_rows_count, encoding=encoding)
     elif local_path.endswith(".tsv"):
         df = pd.read_table(local_path, dtype=dtype, keep_default_na=False, nrows=max_rows_count)
     elif local_path.endswith(".parquet"):
