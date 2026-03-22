@@ -57,7 +57,7 @@ nodes:
     path: hello.py
   inputs:
     prompt: ${hello_prompt.output}
-    deployment_name: text-davinci-003
+    deployment_name: gpt-35-turbo
     max_tokens: "120"
 ```
 
@@ -239,7 +239,7 @@ jobs:
       data: ${{parent.inputs.data}}
       url: "${data.url}"
       connections.summarize_text_content.connection: azure_open_ai_connection
-      connections.summarize_text_content.deployment_name: text-davinci-003
+      connections.summarize_text_content.deployment_name: gpt-35-turbo
       environment_variables.AZURE_OPENAI_API_KEY: ${my_connection.api_key}
       environment_variables.AZURE_OPENAI_API_BASE: ${my_connection.api_base}
 ...
@@ -271,7 +271,7 @@ def pipeline_func_with_flow(data):
         connections={
             "summarize_text_content": {
                 "connection": "azure_open_ai_connection",
-                "deployment_name": "text-davinci-003",
+                "deployment_name": "gpt-35-turbo",
             },
         },
         environment_variables={

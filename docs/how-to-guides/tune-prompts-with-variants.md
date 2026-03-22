@@ -32,7 +32,7 @@ node_variants:
             type: code
             path: summarize_text_content.jinja2
           inputs:
-            deployment_name: text-davinci-003
+            deployment_name: gpt-35-turbo
             max_tokens: '128'
             temperature: '0.2'
             text: ${fetch_text_content_from_url.output}
@@ -47,7 +47,7 @@ node_variants:
             type: code
             path: summarize_text_content__variant_1.jinja2
           inputs:
-            deployment_name: text-davinci-003
+            deployment_name: gpt-35-turbo
             max_tokens: '256'
             temperature: '0.3'
             text: ${fetch_text_content_from_url.output}

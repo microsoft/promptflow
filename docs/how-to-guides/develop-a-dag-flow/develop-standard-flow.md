@@ -178,7 +178,7 @@ by `${prepare_examples.output}` and `${summarize_text_content.output}`.
     type: code
     path: classify_with_llm.jinja2
   inputs:
-    deployment_name: text-davinci-003
+    deployment_name: gpt-35-turbo
     suffix: ""
     max_tokens: 128
     temperature: 0.2
@@ -218,7 +218,7 @@ You can link `examples` to the `evidence` output of upstream `covert_to_dict` no
     type: code
     path: classify_with_llm.jinja2
   inputs:
-    deployment_name: text-davinci-003
+    deployment_name: gpt-35-turbo
     suffix: ""
     max_tokens: 128
     temperature: 0.2
