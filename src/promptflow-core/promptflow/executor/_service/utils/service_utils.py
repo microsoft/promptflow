@@ -71,7 +71,7 @@ def generate_error_response(ex: Union[dict, Exception]):
 def set_environment_variables(environment_variables: Mapping[str, Any]):
     def filter_env_variables(environ: Dict[str, Any]) -> Dict[str, Any]:
         """Remove problematic environment variables."""
-        deny_list = {"PYTHONWARNINGS", "BROWSER"}
+        deny_list = {"PYTHONWARNINGS", "BROWSER", "PF_USE_SANDBOX_FOR_JINJA"}
         return {k: v for k, v in environment_variables.items() if k not in deny_list}
 
     if isinstance(environment_variables, dict) and environment_variables:

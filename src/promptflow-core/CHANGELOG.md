@@ -1,5 +1,11 @@
 # promptflow-core package
 
+## v1.18.2 (2026.4.6)
+
+### Bugs fixed
+
+- Resolving an RCE using PF_USE_SANDBOX_FOR_JINJA.
+
 ## v1.18.1 (2025.6.10)
 
 ### Bugs fixed
