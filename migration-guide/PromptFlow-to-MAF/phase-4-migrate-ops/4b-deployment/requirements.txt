@@ -1,0 +1,7 @@
+agent-framework>=1.0.0
+agent-framework-azure-ai-search>=1.0.0
+fastapi
+uvicorn
+python-dotenv
+azure-monitor-opentelemetry
+azure-identity
