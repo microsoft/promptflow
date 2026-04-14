@@ -60,15 +60,15 @@ class AggregatorExecutor(Executor):
         await ctx.yield_output(combined)
 
 
+_dispatch = DispatchExecutor(id="dispatch")
+_path_a = PathAExecutor(id="path_a")
+_path_b = PathBExecutor(id="path_b")
+_aggregate = AggregatorExecutor(id="aggregate")
+
 workflow = (
-    WorkflowBuilder(name="ParallelWorkflow")
-    .register_executor(lambda: DispatchExecutor(id="dispatch"), name="Dispatch")
-    .register_executor(lambda: PathAExecutor(id="path_a"), name="PathA")
-    .register_executor(lambda: PathBExecutor(id="path_b"), name="PathB")
-    .register_executor(lambda: AggregatorExecutor(id="aggregate"), name="Aggregate")
-    .add_fan_out_edges("Dispatch", ["PathA", "PathB"])
-    .add_fan_in_edges(["PathA", "PathB"], "Aggregate")
-    .set_start_executor("Dispatch")
+    WorkflowBuilder(name="ParallelWorkflow", start_executor=_dispatch)
+    .add_fan_out_edges(_dispatch, [_path_a, _path_b])
+    .add_fan_in_edges([_path_a, _path_b], _aggregate)
     .build()
 )
 

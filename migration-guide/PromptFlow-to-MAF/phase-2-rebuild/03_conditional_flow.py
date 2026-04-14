@@ -69,14 +69,14 @@ def is_unsafe(message: ClassifiedMessage) -> bool:
 
 # Two edges leave ClassifyExecutor — only one fires per run.
 # This is the MAF equivalent of the PF If node.
+_classify = ClassifyExecutor(id="classify")
+_safe_handler = SafeHandlerExecutor(id="safe")
+_flagged_handler = FlaggedHandlerExecutor(id="flagged")
+
 workflow = (
-    WorkflowBuilder(name="ConditionalWorkflow")
-    .register_executor(lambda: ClassifyExecutor(id="classify"), name="Classify")
-    .register_executor(lambda: SafeHandlerExecutor(id="safe"), name="SafeHandler")
-    .register_executor(lambda: FlaggedHandlerExecutor(id="flagged"), name="FlaggedHandler")
-    .add_edge("Classify", "SafeHandler", condition=is_safe)
-    .add_edge("Classify", "FlaggedHandler", condition=is_unsafe)
-    .set_start_executor("Classify")
+    WorkflowBuilder(name="ConditionalWorkflow", start_executor=_classify)
+    .add_edge(_classify, _safe_handler, condition=is_safe)
+    .add_edge(_classify, _flagged_handler, condition=is_unsafe)
     .build()
 )
 

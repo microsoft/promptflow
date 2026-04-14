@@ -17,25 +17,28 @@ Uninstall any previous version first, then reinstall cleanly:
     pip uninstall agent-framework agent-framework-core agent-framework-foundry -y
     pip install agent-framework>=1.0.0
 
-MAF 1.0 is GA — `--pre` is no longer needed for core packages.
+MAF core packages are GA (1.0.1) — `--pre` is no longer needed for
+`agent-framework` and `agent-framework-foundry`. However,
+`agent-framework-orchestrations` and `agent-framework-azure-ai-search` are
+still in preview and require `--pre`.
 
 ---
 
 ### I'm getting dependency conflicts after upgrading from an RC version
 
 RC installs (`1.0.0rc*` or `1.0.0b*`) are incompatible with the GA release.
-The GA packages enforce `>=1.0.0,<2` dependency floors.
+The GA packages enforce `>=1.0.1,<2` dependency floors.
 
 Clean install:
 
     pip uninstall agent-framework agent-framework-core agent-framework-openai agent-framework-foundry -y
-    pip install agent-framework>=1.0.0
+    pip install agent-framework>=1.0.1 agent-framework-foundry>=1.0.1
 
-If you are using preview connectors (e.g. `agent-framework-copilotstudio`,
-`agent-framework-ollama`, `agent-framework-devui`), those still require `--pre`
-on a separate install command:
+Preview packages (orchestrations, Azure AI Search, and connectors like
+`agent-framework-copilotstudio`) still require `--pre` on a separate
+install command:
 
-    pip install agent-framework-copilotstudio --pre
+    pip install agent-framework-orchestrations agent-framework-azure-ai-search --pre
 
 Do not mix `--pre` and non-`--pre` packages in a single install command.
 
@@ -43,12 +46,12 @@ Do not mix `--pre` and non-`--pre` packages in a single install command.
 
 ### `agent-framework-azure-ai` cannot be found
 
-This package was removed in 1.0. The embedding and Foundry model endpoint
-surfaces moved to `agent-framework-foundry`:
+There is no package called `agent-framework-azure-ai`. For Foundry project
+endpoints, use `agent-framework-foundry`:
 
     pip install agent-framework-foundry
 
-Import from `agent_framework.foundry` instead of `agent_framework.azure_ai`.
+Import from `agent_framework.foundry`.
 
 ---
 
@@ -70,37 +73,10 @@ Verify your key length is non-zero:
 
 ---
 
-### `AzureOpenAIChatClient` is hitting the wrong endpoint
+### `FoundryChatClient` is not connecting to my Foundry project
 
-If you have both `OPENAI_API_KEY` and `AZURE_OPENAI_*` set in your environment,
-the client defaults to OpenAI (not Azure) when `OPENAI_API_KEY` is present.
-To force Azure routing, pass the credential explicitly:
-
-    from agent_framework.azure import AzureOpenAIChatClient
-    from azure.identity import AzureCliCredential
-
-    client = AzureOpenAIChatClient(
-        endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-        deployment_name=os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"],
-        credential=AzureCliCredential(),
-    )
-
----
-
-### I want to use managed identity instead of an API key
-
-See `phase-4-migrate-ops/4b-deployment/managed_identity.md` for step-by-step
-instructions. The short version: pass `credential=ManagedIdentityCredential()`
-to `AzureOpenAIChatClient()` and remove `AZURE_OPENAI_API_KEY` from your
-environment variables.
-
----
-
-### I'm connecting to a Foundry project endpoint but `AzureOpenAIChatClient` doesn't work
-
-`AzureOpenAIChatClient` targets raw Azure OpenAI Service endpoints
-(`https://<resource>.openai.azure.com`). For Foundry project endpoints
-(`https://<resource>.services.ai.azure.com`), use `FoundryChatClient`:
+Verify your `.env` contains the correct Foundry project endpoint. The endpoint
+format is `https://<resource>.services.ai.azure.com`:
 
     from agent_framework.foundry import FoundryChatClient
     from azure.identity import DefaultAzureCredential
@@ -110,6 +86,17 @@ environment variables.
         model=os.environ["FOUNDRY_MODEL"],
         credential=DefaultAzureCredential(),
     )
+
+If using `DefaultAzureCredential`, ensure you are logged in (`az login`) or
+that a managed identity is assigned to your compute.
+
+---
+
+### I want to use managed identity instead of `DefaultAzureCredential`
+
+See `phase-4-migrate-ops/4b-deployment/managed_identity.md` for step-by-step
+instructions. The short version: use `ManagedIdentityCredential()` as the
+`credential=` argument to `FoundryChatClient()` when deploying to Azure.
 
 ---
 
@@ -135,8 +122,8 @@ Correct — yields a final workflow output:
 Check for early returns or unhandled exceptions that might skip the call.
 
 **3. The executor is connected to the workflow graph.**
-An executor that is registered but not reachable from `set_start_executor()`
-via `add_edge()` will never run. Double-check your edge definitions.
+An executor that is not reachable from the `start_executor` via `add_edge()`
+will never run. Double-check your edge definitions.
 
 ---
 
@@ -195,14 +182,14 @@ set `max_iterations` explicitly on `WorkflowBuilder`:
 
 MAF validates the workflow graph at build time. Common causes:
 
-- **No start executor set** — you must call `.set_start_executor("Name")`.
+- **No start executor set** — you must pass `start_executor=` to
+  `WorkflowBuilder(...)`.
 - **Type mismatch on an edge** — the output type of executor A does not match
   the input type of executor B. Check that `WorkflowContext[T_Out]` in the
   upstream executor matches the handler parameter type in the downstream one.
-- **Duplicate executor name** — each `.register_executor()` call must use a
-  unique `name=` value.
-- **Unreachable executor** — an executor is registered but not connected to
-  the graph via any `add_edge()`, `add_fan_out_edges()`, or `add_fan_in_edges()`.
+- **Duplicate executor ID** — each executor must have a unique `id=` value.
+- **Unreachable executor** — an executor passed to `add_edge()` but not
+  connected to the graph via any edge path from the start executor.
 
 ---
 
@@ -211,8 +198,8 @@ MAF validates the workflow graph at build time. Common causes:
 `add_fan_in_edges()` waits for all listed sources to complete before firing.
 Make sure every parallel executor in the fan-out is also listed in the fan-in:
 
-    .add_fan_out_edges("Dispatch", ["PathA", "PathB"])
-    .add_fan_in_edges(["PathA", "PathB"], "Aggregate")  # both must be listed
+    .add_fan_out_edges(dispatch, [path_a, path_b])
+    .add_fan_in_edges([path_a, path_b], aggregate)  # both must be listed
 
 If one branch is missing from `add_fan_in_edges()`, the aggregator may fire
 early with a partial result.
@@ -270,17 +257,36 @@ faster for test suites with 20+ rows.
 
 ### No traces appearing in Application Insights
 
-Make sure `configure_azure_monitor()` is called **before** any `workflow.run()`
-call — not after, and not inside a handler. It must run at application startup:
+Make sure **both** `configure_azure_monitor()` and `configure_otel_providers()`
+are called **before** any `workflow.run()` call — not after, and not inside a
+handler. They must run at application startup:
 
     from azure.monitor.opentelemetry import configure_azure_monitor
+    from agent_framework.observability import configure_otel_providers
+
     configure_azure_monitor(
         connection_string=os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"]
     )
+    configure_otel_providers()
     # workflow.run() calls go after this
+
+`configure_azure_monitor()` sets up the Application Insights exporter.
+`configure_otel_providers()` enables MAF's built-in instrumentation so that
+executor transitions, agent calls, and LLM requests produce workflow-level
+spans. Without it, you will see Application Insights metadata but no
+workflow-specific trace data.
 
 Also verify the connection string is correct: Azure Portal → your Application
 Insights resource → Overview → Connection String.
+
+---
+
+### Traces show Application Insights data but no workflow steps
+
+You called `configure_azure_monitor()` but not `configure_otel_providers()`.
+The Azure Monitor function only handles transport, but MAF workflows require
+`configure_otel_providers()` from `agent_framework.observability` to generate
+executor-level spans. See the entry above for the correct two-step setup.
 
 ---
 
