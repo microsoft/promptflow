@@ -13,7 +13,7 @@ and `Executor` pattern. Work through the samples in numbered order.
 | [04_parallel_flow.py](04_parallel_flow.py)| Parallel nodes with no shared dependencies |
 | [05_rag_flow.py](05_rag_flow.py) | Embed Text + Vector Lookup + LLM nodes (full RAG pipeline) |
 | [06_function_tools.py](06_function_tools.py) | Python tool node → function tools |
-| [07_multi_agent.py](07_multi_agent.py) | Multi-step specialist routing → multi-agent handoff |
+| [07_multi_agent.py](07_multi_agent.py) | Multi-step specialist routing → `HandoffBuilder` multi-agent handoff |
 
 ## Run any sample
 

@@ -9,8 +9,9 @@ Prompt Flow equivalent (3 separate nodes):
     [Embed Text] --> [Vector DB Lookup] --> [LLM node]
 
 Prerequisites:
-    pip install agent-framework-azure-ai-search
-    Set in .env: AZURE_AI_SEARCH_ENDPOINT, AZURE_AI_SEARCH_INDEX_NAME,
+    pip install agent-framework-azure-ai-search agent-framework-foundry azure-identity
+    Set in .env: FOUNDRY_PROJECT_ENDPOINT, FOUNDRY_MODEL,
+                 AZURE_AI_SEARCH_ENDPOINT, AZURE_AI_SEARCH_INDEX_NAME,
                  AZURE_AI_SEARCH_API_KEY
 """
 
@@ -20,9 +21,10 @@ import os
 from dotenv import load_dotenv
 from typing_extensions import Never
 
-from agent_framework import Executor, WorkflowBuilder, WorkflowContext, handler
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Agent, Executor, WorkflowBuilder, WorkflowContext, handler
+from agent_framework.foundry import FoundryChatClient
 from agent_framework_azure_ai_search import AzureAISearchContextProvider
+from azure.identity import DefaultAzureCredential
 
 load_dotenv()
 
@@ -46,7 +48,13 @@ class RAGExecutor(Executor):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._agent = AzureOpenAIChatClient().as_agent(
+        client = FoundryChatClient(
+            project_endpoint=os.environ["FOUNDRY_PROJECT_ENDPOINT"],
+            model=os.environ["FOUNDRY_MODEL"],
+            credential=DefaultAzureCredential(),
+        )
+        self._agent = Agent(
+            client=client,
             name="DocQAAgent",
             instructions=(
                 "You are a precise document Q&A assistant. "
@@ -62,12 +70,9 @@ class RAGExecutor(Executor):
         await ctx.yield_output(result)
 
 
-workflow = (
-    WorkflowBuilder(name="RAGWorkflow")
-    .register_executor(lambda: RAGExecutor(id="rag"), name="RAG")
-    .set_start_executor("RAG")
-    .build()
-)
+_rag = RAGExecutor(id="rag")
+
+workflow = WorkflowBuilder(name="RAGWorkflow", start_executor=_rag).build()
 
 
 async def main():

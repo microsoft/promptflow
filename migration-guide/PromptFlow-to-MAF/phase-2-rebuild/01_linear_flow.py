@@ -6,12 +6,14 @@ Prompt Flow equivalent:
 """
 
 import asyncio
+import os
 
 from dotenv import load_dotenv
 from typing_extensions import Never
 
-from agent_framework import Executor, WorkflowBuilder, WorkflowContext, handler
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Agent, Executor, WorkflowBuilder, WorkflowContext, handler
+from agent_framework.foundry import FoundryChatClient
+from azure.identity import DefaultAzureCredential
 
 load_dotenv()
 
@@ -34,15 +36,21 @@ class LLMExecutor(Executor):
       - Never → does not send messages to downstream executors
       - str   → yields a str as the final workflow output via ctx.yield_output()
 
-    AzureOpenAIChatClient reads from environment automatically:
-      AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_CHAT_DEPLOYMENT_NAME
+    FoundryChatClient connects to a Microsoft Foundry project endpoint.
+    It reads FOUNDRY_PROJECT_ENDPOINT and FOUNDRY_MODEL from the environment.
 
     The 'instructions' parameter replaces the system prompt template in the PF LLM node.
     """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._agent = AzureOpenAIChatClient().as_agent(
+        client = FoundryChatClient(
+            project_endpoint=os.environ["FOUNDRY_PROJECT_ENDPOINT"],
+            model=os.environ["FOUNDRY_MODEL"],
+            credential=DefaultAzureCredential(),
+        )
+        self._agent = Agent(
+            client=client,
             name="QAAgent",
             instructions="You are a helpful assistant. Answer concisely.",
         )
@@ -53,12 +61,12 @@ class LLMExecutor(Executor):
         await ctx.yield_output(result)
 
 
+_input = InputExecutor(id="input")
+_llm = LLMExecutor(id="llm")
+
 workflow = (
-    WorkflowBuilder(name="LinearWorkflow")
-    .register_executor(lambda: InputExecutor(id="input"), name="Input")
-    .register_executor(lambda: LLMExecutor(id="llm"), name="LLM")
-    .add_edge("Input", "LLM")
-    .set_start_executor("Input")
+    WorkflowBuilder(name="LinearWorkflow", start_executor=_input)
+    .add_edge(_input, _llm)
     .build()
 )
 

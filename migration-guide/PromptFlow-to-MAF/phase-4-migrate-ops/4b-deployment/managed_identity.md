@@ -1,8 +1,8 @@
 # Using Managed Identity Instead of API Keys
 
-For production deployments, replace static API keys with managed identity.
-This removes the need to store `AZURE_OPENAI_API_KEY` in your Container App
-environment variables entirely.
+For production deployments, use managed identity with `FoundryChatClient`.
+This removes the need to store API keys in your Container App environment
+variables entirely.
 
 ## Step 1: Enable managed identity on the Container App
 
@@ -11,31 +11,29 @@ environment variables entirely.
       --resource-group <your-rg> \
       --system-assigned
 
-## Step 2: Grant the identity access to Azure OpenAI
+## Step 2: Grant the identity access to the Foundry project
 
     az role assignment create \
       --role "Cognitive Services OpenAI User" \
       --assignee <principal-id-from-step-1> \
-      --scope /subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.CognitiveServices/accounts/<openai-resource>
+      --scope /subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.CognitiveServices/accounts/<foundry-resource>
 
 ## Step 3: Update your client code
 
-Replace `AzureOpenAIChatClient()` (which reads the API key from environment)
-with an explicit credential:
+Use `ManagedIdentityCredential()` as the credential:
 
-    from agent_framework.azure import AzureOpenAIChatClient
+    from agent_framework import Agent
+    from agent_framework.foundry import FoundryChatClient
     from azure.identity import ManagedIdentityCredential
 
-    client = AzureOpenAIChatClient(
-        credential=ManagedIdentityCredential()
+    client = FoundryChatClient(
+        project_endpoint=os.environ["FOUNDRY_PROJECT_ENDPOINT"],
+        model=os.environ["FOUNDRY_MODEL"],
+        credential=ManagedIdentityCredential(),
     )
+    agent = Agent(client=client, name="MyAgent", instructions="...")
 
-## Step 4: Remove the API key from your Container App env vars
-
-    az containerapp update \
-      --name maf-app \
-      --resource-group <your-rg> \
-      --remove-env-vars AZURE_OPENAI_API_KEY
+## Step 4: Verify
 
 `DefaultAzureCredential` also works and will automatically use managed
 identity when running in Azure, and Azure CLI credentials when running locally —

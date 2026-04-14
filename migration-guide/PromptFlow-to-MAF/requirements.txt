@@ -1,14 +1,16 @@
 # Root requirements — covers all samples in this repo.
-# MAF 1.0 is GA (released 2 Apr 2026). No --pre flag needed for core packages.
-# Preview connectors (e.g. agent-framework-copilotstudio) still require --pre.
+# MAF core and foundry are GA (1.0.1). Orchestrations and Azure AI Search are
+# still in preview and require --pre on a separate pip install command.
 
-agent-framework>=1.0.0
-agent-framework-azure-ai-search>=1.0.0
-agent-framework-foundry>=1.0.0
+# GA packages
+agent-framework>=1.0.1
+agent-framework-foundry>=1.0.1
 
-# agent-framework-azure-ai was removed in MAF 1.0; its functionality moved to
-# agent-framework-foundry (used by the Foundry project endpoint sample in
-# phase-4-migrate-ops/4b-deployment/foundry_client.py).
+# Preview packages — install separately with --pre:
+#   pip install agent-framework-orchestrations --pre
+#   pip install agent-framework-azure-ai-search --pre
+agent-framework-orchestrations>=1.0.0b260409
+agent-framework-azure-ai-search>=1.0.0b260409
 
 # Evaluation (Phase 3)
 azure-ai-evaluation>=1.16.0
@@ -21,7 +23,7 @@ python-dotenv>=1.0.0
 # Tracing (Phase 4a)
 azure-monitor-opentelemetry>=1.6.0
 
-# Azure identity — used by Foundry client alternative
+# Azure identity — used by FoundryChatClient for authentication
 azure-identity>=1.19.0
 
 # Parity check (Phase 3)

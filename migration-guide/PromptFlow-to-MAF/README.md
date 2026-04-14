@@ -8,7 +8,7 @@ Prompt Flow is being retired. Feature development ended **17 April 2026**, with 
 
 ## Who this is for
 
-Teams running Prompt Flow workloads on Azure AI Foundry or Azure Machine Learning who want a structured, low-risk path to MAF.
+Teams running Prompt Flow workloads on Microsoft Foundry or Azure Machine Learning who want a structured, low-risk path to MAF.
 
 ---
 
@@ -30,7 +30,7 @@ Work through the phases in order. Each folder has its own README with context, p
 
 - Python 3.10+
 - An Azure subscription with:
-  - Azure OpenAI resource (or Azure AI Foundry project)
+  - Azure OpenAI resource (or Microsoft Foundry project)
   - Azure AI Search index (for RAG samples only)
   - Application Insights instance (for tracing samples)
 - Azure CLI (`az login` completed)
@@ -42,7 +42,16 @@ Work through the phases in order. Each folder has its own README with context, p
 ```bash
 git clone https://github.com/shshubhe/promptflow-migration-guide
 cd promptflow-migration-guide/migration-guide/PromptFlow-to-MAF
+
+# GA packages
+pip install agent-framework>=1.0.1 agent-framework-foundry>=1.0.1
+
+# Preview packages (orchestrations for multi-agent, Azure AI Search for RAG)
+pip install agent-framework-orchestrations agent-framework-azure-ai-search --pre
+
+# Remaining dependencies (evaluation, deployment, tracing)
 pip install -r requirements.txt
+
 cp .env.example .env   # then fill in your values
 ```
 

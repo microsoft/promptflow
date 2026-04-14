@@ -7,12 +7,14 @@
 # Prerequisites:
 #   - az login completed
 #   - ACR and Container Apps environment already exist
-#   - export AZURE_OPENAI_API_KEY before running
+#   - Replace all <...> placeholders in this script with your values
 #   - optional: export AZURE_AI_SEARCH_API_KEY for RAG workflows
 #   - optional: export APPLICATIONINSIGHTS_CONNECTION_STRING to enable tracing
 #   - optional: export MAF_WORKFLOW_FILE to deploy a workflow other than
 #               phase-2-rebuild/01_linear_flow.py
-#   - or switch to the managed-identity pattern in managed_identity.md
+#   - The Container App uses DefaultAzureCredential to authenticate with
+#     the Foundry project endpoint. Assign a managed identity with the
+#     appropriate role — see managed_identity.md for details.
 # Usage: bash deploy.sh
 
 set -euo pipefail
@@ -21,17 +23,12 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 GUIDE_DIR=$(cd "${SCRIPT_DIR}/../.." && pwd)
 cd "$GUIDE_DIR"
 
-[[ -n "${AZURE_OPENAI_API_KEY:-}" ]] || {
-  echo "AZURE_OPENAI_API_KEY is required." >&2
-  exit 1
-}
-
 ACR_NAME="<your-acr>"
 RESOURCE_GROUP="<your-rg>"
 CONTAINER_APP_ENV="<your-env>"
 APP_NAME="maf-app"
-OPENAI_ENDPOINT="https://<resource>.openai.azure.com/"
-OPENAI_DEPLOYMENT="<deployment>"
+FOUNDRY_ENDPOINT="https://<resource>.services.ai.azure.com"
+FOUNDRY_MODEL_NAME="<model>"
 SEARCH_ENDPOINT="https://<search>.search.windows.net"
 SEARCH_INDEX="<index>"
 IMAGE="${ACR_NAME}.azurecr.io/${APP_NAME}:latest"
@@ -39,14 +36,21 @@ WORKFLOW_FILE="${MAF_WORKFLOW_FILE:-phase-2-rebuild/01_linear_flow.py}"
 HEALTHCHECK_ATTEMPTS="${HEALTHCHECK_ATTEMPTS:-12}"
 HEALTHCHECK_SLEEP_SECONDS="${HEALTHCHECK_SLEEP_SECONDS:-10}"
 
-SECRET_ARGS=(
-  openai-key="$AZURE_OPENAI_API_KEY"
-)
+# Fail fast if placeholders have not been replaced.
+for var_name in ACR_NAME RESOURCE_GROUP CONTAINER_APP_ENV FOUNDRY_ENDPOINT FOUNDRY_MODEL_NAME; do
+  eval "val=\$$var_name"
+  if [[ "$val" == *"<"* ]]; then
+    echo "ERROR: $var_name still contains a placeholder value ('$val')." >&2
+    echo "Edit deploy.sh and replace all <...> placeholders before running." >&2
+    exit 1
+  fi
+done
+
+SECRET_ARGS=()
 
 ENV_ARGS=(
-  AZURE_OPENAI_API_KEY=secretref:openai-key
-  AZURE_OPENAI_ENDPOINT="$OPENAI_ENDPOINT"
-  AZURE_OPENAI_CHAT_DEPLOYMENT_NAME="$OPENAI_DEPLOYMENT"
+  FOUNDRY_PROJECT_ENDPOINT="$FOUNDRY_ENDPOINT"
+  FOUNDRY_MODEL="$FOUNDRY_MODEL_NAME"
   MAF_WORKFLOW_FILE="$WORKFLOW_FILE"
 )
 
@@ -70,16 +74,22 @@ az acr build \
   --file phase-4-migrate-ops/4b-deployment/Dockerfile \
   .
 
-az containerapp create \
-  --name "$APP_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --environment "$CONTAINER_APP_ENV" \
-  --image "$IMAGE" \
-  --target-port 8000 \
-  --ingress external \
-  --registry-server "${ACR_NAME}.azurecr.io" \
-  --secrets "${SECRET_ARGS[@]}" \
+CREATE_ARGS=(
+  az containerapp create
+  --name "$APP_NAME"
+  --resource-group "$RESOURCE_GROUP"
+  --environment "$CONTAINER_APP_ENV"
+  --image "$IMAGE"
+  --target-port 8000
+  --ingress external
+  --registry-server "${ACR_NAME}.azurecr.io"
   --env-vars "${ENV_ARGS[@]}"
+)
+if [[ ${#SECRET_ARGS[@]} -gt 0 ]]; then
+  CREATE_ARGS+=(--secrets "${SECRET_ARGS[@]}")
+fi
+
+"${CREATE_ARGS[@]}"
 
 APP_URL=$(az containerapp show \
   --name "$APP_NAME" \

@@ -24,6 +24,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from azure.monitor.opentelemetry import configure_azure_monitor
+from agent_framework.observability import configure_otel_providers
 
 GUIDE_ROOT = Path(__file__).resolve().parents[2]
 if str(GUIDE_ROOT) not in sys.path:
@@ -40,6 +41,7 @@ workflow = load_workflow()
 _appinsights_conn = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
 if _appinsights_conn:
     configure_azure_monitor(connection_string=_appinsights_conn)
+    configure_otel_providers()
 
 
 class QuestionRequest(BaseModel):

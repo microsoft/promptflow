@@ -40,12 +40,12 @@ class OutputExecutor(Executor):
         await ctx.yield_output(text)
 
 
+_cleaner = TextCleanerExecutor(id="cleaner")
+_output = OutputExecutor(id="output")
+
 workflow = (
-    WorkflowBuilder(name="PythonNodeWorkflow")
-    .register_executor(lambda: TextCleanerExecutor(id="cleaner"), name="Cleaner")
-    .register_executor(lambda: OutputExecutor(id="output"), name="Output")
-    .add_edge("Cleaner", "Output")
-    .set_start_executor("Cleaner")
+    WorkflowBuilder(name="PythonNodeWorkflow", start_executor=_cleaner)
+    .add_edge(_cleaner, _output)
     .build()
 )
 

@@ -4,7 +4,7 @@
 |---|---|---|
 | Flow (YAML / visual graph) | `Workflow` built with `WorkflowBuilder` | All samples |
 | Node (any step) | `Executor` class with a `@handler` method | All samples |
-| LLM node | `AzureOpenAIChatClient().as_agent(instructions=...)` inside an `Executor` | `01_linear_flow.py` |
+| LLM node | `Agent(client=FoundryChatClient(...), instructions=...)` inside an `Executor` | `01_linear_flow.py` |
 | Python node | Plain Python logic inside an `Executor @handler` | `02_python_node.py` |
 | Prompt node | String formatting inside an `Executor @handler` | `02_python_node.py` |
 | Embed Text + Vector Lookup nodes | `AzureAISearchContextProvider` via `context_providers=[...]` | `05_rag_flow.py` |
@@ -15,6 +15,7 @@
 | Flow Outputs | `await ctx.yield_output(value)` in the terminal `Executor` | All samples |
 | Connections (credentials) | Environment variables read automatically by MAF clients | `.env.example` |
 | Evaluation flow | `SimilarityEvaluator` from Azure AI Evaluation SDK | `phase-3-validate/` |
+| Multi-step specialist routing | `HandoffBuilder` from `agent-framework-orchestrations` | `07_multi_agent.py` |
 | Managed Online Endpoint | FastAPI wrapper + Azure Container Apps, or Foundry Agent Service | `phase-4-migrate-ops/4b-deployment/` |
 
 ---

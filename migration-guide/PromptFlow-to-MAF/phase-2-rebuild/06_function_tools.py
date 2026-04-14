@@ -10,12 +10,14 @@ Prompt Flow equivalent:
 """
 
 import asyncio
+import os
 
 from dotenv import load_dotenv
 from typing_extensions import Never
 
-from agent_framework import Executor, WorkflowBuilder, WorkflowContext, handler
-from agent_framework.azure import AzureOpenAIChatClient
+from agent_framework import Agent, Executor, WorkflowBuilder, WorkflowContext, handler
+from agent_framework.foundry import FoundryChatClient
+from azure.identity import DefaultAzureCredential
 
 load_dotenv()
 
@@ -63,7 +65,13 @@ class ToolAgentExecutor(Executor):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._agent = AzureOpenAIChatClient().as_agent(
+        client = FoundryChatClient(
+            project_endpoint=os.environ["FOUNDRY_PROJECT_ENDPOINT"],
+            model=os.environ["FOUNDRY_MODEL"],
+            credential=DefaultAzureCredential(),
+        )
+        self._agent = Agent(
+            client=client,
             name="SupportAgent",
             instructions=(
                 "You are a customer support assistant. "
@@ -79,12 +87,9 @@ class ToolAgentExecutor(Executor):
         await ctx.yield_output(result)
 
 
-workflow = (
-    WorkflowBuilder(name="FunctionToolsWorkflow")
-    .register_executor(lambda: ToolAgentExecutor(id="tool_agent"), name="ToolAgent")
-    .set_start_executor("ToolAgent")
-    .build()
-)
+_tool_agent = ToolAgentExecutor(id="tool_agent")
+
+workflow = WorkflowBuilder(name="FunctionToolsWorkflow", start_executor=_tool_agent).build()
 
 
 async def main():

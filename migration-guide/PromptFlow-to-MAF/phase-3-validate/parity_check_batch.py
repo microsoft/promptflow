@@ -94,7 +94,24 @@ async def run_parity_check():
     ]
 
     # Run rows concurrently, capped at CONCURRENCY_LIMIT to avoid rate-limit errors.
-    results = await asyncio.gather(*tasks)
+    # return_exceptions=True prevents one transient failure from losing all results.
+    raw_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    results = []
+    errors = []
+    for i, r in enumerate(raw_results):
+        if isinstance(r, Exception):
+            errors.append((i, r))
+        else:
+            results.append(r)
+
+    if errors:
+        print(f"\nWARNING: {len(errors)} row(s) failed during evaluation:")
+        for idx, err in errors:
+            print(f"  Row {idx}: {err}")
+
+    if not results:
+        raise RuntimeError("All evaluation rows failed. Check credentials and network connectivity.")
 
     df = pd.DataFrame(results)
     mean_score = df["similarity"].mean()
