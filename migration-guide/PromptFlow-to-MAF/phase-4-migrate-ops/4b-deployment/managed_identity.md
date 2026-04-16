@@ -1,22 +1,32 @@
 # Using Managed Identity Instead of API Keys
 
 For production deployments, use managed identity with `FoundryChatClient`.
-This removes the need to store API keys in your Container App environment
+This removes the need to store API keys in your online endpoint environment
 variables entirely.
 
-## Step 1: Enable managed identity on the Container App
+Azure ML managed online endpoints automatically have a **system-assigned
+managed identity** — no extra step is needed to enable it.
 
-    az containerapp identity assign \
-      --name maf-app \
+## Step 1: Get the endpoint's managed identity principal ID
+
+    az ml online-endpoint show \
+      --name maf-endpoint \
       --resource-group <your-rg> \
-      --system-assigned
+      --workspace-name <your-workspace> \
+      --query identity.principal_id -o tsv
 
 ## Step 2: Grant the identity access to the Foundry project
 
     az role assignment create \
-      --role "Cognitive Services OpenAI User" \
-      --assignee <principal-id-from-step-1> \
+      --role "Cognitive Services User" \
+      --assignee-object-id <principal-id-from-step-1> \
+      --assignee-principal-type ServicePrincipal \
       --scope /subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.CognitiveServices/accounts/<foundry-resource>
+
+> **Note:** Use `Cognitive Services User` (not `Azure AI Developer`).
+> The `Azure AI Developer` role does not include the
+> `Microsoft.CognitiveServices/accounts/AIServices/agents/write` data action
+> required by Foundry. Allow 5–10 minutes for RBAC data plane propagation.
 
 ## Step 3: Update your client code
 

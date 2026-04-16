@@ -1,12 +1,10 @@
 """
-Wraps a MAF workflow in a FastAPI service.
+Azure ML managed online endpoint scoring script.
 
 Replaces: Prompt Flow Managed Online Endpoint.
 
-The /ask endpoint accepts {"question": str} and returns {"answer": str}.
-
-Run locally:
-    uvicorn app:app --reload
+init() is called once when the container starts.
+run(raw_data) is called for each request; raw_data is the JSON request body.
 
 Deploy:
     bash deploy.sh
@@ -15,65 +13,67 @@ Optional: set MAF_WORKFLOW_FILE to your workflow file path
           (default: phase-2-rebuild/01_linear_flow.py).
 """
 
+import asyncio
+import json
+import logging
 import os
-from contextlib import asynccontextmanager
 from pathlib import Path
 import sys
 
-from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from azure.monitor.opentelemetry import configure_azure_monitor
-from agent_framework.observability import configure_otel_providers
+logger = logging.getLogger(__name__)
 
-GUIDE_ROOT = Path(__file__).resolve().parents[2]
-if str(GUIDE_ROOT) not in sys.path:
-    sys.path.insert(0, str(GUIDE_ROOT))
-
-from workflow_loader import load_workflow
-
-load_dotenv()
-
-workflow = load_workflow()
-
-# Tracing is optional — only configured when the connection string is present.
-# Set APPLICATIONINSIGHTS_CONNECTION_STRING in .env to enable Application Insights.
-_appinsights_conn = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
-if _appinsights_conn:
-    configure_azure_monitor(connection_string=_appinsights_conn)
-    configure_otel_providers()
+workflow = None
 
 
-class QuestionRequest(BaseModel):
-    question: str
+def init():
+    """Called once when the endpoint container starts."""
+    global workflow
+
+    guide_root = Path(__file__).resolve().parents[2]
+    if str(guide_root) not in sys.path:
+        sys.path.insert(0, str(guide_root))
+
+    # Optional tracing — only when the connection string is present.
+    appinsights_conn = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
+    if appinsights_conn:
+        from azure.monitor.opentelemetry import configure_azure_monitor
+        from agent_framework.observability import configure_otel_providers
+
+        configure_azure_monitor(connection_string=appinsights_conn)
+        configure_otel_providers()
+
+    from workflow_loader import load_workflow
+
+    workflow = load_workflow()
+    logger.info("Workflow loaded successfully.")
 
 
-class AnswerResponse(BaseModel):
-    answer: str
+def run(raw_data):
+    """Called for each scoring request.
 
+    Parameters
+    ----------
+    raw_data : str
+        JSON string with the request body, e.g. '{"question": "..."}'
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    yield
+    Returns
+    -------
+    dict
+        {"answer": str}
+    """
+    data = json.loads(raw_data)
+    question = data.get("question", "").strip()
+    if not question:
+        raise ValueError("Question must not be empty.")
 
-
-app = FastAPI(title="MAF Workflow Service", lifespan=lifespan)
-
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
-
-
-@app.post("/ask", response_model=AnswerResponse)
-async def ask(payload: QuestionRequest):
-    if not payload.question.strip():
-        raise HTTPException(status_code=400, detail="Question must not be empty.")
-
-    result = await workflow.run(payload.question.strip())
+    result = asyncio.get_event_loop().run_until_complete(workflow.run(question))
     outputs = result.get_outputs()
 
     if not outputs:
-        raise HTTPException(status_code=500, detail="Workflow produced no output.")
+        raise RuntimeError("Workflow produced no output.")
 
-    return AnswerResponse(answer=outputs[0])
+    output = outputs[0]
+    # AgentResponse objects are not JSON-serializable; extract the text.
+    if hasattr(output, "text"):
+        return {"answer": output.text}
+    return {"answer": str(output)}

@@ -1,20 +1,33 @@
 #!/bin/bash
-# Builds the container image, pushes it to Azure Container Registry,
-# and creates a Container App.
+# Deploys the MAF workflow as an Azure Machine Learning Managed Online Endpoint
+# using the standard scoring-script pattern (init/run).
 #
 # Replaces: Prompt Flow Managed Online Endpoint.
 #
 # Prerequisites:
 #   - az login completed
-#   - ACR and Container Apps environment already exist
-#   - Replace all <...> placeholders in this script with your values
-#   - optional: export AZURE_AI_SEARCH_API_KEY for RAG workflows
-#   - optional: export APPLICATIONINSIGHTS_CONNECTION_STRING to enable tracing
-#   - optional: export MAF_WORKFLOW_FILE to deploy a workflow other than
-#               phase-2-rebuild/01_linear_flow.py
-#   - The Container App uses DefaultAzureCredential to authenticate with
-#     the Foundry project endpoint. Assign a managed identity with the
+#   - Azure ML workspace already exists
+#   - The ml CLI extension is installed: az extension add -n ml
+#   - envsubst is available (part of gettext)
+#   - For keyless auth to Foundry, assign a managed identity with the
 #     appropriate role — see managed_identity.md for details.
+#
+# Required environment variables:
+#   SUBSCRIPTION_ID                  - Azure subscription ID
+#   RESOURCE_GROUP                   - Resource group containing the AML workspace
+#   WORKSPACE_NAME                   - Azure ML workspace name
+#   FOUNDRY_PROJECT_ENDPOINT         - Foundry project endpoint URL
+#   FOUNDRY_MODEL                    - Model name (e.g. gpt-4o)
+#
+# Optional environment variables:
+#   MAF_WORKFLOW_FILE                - Workflow file path (default: phase-2-rebuild/01_linear_flow.py)
+#   INSTANCE_TYPE                    - VM SKU (default: Standard_DS3_v2)
+#   INSTANCE_COUNT                   - Number of instances (default: 1)
+#   AZURE_AI_SEARCH_ENDPOINT         - AI Search endpoint (for RAG workflows)
+#   AZURE_AI_SEARCH_INDEX_NAME       - AI Search index name
+#   AZURE_AI_SEARCH_API_KEY          - AI Search API key
+#   APPLICATIONINSIGHTS_CONNECTION_STRING - App Insights connection string (enables tracing)
+#
 # Usage: bash deploy.sh
 
 set -euo pipefail
@@ -23,93 +36,63 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 GUIDE_DIR=$(cd "${SCRIPT_DIR}/../.." && pwd)
 cd "$GUIDE_DIR"
 
-ACR_NAME="<your-acr>"
-RESOURCE_GROUP="<your-rg>"
-CONTAINER_APP_ENV="<your-env>"
-APP_NAME="maf-app"
-FOUNDRY_ENDPOINT="https://<resource>.services.ai.azure.com"
-FOUNDRY_MODEL_NAME="<model>"
-SEARCH_ENDPOINT="https://<search>.search.windows.net"
-SEARCH_INDEX="<index>"
-IMAGE="${ACR_NAME}.azurecr.io/${APP_NAME}:latest"
-WORKFLOW_FILE="${MAF_WORKFLOW_FILE:-phase-2-rebuild/01_linear_flow.py}"
-HEALTHCHECK_ATTEMPTS="${HEALTHCHECK_ATTEMPTS:-12}"
-HEALTHCHECK_SLEEP_SECONDS="${HEALTHCHECK_SLEEP_SECONDS:-10}"
+SUBSCRIPTION_ID="${SUBSCRIPTION_ID:?Set SUBSCRIPTION_ID}"
+RESOURCE_GROUP="${RESOURCE_GROUP:?Set RESOURCE_GROUP}"
+WORKSPACE_NAME="${WORKSPACE_NAME:?Set WORKSPACE_NAME}"
 
-# Fail fast if placeholders have not been replaced.
-for var_name in ACR_NAME RESOURCE_GROUP CONTAINER_APP_ENV FOUNDRY_ENDPOINT FOUNDRY_MODEL_NAME; do
-  eval "val=\$$var_name"
-  if [[ "$val" == *"<"* ]]; then
-    echo "ERROR: $var_name still contains a placeholder value ('$val')." >&2
-    echo "Edit deploy.sh and replace all <...> placeholders before running." >&2
-    exit 1
-  fi
-done
+# ── Export variables that deployment.yml references via envsubst ──────
+export FOUNDRY_PROJECT_ENDPOINT="${FOUNDRY_PROJECT_ENDPOINT:?Set FOUNDRY_PROJECT_ENDPOINT}"
+export FOUNDRY_MODEL="${FOUNDRY_MODEL:?Set FOUNDRY_MODEL}"
+export MAF_WORKFLOW_FILE="${MAF_WORKFLOW_FILE:-phase-2-rebuild/01_linear_flow.py}"
+export INSTANCE_TYPE="${INSTANCE_TYPE:-Standard_DS3_v2}"
+export INSTANCE_COUNT="${INSTANCE_COUNT:-1}"
+export AZURE_AI_SEARCH_ENDPOINT="${AZURE_AI_SEARCH_ENDPOINT:-}"
+export AZURE_AI_SEARCH_INDEX_NAME="${AZURE_AI_SEARCH_INDEX_NAME:-}"
+export AZURE_AI_SEARCH_API_KEY="${AZURE_AI_SEARCH_API_KEY:-}"
+export APPLICATIONINSIGHTS_CONNECTION_STRING="${APPLICATIONINSIGHTS_CONNECTION_STRING:-}"
 
-SECRET_ARGS=()
+# ── Render deployment YAML with current environment variables ────────
+RENDERED_DEPLOYMENT=$(mktemp --suffix=.yml)
+SUBST_VARS='${FOUNDRY_PROJECT_ENDPOINT} ${FOUNDRY_MODEL} ${MAF_WORKFLOW_FILE} ${INSTANCE_TYPE} ${INSTANCE_COUNT} ${AZURE_AI_SEARCH_ENDPOINT} ${AZURE_AI_SEARCH_INDEX_NAME} ${AZURE_AI_SEARCH_API_KEY} ${APPLICATIONINSIGHTS_CONNECTION_STRING}'
+envsubst "$SUBST_VARS" < "${SCRIPT_DIR}/deployment.yml" > "$RENDERED_DEPLOYMENT"
 
-ENV_ARGS=(
-  FOUNDRY_PROJECT_ENDPOINT="$FOUNDRY_ENDPOINT"
-  FOUNDRY_MODEL="$FOUNDRY_MODEL_NAME"
-  MAF_WORKFLOW_FILE="$WORKFLOW_FILE"
-)
-
-if [[ -n "${AZURE_AI_SEARCH_API_KEY:-}" ]]; then
-  SECRET_ARGS+=(search-key="$AZURE_AI_SEARCH_API_KEY")
-  ENV_ARGS+=(
-    AZURE_AI_SEARCH_ENDPOINT="$SEARCH_ENDPOINT"
-    AZURE_AI_SEARCH_INDEX_NAME="$SEARCH_INDEX"
-    AZURE_AI_SEARCH_API_KEY=secretref:search-key
-  )
-fi
-
-if [[ -n "${APPLICATIONINSIGHTS_CONNECTION_STRING:-}" ]]; then
-  SECRET_ARGS+=(appinsights-conn="$APPLICATIONINSIGHTS_CONNECTION_STRING")
-  ENV_ARGS+=(APPLICATIONINSIGHTS_CONNECTION_STRING=secretref:appinsights-conn)
-fi
-
-az acr build \
-  --registry "$ACR_NAME" \
-  --image "${APP_NAME}:latest" \
-  --file phase-4-migrate-ops/4b-deployment/Dockerfile \
-  .
-
-CREATE_ARGS=(
-  az containerapp create
-  --name "$APP_NAME"
-  --resource-group "$RESOURCE_GROUP"
-  --environment "$CONTAINER_APP_ENV"
-  --image "$IMAGE"
-  --target-port 8000
-  --ingress external
-  --registry-server "${ACR_NAME}.azurecr.io"
-  --env-vars "${ENV_ARGS[@]}"
-)
-if [[ ${#SECRET_ARGS[@]} -gt 0 ]]; then
-  CREATE_ARGS+=(--secrets "${SECRET_ARGS[@]}")
-fi
-
-"${CREATE_ARGS[@]}"
-
-APP_URL=$(az containerapp show \
-  --name "$APP_NAME" \
+# ── Create managed online endpoint ──────────────────────────────────
+echo "Creating online endpoint..."
+az ml online-endpoint create \
+  --subscription "$SUBSCRIPTION_ID" \
   --resource-group "$RESOURCE_GROUP" \
-  --query "properties.configuration.ingress.fqdn" -o tsv)
+  --workspace-name "$WORKSPACE_NAME" \
+  --file "${SCRIPT_DIR}/endpoint.yml" \
+  2>/dev/null || echo "Endpoint already exists, continuing..."
 
-healthy=false
-for ((i = 1; i <= HEALTHCHECK_ATTEMPTS; i++)); do
-  if curl --silent --fail "https://${APP_URL}/health" >/dev/null; then
-    healthy=true
-    break
-  fi
-  sleep "$HEALTHCHECK_SLEEP_SECONDS"
-done
+# ── Create deployment under the endpoint ─────────────────────────────
+echo "Creating deployment..."
+az ml online-deployment create \
+  --subscription "$SUBSCRIPTION_ID" \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$WORKSPACE_NAME" \
+  --file "$RENDERED_DEPLOYMENT" \
+  --all-traffic
 
-if [[ "$healthy" != true ]]; then
-  echo "Container App did not become healthy in time: https://${APP_URL}/health" >&2
-  exit 1
-fi
+rm -f "$RENDERED_DEPLOYMENT"
 
-curl --fail-with-body -X POST "https://${APP_URL}/ask" \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is the refund policy?"}' | python3 -m json.tool
+# ── Smoke test ───────────────────────────────────────────────────────
+ENDPOINT_NAME=$(grep '^name:' "${SCRIPT_DIR}/endpoint.yml" | awk '{print $2}')
+
+echo "Running smoke test..."
+az ml online-endpoint invoke \
+  --subscription "$SUBSCRIPTION_ID" \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$WORKSPACE_NAME" \
+  --name "$ENDPOINT_NAME" \
+  --request-file <(echo '{"question": "What is the refund policy?"}')
+
+echo ""
+echo "Endpoint deployed successfully."
+SCORING_URI=$(az ml online-endpoint show \
+  --subscription "$SUBSCRIPTION_ID" \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$WORKSPACE_NAME" \
+  --name "$ENDPOINT_NAME" \
+  --query "scoring_uri" -o tsv)
+echo "Scoring URI: ${SCORING_URI}"
