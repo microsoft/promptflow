@@ -290,29 +290,88 @@ executor-level spans. See the entry above for the correct two-step setup.
 
 ---
 
-### `uvicorn` starts but `/ask` returns 500
+### Online endpoint deployment stays in `Updating` state or fails
 
-The most common cause is that `app.py` loaded the wrong workflow file, or the
-target file does not define a module-level `workflow` object. By default the
-deployment sample uses `phase-2-rebuild/01_linear_flow.py`. To deploy your own
-workflow, set `MAF_WORKFLOW_FILE`:
+Check the deployment logs for the actual error:
 
-    export MAF_WORKFLOW_FILE=phase-2-rebuild/05_rag_flow.py
+    az ml online-deployment get-logs \
+      --endpoint-name maf-endpoint --name blue \
+      --resource-group <rg> --workspace-name <ws>
 
-Also check the Application Insights trace for the full exception — the 500
-response body is intentionally generic to avoid leaking internals.
+Common causes:
+
+1. **`score.py` import error** — a missing dependency or an incorrect
+   `sys.path` in `init()`. Make sure every package used by `score.py` and
+   the workflow file is listed in `conda.yml`.
+2. **`init()` raises an exception** — the managed online endpoint calls
+   `init()` once at container startup. If it throws, the container is
+   marked unhealthy and the deployment fails. Run your workflow locally
+   first to rule out runtime errors.
+3. **Quota exceeded** — the subscription does not have enough quota for the
+   requested instance type. Check regional quota in the Azure Portal or
+   run `az ml online-deployment list --endpoint-name <name>`.
 
 ---
 
-### `az containerapp create` fails with an image pull error
+### `az ml online-endpoint invoke` returns a scoring error
 
-The Container App cannot reach your Azure Container Registry. Ensure:
+The endpoint is running but `run()` in `score.py` raised an exception.
+Retrieve the full traceback from the deployment logs (see above).
 
-1. `--registry-server` matches your ACR login server exactly
-   (`<name>.azurecr.io`).
-2. The Container App's managed identity (or admin credentials) has the
-   `AcrPull` role on the registry.
-3. The image tag pushed by `az acr build` matches the tag in `--image`.
+Frequent causes:
+
+- **Empty or malformed request body** — the `run(raw_data)` function expects
+  a JSON string with a `"question"` key. Verify your request file:
+
+      echo '{"question": "What is MAF?"}' > request.json
+      az ml online-endpoint invoke \
+        --name maf-endpoint --request-file request.json \
+        --resource-group <rg> --workspace-name <ws>
+
+- **Wrong workflow file** — `score.py` defaults to
+  `phase-2-rebuild/01_linear_flow.py`. Override via the
+  `MAF_WORKFLOW_FILE` environment variable in `deployment.yml`.
+- **Workflow produced no output** — see the
+  "`workflow.run()` returns a result but `get_outputs()` is an empty list"
+  section above.
+
+---
+
+### Managed identity authentication fails on the online endpoint
+
+If `score.py` uses `DefaultAzureCredential` or `ManagedIdentityCredential`
+to call Foundry or other Azure services, ensure:
+
+1. A system-assigned or user-assigned managed identity is enabled on the
+   online endpoint.
+2. The identity has the required role assignments (e.g.
+   `Cognitive Services OpenAI User` on the Foundry resource).
+3. The `FOUNDRY_PROJECT_ENDPOINT` environment variable in `deployment.yml`
+   points to the correct project endpoint.
+
+See `phase-4-migrate-ops/4b-deployment/managed_identity.md` for full
+instructions.
+
+---
+
+### How do I update an existing deployment without downtime?
+
+Use `az ml online-deployment update` with the same deployment name. The
+managed endpoint performs a rolling update. To do a blue/green swap instead,
+create a second deployment and shift traffic:
+
+    az ml online-endpoint update --name maf-endpoint \
+      --traffic "blue=0 green=100" \
+      --resource-group <rg> --workspace-name <ws>
+
+---
+
+## Reference links
+
+- [Azure ML managed online endpoints overview](https://learn.microsoft.com/en-us/azure/machine-learning/concept-endpoints-online)
+- [Deploy and score a model with a managed online endpoint](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-deploy-online-endpoints)
+- [Troubleshoot online endpoint deployments](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-troubleshoot-online-endpoints)
+- [Managed online endpoint VM SKU list](https://learn.microsoft.com/en-us/azure/machine-learning/reference-managed-online-endpoints-vm-sku-list)
 
 ---
 
