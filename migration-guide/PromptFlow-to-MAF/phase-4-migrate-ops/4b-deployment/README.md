@@ -10,7 +10,7 @@ Prompt Flow Managed Online Endpoint pattern.
 |------|---------|
 | `endpoint.yml` | Endpoint definition (name, auth mode) |
 | `deployment.yml` | Deployment template (environment, code, instance config) — uses `${VAR}` placeholders |
-| `app.py` | Scoring script with `init()` / `run()` entry points |
+| `score.py` | Scoring script with `init()` / `run()` entry points |
 | `conda.yml` | Conda environment with pip dependencies |
 | `deploy.sh` | End-to-end deployment script |
 
@@ -147,7 +147,7 @@ bash phase-4-migrate-ops/4b-deployment/deploy.sh
 
 ## Scoring Script Pattern
 
-The scoring script (`app.py`) follows the AML `init()` / `run()` convention:
+The scoring script (`score.py`) follows the AML `init()` / `run()` convention:
 
 - **`init()`** — called once at container startup. Loads the MAF workflow via
   `workflow_loader` and optionally configures Application Insights tracing.
