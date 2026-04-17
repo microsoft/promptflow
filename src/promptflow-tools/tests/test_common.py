@@ -576,7 +576,7 @@ class TestCommon:
 
         See ICM #31000000356466
         """
-            input_data = {
+        input_data = {
             "chat_history": [
                 {
                     "inputs": {
@@ -609,7 +609,7 @@ class TestCommon:
             user:
             {{question}}
 """)
-            expected_result = [
+        expected_result = [
             {"role": "system", "content": "You are a helpful assistant."},
             {
                 "role": "user",
