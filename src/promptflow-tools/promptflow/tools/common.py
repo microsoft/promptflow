@@ -801,7 +801,7 @@ def build_messages(
     inputs_to_escape: List[str] = kwargs.pop(INPUTS_TO_ESCAPE_PARAM_KEY, [])
     escape_dict: Dict[str, str] = Escaper.build_escape_dict_from_kwargs(_inputs_to_escape=inputs_to_escape, **kwargs)
     updated_kwargs: Dict[str, Any] = Escaper.escape_kwargs(
-    escape_dict=escape_dict, _inputs_to_escape=inputs_to_escape, **kwargs
+        escape_dict=escape_dict, _inputs_to_escape=inputs_to_escape, **kwargs
     )
 
     # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
