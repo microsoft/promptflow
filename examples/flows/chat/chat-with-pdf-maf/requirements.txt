@@ -6,3 +6,4 @@ faiss-cpu
 openai
 jinja2
 tiktoken
+requests
