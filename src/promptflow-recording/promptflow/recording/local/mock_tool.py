@@ -20,7 +20,6 @@ recording_array = ["fetch_text_content_from_url", "my_python_tool"]
 
 
 def recording_array_extend(items):
-    global recording_array
     recording_array.extend(items)
 
 
