@@ -50,7 +50,6 @@ def _prepare_input_dict(func, args, kwargs):
 
 def _replace_tool_rule(func):
     """Replace tool with the following rules."""
-    global recording_array
     if func.__name__ == "partial":
         func_wo_partial = func.func
     else:
