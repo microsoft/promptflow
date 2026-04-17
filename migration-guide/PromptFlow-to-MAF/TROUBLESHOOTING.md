@@ -346,8 +346,6 @@ to call Foundry or other Azure services, ensure:
    online endpoint.
 2. The identity has the required role assignments (e.g.
    `Cognitive Services OpenAI User` on the Foundry resource).
-3. The `FOUNDRY_PROJECT_ENDPOINT` environment variable in `deployment.yml`
-   points to the correct project endpoint.
 
 See `phase-4-migrate-ops/4b-deployment/managed_identity.md` for full
 instructions.
