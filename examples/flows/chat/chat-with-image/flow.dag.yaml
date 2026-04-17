@@ -8,7 +8,7 @@ inputs:
   question:
     type: list
     default:
-    - data:image/png;url: https://images.idgesg.net/images/article/2019/11/edge-browser-logo_microsoft-100816808-large.jpg
+    - data:image/png;url: https://uhf.microsoft.com/images/microsoft/RE1Mu3b.png
     - How many colors can you see?
     is_chat_input: true
 outputs:
