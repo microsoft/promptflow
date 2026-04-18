@@ -37,7 +37,6 @@ github_workspace = os.path.expanduser("~/promptflow/")
 special_care = {
     "sdk_cli_tests": 4,
     "sdk_cli_azure_test_replay": 4,
-    "sdk_cli_global_config_tests": 1,
     "tracing-e2e-test": 12,
     "tracing-unit-test": 12,
     "core_test": 4,
@@ -54,14 +53,6 @@ checks = {
         "src/promptflow-tracing/**",
         "scripts/building/**",
         "src/promptflow-recording/**",
-    ],
-    "sdk_cli_global_config_tests": [
-        "src/promptflow-core/**",
-        "src/promptflow-devkit/**",
-        "src/promptflow-tracing/**",
-        "src/promptflow-azure/**",
-        "src/promptflow/**",
-        "scripts/building/**",
     ],
     "sdk_cli_azure_test_replay": [
         "src/promptflow/**",
