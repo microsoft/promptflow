@@ -82,7 +82,7 @@ jobs:
           papermill -k python chat-with-class-based-flow.ipynb chat-with-class-based-flow.output.ipynb
       - name: Upload artifact
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifact
           path: examples/flex-flows/chat-basic

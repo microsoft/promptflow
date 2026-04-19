@@ -47,7 +47,7 @@ steps:
       papermill -k python {{ name }}.ipynb {{ name }}.output.ipynb -p api_key ${{ '{{' }} secrets.AOAI_API_KEY_TEST }} -p api_base ${{ '{{' }} secrets.AOAI_API_ENDPOINT_TEST }} -p api_version 2023-07-01-preview
   - name: Upload artifact
     if: ${{ '{{' }} always() }}
-    uses: actions/upload-artifact@v3
+    uses: actions/upload-artifact@v4
     with:
       name: artifact
       path: {{ gh_working_dir }}

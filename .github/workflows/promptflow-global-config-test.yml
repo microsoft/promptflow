@@ -94,7 +94,7 @@ jobs:
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: Upload Test Results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Test Results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
         path: |

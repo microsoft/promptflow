@@ -72,7 +72,7 @@ jobs:
           papermill -k python pipeline.ipynb pipeline.output.ipynb
       - name: Upload artifact
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifact
           path: examples/tutorials/run-flow-with-pipeline

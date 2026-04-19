@@ -82,7 +82,7 @@ jobs:
           papermill -k python otlp-trace-collector.ipynb otlp-trace-collector.output.ipynb
       - name: Upload artifact
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifact
           path: examples/tutorials/tracing/custom-otlp-collector

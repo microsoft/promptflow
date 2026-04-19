@@ -82,7 +82,7 @@ jobs:
           papermill -k python quickstart.ipynb quickstart.output.ipynb
       - name: Upload artifact
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifact
           path: examples/tutorials/get-started
