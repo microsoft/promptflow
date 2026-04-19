@@ -212,6 +212,10 @@ def trigger_prepare(input_paths):
         if input_path.endswith(".md"):
             continue
 
+        # Skip documentation-only paths that don't affect SDK/CLI pipelines.
+        if input_path.startswith("migration-guide/"):
+            continue
+
         keys = [
             key for key in reverse_checks.keys() if fnmatch.fnmatch(input_path, key)
         ]
