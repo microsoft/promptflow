@@ -90,7 +90,7 @@ jobs:
           minimum: 0
           maximum: 99
       - name: Azure Login
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           tenant-id: ${{secrets.AZURE_TENANT_ID}}
@@ -145,7 +145,7 @@ jobs:
           inlineScript: |
             Disconnect-AzAccount
       - name: Azure Login Again_login
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           tenant-id: ${{secrets.AZURE_TENANT_ID}}

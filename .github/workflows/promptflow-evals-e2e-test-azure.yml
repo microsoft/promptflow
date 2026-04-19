@@ -58,9 +58,11 @@ jobs:
         run: poetry run pip install -e ../promptflow-recording
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: generate end-to-end test config from secret
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         run: echo '${{ secrets.PF_EVALS_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}
-      - uses: azure/login@v1
+      - uses: azure/login@v2
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         with:
           client-id: ${{ secrets.PF_EVALS_SP_CLIENT_ID }}
           tenant-id: ${{ secrets.PF_EVALS_SP_TENANT_ID }}

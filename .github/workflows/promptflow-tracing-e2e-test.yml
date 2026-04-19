@@ -72,6 +72,7 @@ jobs:
         run: poetry install
         working-directory: ${{ env.RECORD_DIRECTORY }}
       - name: generate end-to-end test config from secret
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         run: echo '${{ secrets.PF_TRACING_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run e2e tests
