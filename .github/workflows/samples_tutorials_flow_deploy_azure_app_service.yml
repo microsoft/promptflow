@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   samples_tutorials_flow_deploy_azure_app_service:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     environment:
       internal

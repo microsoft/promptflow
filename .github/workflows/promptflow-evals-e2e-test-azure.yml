@@ -94,7 +94,18 @@ jobs:
           check_name: promptflow-evals test result
           comment_title: promptflow-evals test result
           files: "artifacts/**/test-results.xml"  # align with `--junit-xml` in pyproject.toml
+      - name: Check for coverage files
+        id: cov
+        shell: bash
+        run: |
+          if [ -f "artifacts/report-ubuntu-latest-py3.11/coverage.xml" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "::warning::No coverage.xml found — skipping coverage summary."
+          fi
       - uses: irongut/CodeCoverageSummary@v1.3.0
+        if: steps.cov.outputs.found == 'true'
         with:
           filename: "artifacts/report-ubuntu-latest-py3.11/coverage.xml"
           badge: true

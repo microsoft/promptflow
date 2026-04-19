@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   samples_prompty_eval_basic:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     environment:
       internal

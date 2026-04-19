@@ -42,8 +42,20 @@ runs:
       check_name: "${{ inputs.testResultTitle }} [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/${{ inputs.testActionFileName }}?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
       comment_title: "${{ inputs.testResultTitle }} [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/${{ inputs.testActionFileName }}?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
       files: "artifacts/**/test-*.xml"
-  - name: Code Coverage Summary
+  - name: Check for coverage files
+    id: cov
     if: ${{ inputs.coverageThreshold != 0 }}
+    shell: bash
+    run: |
+      cov_path="artifacts/Test Results (Python ${{ inputs.pythonVersion }}) (OS ${{ inputs.osVersion }})/coverage.xml"
+      if [ -f "$cov_path" ]; then
+        echo "found=true" >> $GITHUB_OUTPUT
+      else
+        echo "found=false" >> $GITHUB_OUTPUT
+        echo "::warning::No coverage.xml found at '$cov_path' — skipping coverage summary."
+      fi
+  - name: Code Coverage Summary
+    if: ${{ inputs.coverageThreshold != 0 && steps.cov.outputs.found == 'true' }}
     uses: irongut/CodeCoverageSummary@v1.3.0
     with:
       filename: "artifacts/Test Results (Python ${{ inputs.pythonVersion }}) (OS ${{ inputs.osVersion }})/coverage.xml"

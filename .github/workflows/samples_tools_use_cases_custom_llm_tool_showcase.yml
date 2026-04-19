@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   samples_tools_use_cases_custom_llm_tool_showcase:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     environment:
       internal

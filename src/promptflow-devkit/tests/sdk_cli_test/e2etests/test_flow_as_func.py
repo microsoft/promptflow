@@ -70,7 +70,6 @@ class TestFlowAsFunc:
         node_run_infos_group = []
 
         async def parse_invoke_async(*args, **kwargs):
-            nonlocal run_info_group
             obj = await original_async_func(*args, **kwargs)
             run_info_group.append(obj.run_info)
             node_run_infos_group.append(obj.node_run_infos)

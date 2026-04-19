@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   samples_tutorials_e2e_development_chat_with_pdf:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     environment:
       internal

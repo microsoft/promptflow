@@ -260,7 +260,12 @@ class TestCommon:
     def test_try_parse_tool_call_reject_python_expressions(self) -> None:
         """Validates that try_parse_tool_calls only accepts literals (isn't calling eval on arbitrary expressions)."""
 
-        malicious_tool_call = '## tool_calls:\n[{"id": "abc123", "type": "function", "function": {"name": "write_file", "arguments": str(open("../file.txt", "w").write("I\'m evil!"))}}]'
+        malicious_tool_call = (
+            '## tool_calls:\n'
+            '[{"id": "abc123", "type": "function", "function": '
+            '{"name": "write_file", "arguments": '
+            'str(open("../file.txt", "w").write("I\'m evil!"))}}]'
+        )
 
         assert try_parse_tool_calls(malicious_tool_call) is None
         assert not (Path.cwd().parent / "file.txt").exists(), "Parsing the tool call should not have written a file"
@@ -570,9 +575,9 @@ class TestCommon:
             assert messages == expected_result
             assert mock_uuid4.call_count == 1
 
-
     def test_build_message_prompt_injection_from_chat_history(self):
-        """Validate that a maliciously crafted message in the chat history doesn't inject extra messages into chat history.
+        """Validate that a maliciously crafted message in the chat history
+        doesn't inject extra messages into chat history.
 
         See ICM #31000000356466
         """
