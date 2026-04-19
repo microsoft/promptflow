@@ -25,6 +25,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: snok/install-poetry@v1
+      with:
+        version: 1.8.5
     - name: build
       run: poetry build
       working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -53,6 +55,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1
+        with:
+          version: 1.8.5
       - uses: actions/download-artifact@v4
         with:
           name: promptflow-tracing

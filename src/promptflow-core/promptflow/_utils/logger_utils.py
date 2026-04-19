@@ -267,7 +267,6 @@ class LogContext:
 
     @staticmethod
     def clear_current():
-        global logger_contexts
         if logger_contexts:
             logger_contexts.pop()
 

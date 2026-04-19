@@ -117,7 +117,6 @@ _encryption_key_lock = FileLock(KEYRING_ENCRYPTION_LOCK_PATH)
 
 
 def get_encryption_key(generate_if_not_found: bool = False) -> str:
-    global CUSTOMIZED_ENCRYPTION_KEY_IN_KEY_RING
     global ENCRYPTION_KEY_IN_KEY_RING
     if CUSTOMIZED_ENCRYPTION_KEY_IN_KEY_RING is not None:
         return CUSTOMIZED_ENCRYPTION_KEY_IN_KEY_RING

@@ -23,6 +23,8 @@ jobs:
       with:
         python-version: 3.11
     - uses: snok/install-poetry@v1
+      with:
+        version: 1.8.5
     - name: Install all packages
       run: |
         touch src/promptflow-tracing/promptflow/__init__.py

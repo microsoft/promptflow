@@ -19,6 +19,8 @@ jobs:
           python-version: 3.9
 
       - uses: snok/install-poetry@v1
+        with:
+          version: 1.8.5
       - name: install pylint and azure-pylint-guidelines-checker
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |

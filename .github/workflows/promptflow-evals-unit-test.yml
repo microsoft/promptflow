@@ -31,6 +31,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1
+        with:
+          version: 1.8.5
       - name: install test dependency group
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}

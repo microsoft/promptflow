@@ -20,6 +20,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: snok/install-poetry@v1
+      with:
+        version: 1.8.5
     - name: build
       run: poetry build
       working-directory: ${{ env.WORKING_DIRECTORY }}

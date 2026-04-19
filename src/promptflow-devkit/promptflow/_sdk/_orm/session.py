@@ -75,7 +75,6 @@ def update_current_schema(engine, orm_class, tablename: str) -> None:
 
 def mgmt_db_session() -> Session:
     global session_maker
-    global lock
 
     if session_maker is not None:
         return session_maker()
@@ -260,7 +259,6 @@ def mgmt_db_rebase(mgmt_db_path: Union[Path, os.PathLike, str], customized_encry
 
 def trace_mgmt_db_session() -> Session:
     global trace_session_maker
-    global trace_lock
 
     if trace_session_maker is not None:
         return trace_session_maker()

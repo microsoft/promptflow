@@ -44,6 +44,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1
+        with:
+          version: 1.8.5
       - name: install promptflow packages in editable mode
         run: |
           set -xe

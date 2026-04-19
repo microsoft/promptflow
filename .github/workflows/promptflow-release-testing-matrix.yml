@@ -43,6 +43,8 @@ jobs:
       with:
         python-version: "3.9"
     - uses: snok/install-poetry@v1
+      with:
+        version: 1.8.5
     - working-directory: ${{ env.TRACING_DIRECTORY }}
       run: poetry build -f wheel
     - working-directory: ${{ env.CORE_DIRECTORY }}
@@ -95,6 +97,8 @@ jobs:
       with:
         python-version: ${{ matrix.pythonVersion }}
     - uses: snok/install-poetry@v1
+      with:
+        version: 1.8.5
     - name: Download Artifacts
       uses: actions/download-artifact@v4
       with:
@@ -148,6 +152,8 @@ jobs:
         with:
           python-version: ${{ matrix.pythonVersion }}
       - uses: snok/install-poetry@v1
+        with:
+          version: 1.8.5
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -205,6 +211,8 @@ jobs:
         with:
           python-version: ${{ matrix.pythonVersion }}
       - uses: snok/install-poetry@v1
+        with:
+          version: 1.8.5
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -255,6 +263,8 @@ jobs:
         with:
           python-version: ${{ matrix.pythonVersion }}
       - uses: snok/install-poetry@v1
+        with:
+          version: 1.8.5
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -317,6 +327,8 @@ jobs:
         with:
           python-version: ${{ matrix.pythonVersion }}
       - uses: snok/install-poetry@v1
+        with:
+          version: 1.8.5
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:

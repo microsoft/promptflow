@@ -63,6 +63,8 @@ jobs:
         with:
           python-version: ${{ matrix.pythonVersion }}
       - uses: snok/install-poetry@v1
+        with:
+          version: 1.8.5
       - name: Azure Login
         uses: azure/login@v1
         with:
