@@ -34,7 +34,7 @@ SIMILARITY_THRESHOLD = 3.5  # Scores below this are flagged for review (scale: 1
 if str(GUIDE_ROOT) not in sys.path:
     sys.path.insert(0, str(GUIDE_ROOT))
 
-from workflow_loader import load_workflow
+from workflow_loader import load_workflow  # noqa: E402
 
 
 async def run_parity_check():

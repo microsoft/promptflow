@@ -26,13 +26,14 @@ INPUT_CSV_PATH = SCRIPT_DIR / "test_inputs.csv"
 OUTPUT_CSV_PATH = SCRIPT_DIR / "parity_results.csv"
 ENV_PATH = GUIDE_ROOT / ".env"
 SIMILARITY_THRESHOLD = 3.5  # Scale: 1–5. Rows below this are flagged for review.
-CONCURRENCY_LIMIT = 5  # Max simultaneous Azure OpenAI calls; prevents 429 rate-limit errors.
-                       # Adjust based on your Azure OpenAI quota (tokens-per-minute limit).
+# Max simultaneous Azure OpenAI calls; prevents 429 rate-limit errors.
+# Adjust based on your Azure OpenAI quota (tokens-per-minute limit).
+CONCURRENCY_LIMIT = 5
 
 if str(GUIDE_ROOT) not in sys.path:
     sys.path.insert(0, str(GUIDE_ROOT))
 
-from workflow_loader import load_workflow
+from workflow_loader import load_workflow  # noqa: E402
 
 
 async def evaluate_row(
