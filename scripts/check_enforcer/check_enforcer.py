@@ -177,6 +177,8 @@ def trigger_prepare(input_paths):
             continue
         if input_path.startswith("migration-guide/"):
             continue
+        if input_path.startswith(".github/"):
+            continue
         # Check if the input path contains "examples" or "samples".
         if "examples" in input_path or "samples" in input_path:
             sys.path.append(os.path.expanduser(github_workspace + "/scripts/readme"))
