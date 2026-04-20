@@ -1,0 +1,24 @@
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
+name: blue
+endpoint_name: maf-endpoint
+environment:
+  name: maf-env
+  version: "2"
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu22.04:latest
+  conda_file: phase-4-migrate-ops/4b-deployment/conda.yml
+code_configuration:
+  code: .
+  scoring_script: phase-4-migrate-ops/4b-deployment/score.py
+environment_variables:
+  FOUNDRY_PROJECT_ENDPOINT: ${FOUNDRY_PROJECT_ENDPOINT}
+  FOUNDRY_MODEL: ${FOUNDRY_MODEL}
+  MAF_WORKFLOW_FILE: ${MAF_WORKFLOW_FILE}
+  AZURE_AI_SEARCH_ENDPOINT: ${AZURE_AI_SEARCH_ENDPOINT}
+  AZURE_AI_SEARCH_INDEX_NAME: ${AZURE_AI_SEARCH_INDEX_NAME}
+  AZURE_AI_SEARCH_API_KEY: ${AZURE_AI_SEARCH_API_KEY}
+  APPLICATIONINSIGHTS_CONNECTION_STRING: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
+instance_type: ${INSTANCE_TYPE}
+instance_count: ${INSTANCE_COUNT}
+request_settings:
+  request_timeout_ms: 60000
+  max_concurrent_requests_per_instance: 5

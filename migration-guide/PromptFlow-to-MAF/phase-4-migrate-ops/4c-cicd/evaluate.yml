@@ -1,0 +1,62 @@
+# Runs parity_check.py on every push and fails the pipeline if mean
+# similarity drops below the quality threshold (3.5 / 5.0).
+#
+# Replaces: Manual evaluation runs in the Prompt Flow UI.
+#
+# Required repository secrets:
+#   AZURE_OPENAI_API_KEY
+#   AZURE_OPENAI_ENDPOINT
+#   AZURE_OPENAI_CHAT_DEPLOYMENT_NAME
+#   APPINSIGHTS_CONN  (optional) — mapped to APPLICATIONINSIGHTS_CONNECTION_STRING in the workflow
+
+name: Evaluate on Deploy
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+defaults:
+  run:
+    working-directory: migration-guide/PromptFlow-to-MAF
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check parity input file exists
+        run: |
+          if [ ! -f phase-3-validate/test_inputs.csv ]; then
+            echo "ERROR: phase-3-validate/test_inputs.csv is missing." >&2
+            echo "Copy test_inputs.csv.example to test_inputs.csv and populate it with real production queries before enabling the quality gate." >&2
+            exit 1
+          fi
+
+      - name: Run parity evaluation
+        run: python phase-3-validate/parity_check.py
+        env:
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
+          APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.APPINSIGHTS_CONN }}
+          MAF_WORKFLOW_FILE: phase-2-rebuild/01_linear_flow.py
+
+      - name: Enforce quality gate
+        run: |
+          python -c "
+          import pandas as pd, sys
+          df = pd.read_csv('phase-3-validate/parity_results.csv')
+          score = df['similarity'].mean()
+          print(f'Mean similarity: {score:.2f} / 5.0')
+          sys.exit(0 if score >= 3.5 else 1)
+          "

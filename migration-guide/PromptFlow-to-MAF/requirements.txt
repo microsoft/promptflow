@@ -1,0 +1,30 @@
+# Root requirements — covers all samples in this repo.
+# MAF core and foundry are GA (1.0.1). Orchestrations and Azure AI Search are
+# still in preview and require --pre on a separate pip install command.
+
+# GA packages
+agent-framework>=1.0.1
+agent-framework-foundry>=1.0.1
+
+# Preview packages — install separately with --pre:
+#   pip install agent-framework-orchestrations --pre
+#   pip install agent-framework-azure-ai-search --pre
+agent-framework-orchestrations>=1.0.0b260409
+agent-framework-azure-ai-search>=1.0.0b260409
+
+# Evaluation (Phase 3)
+azure-ai-evaluation>=1.16.0
+
+# Deployment wrapper (Phase 4b)
+fastapi>=0.115.0
+uvicorn>=0.34.0
+python-dotenv>=1.0.0
+
+# Tracing (Phase 4a)
+azure-monitor-opentelemetry>=1.6.0
+
+# Azure identity — used by FoundryChatClient for authentication
+azure-identity>=1.19.0
+
+# Parity check (Phase 3)
+pandas>=2.2.0
