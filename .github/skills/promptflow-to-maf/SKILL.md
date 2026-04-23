@@ -28,6 +28,14 @@ Activate this skill when the user wants to:
 6. **Copy user-defined Python packages** — If the flow imports from internal packages (e.g., `my_utils/`, helper modules), copy the entire package directory into the output folder. The MAF workflow imports directly from the local copy — no `sys.path` manipulation needed.
 7. **Generate a test sample** — Always include a runnable `test_<name>.py` sample script.
 8. **Never modify the original flow** — All output goes into the new folder.
+9. **Evaluation flows use the EvalRunner pattern** — If any node has `aggregation: true`, the flow is an evaluation flow. Split it into a per-row MAF workflow + a standalone aggregation function + an `EvalRunner` orchestrator + a `run_eval.py` entry point. See the "Evaluation Flow Conversion" section below.
+10. **Workflow factory for concurrency** — MAF workflows do not support concurrent `run()` calls on a single instance (`RuntimeError: Workflow is already running`). For evaluation flows, always export a `create_workflow()` factory function that creates a fresh workflow instance per row.
+11. **Copy ALL referenced resources into the output folder** — The generated `-maf/` project must be fully self-contained with zero dependencies on the original Prompt Flow folder. Copy every resource file the flow references:
+   - **Data files** (`.jsonl`, `.csv`, `.json`, `.tsv`) used for testing or evaluation
+   - **Prompt / template files** (`.jinja2`, `.md` used as prompts)
+   - **User-defined Python modules** (`.py` files or packages imported by nodes — see rule 6)
+   - **Any other non-code assets** (e.g., `samples.json`, config files, image assets)
+   Update all file path references (e.g., `DEFAULT_DATA`, `_TEMPLATES_DIR`, `_PROMPT_TEMPLATE`) to point to the local copy using `Path(__file__).parent / ...`. Never use `parent.parent` or relative paths that reach back into the original flow directory.
 
 ---
 
@@ -58,6 +66,7 @@ Use this table to convert each Prompt Flow node type to its MAF equivalent:
 | Conditional / If node (`activate_config`) | `.add_edge(source, target, condition=fn)` |
 | Parallel nodes (no shared deps) | `.add_fan_out_edges(source, [targetA, targetB])` |
 | Merge / aggregate node | `.add_fan_in_edges([sourceA, sourceB], target)` |
+| `aggregation: true` node (eval batch) | Standalone function + `EvalRunner` orchestrator (see Evaluation Flow Conversion) |
 | Embed Text + Vector Lookup + LLM (RAG) | `AzureAISearchContextProvider` via `context_providers=[...]` on `Agent` |
 | Python tool node | Plain function passed to `Agent(tools=[fn1, fn2])` |
 | Flow inputs | Type annotation on start Executor's `@handler` parameter (use `@dataclass` for multiple inputs) |
@@ -96,6 +105,11 @@ Use this table to convert each Prompt Flow node type to its MAF equivalent:
    - Parallel branches (A → B, A → C)
    - Conditional branches (`activate_config`)
    - Fan-in / aggregation points
+5. **Detect evaluation flows** — Check if any node has `aggregation: true`. If yes, this is an evaluation flow. Identify:
+   - **Per-row nodes** — all nodes WITHOUT `aggregation: true`
+   - **Aggregation nodes** — all nodes WITH `aggregation: true`
+   - **Aggregation inputs** — which per-row node outputs feed into the aggregation node (e.g., `${grade.output}` → `grades: List[str]`)
+   - If the flow is an evaluation flow, follow Phase 2a instead of Phase 2.
 
 ### Phase 2: Generate MAF Code
 
@@ -125,6 +139,122 @@ Use this table to convert each Prompt Flow node type to its MAF equivalent:
     - Pass the `Message` (not a plain string) to `Agent.run()`
     - The downstream Executor's `@handler` must accept `Message` (not `str`) and `WorkflowContext` must use `Message` as the send type
 12. **Handle Python tool nodes** — convert to plain functions and pass to `Agent(tools=[fn])`.
+
+### Phase 2a: Generate Evaluation Flow Code
+
+If the flow has `aggregation: true` nodes, generate these files instead of a single workflow:
+
+1. **`workflow.py`** — Per-row MAF workflow containing only the non-aggregation nodes. Export a `create_workflow()` factory function (not a module-level singleton) so that `EvalRunner` can create a fresh instance per concurrent row.
+
+2. **`aggregation.py`** — Extract each aggregation node's Python function as a standalone function:
+   - Remove the `@tool` decorator
+   - Remove `from promptflow.core import log_metric` and all `log_metric()` calls
+   - Instead of calling `log_metric(key, value)`, include the metric in the returned dict
+   - Keep the function signature (parameter names and types) identical to the original
+   - The function must return a `dict` mapping metric names to values
+
+3. **`eval_runner.py`** — Copy the `EvalRunner` template (see below) verbatim. This file is identical across all evaluation flows.
+
+4. **`run_eval.py`** — Entry point that loads the dataset, creates an `EvalRunner`, and prints results. Configure:
+   - `workflow_factory` → the `create_workflow` function from `workflow.py`
+   - `aggregate_fn` → the aggregation function from `aggregation.py`
+   - `input_mapping` → maps transposed key names to aggregation function parameter names
+
+#### Input mapping rules
+
+`EvalRunner._transpose()` converts per-row outputs into keyword args for the aggregation function:
+
+| Per-row output type | `_transpose()` produces | `input_mapping` needed? |
+|---|---|---|
+| Plain value (`str`, `int`, `float`) | `{"values": [v1, v2, ...]}` | Yes — map `"values"` → aggregation param name (e.g., `{"values": "processed_results"}`) |
+| Dict (e.g., `{"coherence": 4.2, "fluency": 2.5}`) | `{"coherence": [4.2, ...], "fluency": [2.5, ...]}` | Only if dict keys differ from aggregation param names |
+
+For multi-output flows (e.g., `eval-summarization` with 4 scores per row), the per-row workflow should yield a dict whose keys match the aggregation function's parameter names. Then no `input_mapping` is needed.
+
+#### EvalRunner Template
+
+Copy this file verbatim as `eval_runner.py` in the output folder:
+
+```python
+import asyncio
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional
+
+
+@dataclass
+class EvalResult:
+    """Result of a batch evaluation run."""
+    per_row_outputs: List[Any]
+    metrics: Dict[str, Any]
+    errors: List[tuple] = field(default_factory=list)
+
+
+class EvalRunner:
+    """Runs a MAF workflow per row, collects outputs, then calls an aggregation function.
+
+    Mirrors PromptFlow's two-phase execution model:
+      Phase 1 — run each row through the workflow concurrently
+      Phase 2 — pass all collected outputs to the aggregation function
+
+    MAF workflows do not support concurrent execution on a single instance,
+    so workflow_factory creates a fresh workflow for each concurrent row.
+    """
+
+    def __init__(
+        self,
+        workflow_factory: Callable[[], Any],
+        aggregate_fn: Callable[..., dict],
+        concurrency: int = 5,
+        input_mapping: Optional[Dict[str, str]] = None,
+    ):
+        self._workflow_factory = workflow_factory
+        self._aggregate_fn = aggregate_fn
+        self._concurrency = concurrency
+        self._input_mapping = input_mapping
+
+    async def run(self, dataset: List[Any]) -> EvalResult:
+        semaphore = asyncio.Semaphore(self._concurrency)
+        per_row_outputs: List[Any] = [None] * len(dataset)
+        errors: List[tuple] = []
+
+        async def _run_row(index: int, row: Any) -> None:
+            async with semaphore:
+                wf = self._workflow_factory()
+                result = await wf.run(row)
+                per_row_outputs[index] = result.get_outputs()[0]
+
+        tasks = [_run_row(i, row) for i, row in enumerate(dataset)]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        succeeded_outputs: List[Any] = []
+        for i, r in enumerate(results):
+            if isinstance(r, Exception):
+                errors.append((i, r))
+            else:
+                succeeded_outputs.append(per_row_outputs[i])
+
+        aggregation_inputs = self._transpose(succeeded_outputs)
+        if self._input_mapping:
+            aggregation_inputs = {
+                self._input_mapping.get(k, k): v for k, v in aggregation_inputs.items()
+            }
+
+        metrics = self._aggregate_fn(**aggregation_inputs)
+        return EvalResult(
+            per_row_outputs=succeeded_outputs,
+            metrics=metrics,
+            errors=errors,
+        )
+
+    @staticmethod
+    def _transpose(outputs: List[Any]) -> Dict[str, Any]:
+        if not outputs:
+            return {"values": []}
+        if not isinstance(outputs[0], dict):
+            return {"values": outputs}
+        keys = outputs[0].keys()
+        return {k: [o[k] for o in outputs] for k in keys}
+```
 
 ### Phase 3: Generate Supporting Files
 
@@ -172,6 +302,8 @@ Use this table to convert each Prompt Flow node type to its MAF equivalent:
    - **Dict format** (from CLI): `{"data:image/png;url": "https://example.com/img.png"}` — extract the URL from the dict value
    - **String format** (from YAML defaults): `"data:image/png;url: https://example.com/img.png"` — parse the URL after `url: `
    - Both must be converted to `Content.from_uri(url, media_type="image/png")`
+11. **MAF workflows do not support concurrent `run()` calls** — Calling `workflow.run()` on an instance that is already running throws `RuntimeError: Workflow is already running. Concurrent executions are not allowed.` For evaluation flows, always use a `create_workflow()` factory and create a fresh instance per row. For non-eval flows, sequential reuse of a single instance is fine.
+12. **Evaluation aggregation functions must return a dict** — The original PromptFlow aggregation nodes call `log_metric(key, value)` to report metrics. In MAF, replace these with a returned `dict` mapping metric names to values. Remove all `log_metric` imports and calls.
 
 ---
 
@@ -365,4 +497,134 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+```
+
+---
+
+## Example: Evaluation Flow (Batch with Aggregation)
+
+This converts an evaluation flow with a per-row `line_process` node and an `aggregation: true` node.
+
+Original `flow.dag.yaml`:
+```yaml
+nodes:
+- name: line_process
+  type: python
+  source:
+    type: code
+    path: line_process.py
+  inputs:
+    groundtruth: ${inputs.groundtruth}
+    prediction: ${inputs.prediction}
+- name: aggregate
+  type: python
+  source:
+    type: code
+    path: aggregate.py
+  inputs:
+    processed_results: ${line_process.output}
+  aggregation: true
+```
+
+### `workflow.py` — Per-row workflow with factory function
+
+```python
+import asyncio
+from dataclasses import dataclass
+from typing_extensions import Never
+from agent_framework import Executor, WorkflowBuilder, WorkflowContext, handler
+
+
+@dataclass
+class EvalInput:
+    groundtruth: str
+    prediction: str
+
+
+class LineProcessExecutor(Executor):
+    @handler
+    async def process(self, input: EvalInput, ctx: WorkflowContext[Never, str]) -> None:
+        result = "Correct" if input.groundtruth.lower() == input.prediction.lower() else "Incorrect"
+        await ctx.yield_output(result)
+
+
+def create_workflow():
+    """Create a fresh workflow instance.
+
+    MAF workflows do not support concurrent execution, so each batch row
+    needs its own workflow instance.
+    """
+    _line_process = LineProcessExecutor(id="line_process")
+    return WorkflowBuilder(name="EvalBasicRow", start_executor=_line_process).build()
+```
+
+### `aggregation.py` — Standalone aggregation function
+
+```python
+from typing import Dict, List
+
+
+def aggregate(processed_results: List[str]) -> Dict[str, int]:
+    results_num = len(processed_results)
+    correct_num = processed_results.count("Correct")
+    return {
+        "results_num": results_num,
+        "correct_num": correct_num,
+    }
+```
+
+### `eval_runner.py` — Copy the EvalRunner template verbatim (see Phase 2a above)
+
+### `run_eval.py` — Entry point
+
+```python
+import argparse
+import asyncio
+import json
+from pathlib import Path
+from aggregation import aggregate
+from eval_runner import EvalRunner
+from workflow import EvalInput, create_workflow
+
+DEFAULT_DATA = Path(__file__).parent / "data.jsonl"
+
+
+def load_dataset(path: Path) -> list[EvalInput]:
+    rows = []
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                obj = json.loads(line)
+                rows.append(EvalInput(groundtruth=obj["groundtruth"], prediction=obj["prediction"]))
+    return rows
+
+
+async def main(data_path: Path, concurrency: int):
+    dataset = load_dataset(data_path)
+    print(f"Loaded {len(dataset)} rows from {data_path}")
+
+    runner = EvalRunner(
+        workflow_factory=create_workflow,
+        aggregate_fn=aggregate,
+        concurrency=concurrency,
+        input_mapping={"values": "processed_results"},
+    )
+    result = await runner.run(dataset)
+
+    print(f"\n--- Metrics ---")
+    for key, value in result.metrics.items():
+        print(f"  {key}: {value}")
+    if result.errors:
+        print(f"\n--- Errors ({len(result.errors)}) ---")
+        for idx, err in result.errors:
+            print(f"  Row {idx}: {err}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data", type=Path, default=DEFAULT_DATA)
+    parser.add_argument("--concurrency", type=int, default=5)
+    args = parser.parse_args()
+    asyncio.run(main(args.data, args.concurrency))
 ```
