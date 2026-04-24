@@ -1,0 +1,5 @@
+agent-framework>=1.0.1
+agent-framework-openai>=1.0.1
+python-dotenv
+Pillow
+requests
