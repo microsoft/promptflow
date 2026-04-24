@@ -22,6 +22,51 @@ Activate this skill when the user wants to:
 
 1. **Read the source flow first** — Always parse `flow.dag.yaml`, all referenced source files (`.jinja2`, `.py`), and `requirements.txt` before generating anything.
 2. **One Executor per node** — Each Prompt Flow node becomes one `Executor` subclass with a `@handler` method.
+
+### Node Collapsing Patterns
+
+While the default is 1:1 node-to-Executor mapping, certain node combinations can be safely merged into a single Executor to reduce complexity:
+
+**When to collapse nodes:**
+- **Prompt template + LLM node** → Merge into one Executor: extract system prompt to `Agent(instructions=...)`, format user prompt as a string with variables, then call `Agent.run()`
+  - Example: `hello_prompt` (`.jinja2`) + `llm` (LLM) → single `LLMExecutor` with both template and agent
+- **LLM + simple post-processing Python node** → Merge if post-processing is a few lines (e.g., extract substring, parse JSON, format output)
+- **Static-data Python node** → Inline as module-level constant (e.g., `prepare_examples()`, `math_example()`) if data is <50 lines
+
+**When to keep separate:**
+- Node would need concurrent execution (e.g., two branches from same source run in parallel)
+- Post-processing is complex (>20 lines) or calls external APIs
+- Output is consumed by multiple downstream nodes (keep it separate for clarity and reuse)
+- Node has stateful side effects that should be isolated
+
+**Example: Prompt + LLM collapse**
+```python
+# Instead of two Executors:
+class PromptExecutor(Executor):
+    @handler
+    async def receive(self, text: str, ctx: WorkflowContext[str]) -> None:
+        prompt = f"Write a simple {text} program..."
+        await ctx.send_message(prompt)
+
+class LLMExecutor(Executor):
+    @handler
+    async def call_llm(self, prompt: str, ctx: WorkflowContext[Never, str]) -> None:
+        response = await self._agent.run(prompt)
+        await ctx.yield_output(response.text)
+
+# Can merge into one:
+class PromptAndLLMExecutor(Executor):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._agent = Agent(client=..., instructions=...)
+
+    @handler
+    async def generate(self, text: str, ctx: WorkflowContext[Never, str]) -> None:
+        prompt = f"Write a simple {text} program..."
+        response = await self._agent.run(prompt)
+        await ctx.yield_output(response.text)
+```
+
 3. **Preserve behaviour** — The MAF workflow must produce the same outputs for the same inputs as the original flow.
 4. **Use GA packages** — `agent-framework>=1.0.1`, `agent-framework-openai>=1.0.1`. Use preview packages (`--pre`) only for orchestrations, Azure AI Search, or multi-agent features.
 5. **Create output folder** — Place generated files in a sibling folder named `<original-folder>-maf/`.
@@ -44,7 +89,7 @@ Activate this skill when the user wants to:
 | Package | Version | Purpose |
 |---------|---------|---------|
 | `agent-framework` | >=1.0.1 (GA) | Core: `Executor`, `WorkflowBuilder`, `WorkflowContext`, `Agent`, `@handler` |
-| `agent-framework-openai` | >=1.0.1 (GA) | `OpenAIChatClient` — works for both OpenAI and Azure OpenAI |
+| `agent-framework-openai` | >=1.0.1 (GA) | `OpenAIChatClient`, `OpenAIChatOptions` — works for both OpenAI and Azure OpenAI |
 | `agent-framework-foundry` | >=1.0.1 (GA) | `FoundryChatClient` — for Microsoft Foundry endpoints |
 | `agent-framework-orchestrations` | preview | `HandoffBuilder` — for multi-agent handoffs |
 | `agent-framework-azure-ai-search` | preview | `AzureAISearchContextProvider` — for RAG pipelines |
@@ -126,6 +171,7 @@ Use this table to convert each Prompt Flow node type to its MAF equivalent:
    - Use `OpenAIChatClient(azure_endpoint=..., model=..., api_key=...)` for Azure OpenAI
    - Use `FoundryChatClient(project_endpoint=..., model=..., credential=...)` for Foundry
    - `Agent.run()` returns an `AgentResponse` — extract text with `.text`
+   - **Preserve LLM parameters** — If the original flow sets `temperature`, `max_tokens`, `top_p`, or other chat parameters on an LLM node, pass them via `options=OpenAIChatOptions(temperature=..., max_tokens=...)` in the `Agent.run()` call. Import `OpenAIChatOptions` from `agent_framework.openai`.
 10. **Handle chat history** — format prior turns into a prompt string in an InputExecutor, not as raw message dicts.
 11. **Handle multimodal / image inputs**:
     - Prompt Flow image references use two formats:
@@ -271,6 +317,7 @@ class EvalRunner:
     - `Agent.run()` returns `AgentResponse`, not `str` — use `.text`
     - `OpenAIChatClient` is the correct class (not `AzureOpenAIChatClient`)
     - `@handler` methods must be `async` and accept `(self, message, ctx)`
+    - `@handler` methods must NOT be named `execute` — this shadows the base `Executor.execute()` and causes `TypeError: got an unexpected keyword argument 'trace_contexts'`
 
 ---
 
@@ -284,6 +331,50 @@ class EvalRunner:
 | Microsoft Foundry | `FoundryChatClient` | `FoundryChatClient(project_endpoint=..., model=..., credential=DefaultAzureCredential())` |
 
 > `OpenAIChatClient` auto-routes to Azure when `azure_endpoint` is provided. There is no separate `AzureOpenAIChatClient` class.
+
+---
+
+## Chat Options (LLM Parameters)
+
+Prompt Flow LLM nodes specify parameters like `temperature`, `max_tokens`, `top_p` in the YAML. In MAF, pass these via `OpenAIChatOptions` to `Agent.run()`:
+
+```python
+from agent_framework.openai import OpenAIChatClient, OpenAIChatOptions
+
+# In the @handler method:
+response = await self._agent.run(
+    prompt,
+    options=OpenAIChatOptions(temperature=0.2, max_tokens=128),
+)
+```
+
+### Available Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `temperature` | `float` | Sampling temperature (0.0–2.0). Lower = more deterministic |
+| `max_tokens` | `int` | Maximum tokens in the response |
+| `top_p` | `float` | Nucleus sampling threshold |
+| `stop` | `str \| Sequence[str]` | Stop sequences |
+| `seed` | `int` | Deterministic sampling seed |
+| `frequency_penalty` | `float` | Penalize repeated tokens |
+| `presence_penalty` | `float` | Penalize tokens already present |
+| `response_format` | `type[BaseModel] \| dict` | Structured output schema |
+| `model` | `str` | Override the model for this call |
+| `tool_choice` | `str` | Tool selection mode (`auto`, `required`, `none`) |
+
+### Mapping from Prompt Flow YAML
+
+| Prompt Flow LLM node field | `OpenAIChatOptions` field |
+|---|---|
+| `temperature: '0.2'` | `temperature=0.2` |
+| `max_tokens: '128'` | `max_tokens=128` |
+| `top_p: '1.0'` | `top_p=1.0` |
+| `stop: ''` | (omit — empty means no stop sequence) |
+| `frequency_penalty: '0'` | (omit — 0 is the default) |
+| `presence_penalty: '0'` | (omit — 0 is the default) |
+
+> Note: Prompt Flow YAML stores these as strings (e.g., `'0.2'`). Convert to the appropriate numeric type in `OpenAIChatOptions`.
 
 ---
 
@@ -304,6 +395,16 @@ class EvalRunner:
    - Both must be converted to `Content.from_uri(url, media_type="image/png")`
 11. **MAF workflows do not support concurrent `run()` calls** — Calling `workflow.run()` on an instance that is already running throws `RuntimeError: Workflow is already running. Concurrent executions are not allowed.` For evaluation flows, always use a `create_workflow()` factory and create a fresh instance per row. For non-eval flows, sequential reuse of a single instance is fine.
 12. **Evaluation aggregation functions must return a dict** — The original PromptFlow aggregation nodes call `log_metric(key, value)` to report metrics. In MAF, replace these with a returned `dict` mapping metric names to values. Remove all `log_metric` imports and calls.
+13. **Never name a `@handler` method `execute`** — The base `Executor` class has an `execute()` method that the workflow engine calls with internal arguments (`message`, `source_executor_ids`, `state`, `runner_context`, `trace_contexts`, `source_span_ids`). If a subclass defines a `@handler` method also named `execute`, it shadows the base method, causing `TypeError: got an unexpected keyword argument 'trace_contexts'` at runtime. Use any other name (e.g., `run_code`, `process`, `handle`, `invoke`).
+14. **LLM responses wrapped in markdown fences** — Modern LLMs often wrap JSON output in ` ```json ... ``` ` code fences even when not asked to. When parsing JSON from `Agent.run()` responses, always strip markdown fences before calling `json.loads()`:
+    ```python
+    text = response.text.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+    result = json.loads(text)
+    ```
+    Without this, `json.loads()` raises `JSONDecodeError` and the fallback silently returns wrong results.
+15. **Preserve LLM parameters from the original flow** — If the Prompt Flow YAML sets `temperature`, `max_tokens`, etc. on an LLM node, these MUST be carried over to the MAF `Agent.run()` call via `OpenAIChatOptions`. Omitting them changes model behavior (e.g., higher temperature = less deterministic outputs, wrong or missing `max_tokens` = truncated/verbose responses).
 
 ---
 
