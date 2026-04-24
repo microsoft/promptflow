@@ -266,7 +266,8 @@
     "GLEU",
     "fmeasure",
     "punkt",
-    "BYOI"
+    "BYOI",
+    "Neur"
   ],
   "flagWords": [
     "Prompt Flow"
