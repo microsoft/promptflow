@@ -1,6 +1,6 @@
 # Migrating from Prompt Flow to Microsoft Agent Framework (MAF)
 
-Prompt Flow is being retired. Feature development ended **17 April 2026**, with full retirement on **17 April 2027**. This repo is a hands-on migration guide with runnable code samples for every step of the move to
+Prompt Flow is being retired. Feature development ended **20 April 2026**, with full retirement on **20 April 2027**. This repo is a hands-on migration guide with runnable code samples for every step of the move to
 [Microsoft Agent Framework 1.0](https://devblogs.microsoft.com/agent-framework/microsoft-agent-framework-version-1-0/)
 (GA as of 2 April 2026, Python & .NET).
 
