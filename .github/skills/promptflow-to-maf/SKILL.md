@@ -21,7 +21,8 @@ Activate this skill when the user wants to:
 ## Rules
 
 1. **Read the source flow first** — Always parse `flow.dag.yaml`, all referenced source files (`.jinja2`, `.py`), and `requirements.txt` before generating anything.
-2. **One Executor per node** — Each Prompt Flow node becomes one `Executor` subclass with a `@handler` method.
+2. **Preserve prompts verbatim** — System prompts, user prompt templates, and any text from `.jinja2` or inline prompt nodes must be copied exactly as they appear in the original Prompt Flow. Do not rephrase, summarize, add, or remove any content — including examples, instructions, formatting, and preambles (e.g., "Read the following conversation and respond:"). The MAF workflow must send the identical prompt text to the LLM.
+3. **One Executor per node** — Each Prompt Flow node becomes one `Executor` subclass with a `@handler` method.
 
 ### Node Collapsing Patterns
 
@@ -67,18 +68,18 @@ class PromptAndLLMExecutor(Executor):
         await ctx.yield_output(response.text)
 ```
 
-3. **Preserve behaviour** — The MAF workflow must produce the same outputs for the same inputs as the original flow.
-4. **Use GA packages** — `agent-framework>=1.0.1`, `agent-framework-openai>=1.0.1`. Use preview packages (`--pre`) only for orchestrations, Azure AI Search, or multi-agent features.
-5. **Create output folder** — Place generated files in a sibling folder named `<original-folder>-maf/`.
-6. **Copy user-defined Python packages** — If the flow imports from internal packages (e.g., `my_utils/`, helper modules), copy the entire package directory into the output folder. The MAF workflow imports directly from the local copy — no `sys.path` manipulation needed.
-7. **Generate a test sample** — Always include a runnable `test_<name>.py` sample script.
-8. **Never modify the original flow** — All output goes into the new folder.
-9. **Evaluation flows use the EvalRunner pattern** — If any node has `aggregation: true`, the flow is an evaluation flow. Split it into a per-row MAF workflow + a standalone aggregation function + an `EvalRunner` orchestrator + a `run_eval.py` entry point. See the "Evaluation Flow Conversion" section below.
-10. **Workflow factory for concurrency** — MAF workflows do not support concurrent `run()` calls on a single instance (`RuntimeError: Workflow is already running`). For evaluation flows, always export a `create_workflow()` factory function that creates a fresh workflow instance per row.
-11. **Copy ALL referenced resources into the output folder** — The generated `-maf/` project must be fully self-contained with zero dependencies on the original Prompt Flow folder. Copy every resource file the flow references:
+4. **Preserve behaviour** — The MAF workflow must produce the same outputs for the same inputs as the original flow.
+5. **Use GA packages** — `agent-framework>=1.0.1`, `agent-framework-openai>=1.0.1`. Use preview packages (`--pre`) only for orchestrations, Azure AI Search, or multi-agent features.
+6. **Create output folder** — Place generated files in a sibling folder named `<original-folder>-maf/`.
+7. **Copy user-defined Python packages** — If the flow imports from internal packages (e.g., `my_utils/`, helper modules), copy the entire package directory into the output folder. The MAF workflow imports directly from the local copy — no `sys.path` manipulation needed.
+8. **Generate a test sample** — Always include a runnable `test_<name>.py` sample script.
+9. **Never modify the original flow** — All output goes into the new folder.
+10. **Evaluation flows use the EvalRunner pattern** — If any node has `aggregation: true`, the flow is an evaluation flow. Split it into a per-row MAF workflow + a standalone aggregation function + an `EvalRunner` orchestrator + a `run_eval.py` entry point. See the "Evaluation Flow Conversion" section below.
+11. **Workflow factory for concurrency** — MAF workflows do not support concurrent `run()` calls on a single instance (`RuntimeError: Workflow is already running`). For evaluation flows, always export a `create_workflow()` factory function that creates a fresh workflow instance per row.
+12. **Copy ALL referenced resources into the output folder** — The generated `-maf/` project must be fully self-contained with zero dependencies on the original Prompt Flow folder. Copy every resource file the flow references:
    - **Data files** (`.jsonl`, `.csv`, `.json`, `.tsv`) used for testing or evaluation
    - **Prompt / template files** (`.jinja2`, `.md` used as prompts)
-   - **User-defined Python modules** (`.py` files or packages imported by nodes — see rule 6)
+   - **User-defined Python modules** (`.py` files or packages imported by nodes — see rule 7)
    - **Any other non-code assets** (e.g., `samples.json`, config files, image assets)
    Update all file path references (e.g., `DEFAULT_DATA`, `_TEMPLATES_DIR`, `_PROMPT_TEMPLATE`) to point to the local copy using `Path(__file__).parent / ...`. Never use `parent.parent` or relative paths that reach back into the original flow directory.
 
