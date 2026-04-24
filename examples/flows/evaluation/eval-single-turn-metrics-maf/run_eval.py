@@ -21,9 +21,11 @@ def load_dataset(path: Path) -> list[EvalInput]:
                     answer=obj["answer"],
                     context=obj.get("context", ""),
                     ground_truth=obj.get("ground_truth", ""),
-                    metrics=obj.get("metrics",
-                        "grounding,answer_relevance,answer_quality,context_precision,"
-                        "answer_similarity,creativity,context_recall,answer_correctness"),
+                    metrics=obj.get(
+                        "metrics",
+                        "grounding,answer_relevance,answer_quality,"
+                        "context_precision,answer_similarity,creativity,"
+                        "context_recall,answer_correctness"),
                 ))
     return rows
 
@@ -39,7 +41,7 @@ async def main(data_path: Path, concurrency: int):
     )
     result = await runner.run(dataset)
 
-    print(f"\n--- Metrics ---")
+    print("\n--- Metrics ---")
     for key, value in result.metrics.items():
         print(f"  {key}: {value}")
 

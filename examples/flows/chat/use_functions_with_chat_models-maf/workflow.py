@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 from dataclasses import dataclass, field
 
@@ -131,7 +130,12 @@ async def main():
                 {
                     "inputs": {"question": "What is the weather like in Boston?"},
                     "outputs": {
-                        "answer": '{"forecast":["sunny","windy"],"location":"Boston","temperature":"72","unit":"fahrenheit"}',
+                        "answer": (
+                            '{"forecast":["sunny","windy"],'
+                            '"location":"Boston",'
+                            '"temperature":"72",'
+                            '"unit":"fahrenheit"}'
+                        ),
                         "llm_output": {
                             "content": None,
                             "function_call": {

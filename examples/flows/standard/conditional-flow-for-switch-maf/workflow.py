@@ -15,7 +15,8 @@ There is a search bar in the mall APP and users can enter any query in the searc
 
 The user may want to search for orders, view product information, or seek recommended products.
 
-Therefore, please classify user intentions into the following three types according to the query: product_recommendation, order_search, product_info
+Therefore, please classify user intentions into the following three types \
+according to the query: product_recommendation, order_search, product_info
 
 Please note that only the above three situations can be returned, and try not to include other return values."""
 

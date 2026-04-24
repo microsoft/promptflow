@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from workflow import ChatInput, workflow
+from workflow import ChatInput, workflow  # noqa: E402
 
 
 async def test_weather_query():
@@ -26,7 +26,12 @@ async def test_forecast_query():
                 {
                     "inputs": {"question": "What is the weather like in Boston?"},
                     "outputs": {
-                        "answer": '{"forecast":["sunny","windy"],"location":"Boston","temperature":"72","unit":"fahrenheit"}',
+                        "answer": (
+                            '{"forecast":["sunny","windy"],'
+                            '"location":"Boston",'
+                            '"temperature":"72",'
+                            '"unit":"fahrenheit"}'
+                        ),
                         "llm_output": {
                             "content": None,
                             "function_call": {

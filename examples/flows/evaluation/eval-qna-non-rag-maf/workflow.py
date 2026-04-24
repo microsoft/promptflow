@@ -45,8 +45,9 @@ def _select_metrics(metrics_str: str) -> dict:
     return {m: (m in user_selected) for m in SUPPORTED_METRICS}
 
 
-def _validate_input(question: str, answer: str, context: str, ground_truth: str,
-                     selected_metrics: dict) -> dict:
+def _validate_input(question: str, answer: str, context: str,
+                    ground_truth: str,
+                    selected_metrics: dict) -> dict:
     dict_metric_required_fields = {
         "gpt_groundedness": {"answer", "context"},
         "gpt_relevance": {"question", "answer", "context"},
@@ -139,19 +140,33 @@ class QnaNonRagExecutor(Executor):
     @handler
     async def evaluate(self, input: EvalInput, ctx: WorkflowContext[Never, dict]) -> None:
         selected = _select_metrics(input.metrics)
-        validated = _validate_input(input.question, input.answer, input.context, input.ground_truth, selected)
+        validated = _validate_input(
+            input.question, input.answer, input.context,
+            input.ground_truth, selected)
 
         tasks = {}
         if validated.get("gpt_coherence"):
-            tasks["gpt_coherence"] = self._eval_gpt_metric("gpt_coherence_prompt", question=input.question, answer=input.answer)
+            tasks["gpt_coherence"] = self._eval_gpt_metric(
+                "gpt_coherence_prompt",
+                question=input.question, answer=input.answer)
         if validated.get("gpt_similarity"):
-            tasks["gpt_similarity"] = self._eval_gpt_metric("gpt_similarity_prompt", question=input.question, answer=input.answer, ground_truth=input.ground_truth)
+            tasks["gpt_similarity"] = self._eval_gpt_metric(
+                "gpt_similarity_prompt",
+                question=input.question, answer=input.answer,
+                ground_truth=input.ground_truth)
         if validated.get("gpt_relevance"):
-            tasks["gpt_relevance"] = self._eval_gpt_metric("gpt_relevance_prompt", question=input.question, answer=input.answer, context=input.context)
+            tasks["gpt_relevance"] = self._eval_gpt_metric(
+                "gpt_relevance_prompt",
+                question=input.question, answer=input.answer,
+                context=input.context)
         if validated.get("gpt_fluency"):
-            tasks["gpt_fluency"] = self._eval_gpt_metric("gpt_fluency_prompt", question=input.question, answer=input.answer)
+            tasks["gpt_fluency"] = self._eval_gpt_metric(
+                "gpt_fluency_prompt",
+                question=input.question, answer=input.answer)
         if validated.get("gpt_groundedness"):
-            tasks["gpt_groundedness"] = self._eval_gpt_metric("gpt_groundedness_prompt", answer=input.answer, context=input.context)
+            tasks["gpt_groundedness"] = self._eval_gpt_metric(
+                "gpt_groundedness_prompt",
+                answer=input.answer, context=input.context)
         if validated.get("ada_similarity"):
             tasks["ada_similarity"] = self._eval_ada_similarity(input.answer, input.ground_truth)
 

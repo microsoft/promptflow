@@ -28,11 +28,19 @@ Return the final numerical answer only and any accompanying reasoning or explana
 
 Here are some examples:
 
-User: A jar contains two red marbles, three green marbles, ten white marbles and no other marbles. Two marbles are randomly drawn from this jar without replacement. What is the probability that these two marbles drawn will both be red? Express your answer as a common fraction.
-Assistant: {"Chain of thought": "The total number of marbles is 2+3+10=15. The probability that the first marble drawn will be red is 2/15. Then, there will be one red left, out of 14. Therefore, the probability of drawing out two red marbles will be: (2/15)*(1/14) = 1/105.", "answer": "1/105"}
+User: A jar contains two red marbles, three green marbles, ten white marbles \
+and no other marbles. Two marbles are randomly drawn from this jar without \
+replacement. What is the probability that these two marbles drawn will both \
+be red? Express your answer as a common fraction.
+Assistant: {"Chain of thought": "The total number of marbles is 2+3+10=15. \
+The probability that the first marble drawn will be red is 2/15. Then, there \
+will be one red left, out of 14. Therefore, the probability of drawing out \
+two red marbles will be: (2/15)*(1/14) = 1/105.", "answer": "1/105"}
 
 User: Find the greatest common divisor of 7! and (5!)^2.
-Assistant: {"Chain of thought": "7! = 5040 = 2^4 * 3^2 * 5 * 7. (5!)^2 = 14400 = 2^6 * 3^2 * 5^2. gcd = 2^4 * 3^2 * 5 = 720.", "answer": "720"}"""
+Assistant: {"Chain of thought": "7! = 5040 = 2^4 * 3^2 * 5 * 7. \
+(5!)^2 = 14400 = 2^6 * 3^2 * 5^2. gcd = 2^4 * 3^2 * 5 = 720.", \
+"answer": "720"}"""
 
 VARIANT_2_INSTRUCTIONS = """\
 You are an assistant to calculate the answer to the provided math problems.
@@ -41,23 +49,46 @@ Return the final numerical answer only and any accompanying reasoning or explana
 
 Here are some examples:
 
-User: A jar contains two red marbles, three green marbles, ten white marbles and no other marbles. Two marbles are randomly drawn from this jar without replacement. What is the probability that these two marbles drawn will both be red? Express your answer as a common fraction.
-Assistant: {"Chain of thought": "The total number of marbles is 2+3+10=15. The probability that the first marble drawn will be red is 2/15. Then, there will be one red left, out of 14. Therefore, the probability of drawing out two red marbles will be: (2/15)*(1/14) = 1/105.", "answer": "1/105"}
+User: A jar contains two red marbles, three green marbles, ten white marbles \
+and no other marbles. Two marbles are randomly drawn from this jar without \
+replacement. What is the probability that these two marbles drawn will both \
+be red? Express your answer as a common fraction.
+Assistant: {"Chain of thought": "The total number of marbles is 2+3+10=15. \
+The probability that the first marble drawn will be red is 2/15. Then, there \
+will be one red left, out of 14. Therefore, the probability of drawing out \
+two red marbles will be: (2/15)*(1/14) = 1/105.", "answer": "1/105"}
 
 User: Find the greatest common divisor of 7! and (5!)^2.
-Assistant: {"Chain of thought": "7! = 5040 = 2^4 * 3^2 * 5 * 7. (5!)^2 = 14400 = 2^6 * 3^2 * 5^2. gcd = 2^4 * 3^2 * 5 = 720.", "answer": "720"}
+Assistant: {"Chain of thought": "7! = 5040 = 2^4 * 3^2 * 5 * 7. \
+(5!)^2 = 14400 = 2^6 * 3^2 * 5^2. gcd = 2^4 * 3^2 * 5 = 720.", \
+"answer": "720"}
 
-User: A club has 10 members, 5 boys and 5 girls. Two of the members are chosen at random. What is the probability that they are both girls?
-Assistant: {"Chain of thought": "There are C(10,2) = 45 ways to choose two members, and C(5,2) = 10 ways to choose two girls. Therefore, the probability is 10/45 = 2/9.", "answer": "2/9"}
+User: A club has 10 members, 5 boys and 5 girls. Two of the members \
+are chosen at random. What is the probability that they are both girls?
+Assistant: {"Chain of thought": "There are C(10,2) = 45 ways to choose \
+two members, and C(5,2) = 10 ways to choose two girls. Therefore, \
+the probability is 10/45 = 2/9.", "answer": "2/9"}
 
-User: Allison, Brian and Noah each have a 6-sided cube. All of the faces on Allison's cube have a 5. The faces on Brian's cube are numbered 1, 2, 3, 4, 5 and 6. Three of the faces on Noah's cube have a 2 and three of the faces have a 6. All three cubes are rolled. What is the probability that Allison's roll is greater than each of Brian's and Noah's?
-Assistant: {"Chain of thought": "Allison always rolls 5. Brian rolls 4 or lower with probability 4/6 = 2/3. Noah rolls 2 (less than 5) with probability 3/6 = 1/2. So the probability is 2/3 * 1/2 = 1/3.", "answer": "1/3"}
+User: Allison, Brian and Noah each have a 6-sided cube. All of the faces \
+on Allison's cube have a 5. The faces on Brian's cube are numbered \
+1, 2, 3, 4, 5 and 6. Three of the faces on Noah's cube have a 2 and \
+three of the faces have a 6. All three cubes are rolled. What is the \
+probability that Allison's roll is greater than each of Brian's and Noah's?
+Assistant: {"Chain of thought": "Allison always rolls 5. Brian rolls 4 \
+or lower with probability 4/6 = 2/3. Noah rolls 2 (less than 5) with \
+probability 3/6 = 1/2. So the probability is 2/3 * 1/2 = 1/3.", \
+"answer": "1/3"}
 
 User: Compute C(50,2).
-Assistant: {"Chain of thought": "C(50,2) = 50!/(2!48!) = (50*49)/(2*1) = 1225.", "answer": "1225"}
+Assistant: {"Chain of thought": "C(50,2) = 50!/(2!48!) = (50*49)/(2*1) \
+= 1225.", "answer": "1225"}
 
-User: The set S = {1, 2, 3, ..., 49, 50} contains the first 50 positive integers. After the multiples of 2 and the multiples of 3 are removed, how many integers remain in the set S?
-Assistant: {"Chain of thought": "25 even numbers removed, leaving 25 odd numbers. Remove odd multiples of 3: 3,9,15,21,27,33,39,45 = 8 numbers. 25 - 8 = 17.", "answer": "17"}"""
+User: The set S = {1, 2, 3, ..., 49, 50} contains the first 50 positive \
+integers. After the multiples of 2 and the multiples of 3 are removed, \
+how many integers remain in the set S?
+Assistant: {"Chain of thought": "25 even numbers removed, leaving 25 odd \
+numbers. Remove odd multiples of 3: 3,9,15,21,27,33,39,45 = 8 numbers. \
+25 - 8 = 17.", "answer": "17"}"""
 
 VARIANT_INSTRUCTIONS = {
     "variant_0": VARIANT_0_INSTRUCTIONS,

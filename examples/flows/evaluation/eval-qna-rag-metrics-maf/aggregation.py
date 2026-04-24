@@ -1,5 +1,5 @@
 import math
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 
 def aggregate(**kwargs) -> Dict[str, Any]:

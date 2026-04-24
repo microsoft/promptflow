@@ -9,7 +9,7 @@ to be set (via .env or environment).
 
 import asyncio
 
-from workflow import QuestionSimInput, workflow, _format_chat_history
+from workflow import QuestionSimInput, workflow
 
 
 # ---------------------------------------------------------------------------
@@ -160,7 +160,7 @@ async def run_test(name: str, sim_input: QuestionSimInput, expect_stop: bool):
         if output == "[STOP]":
             errors.append("Expected generated questions but got '[STOP]'")
         # Should contain at least one non-empty line
-        lines = [l.strip() for l in output.split("\n") if l.strip()]
+        lines = [line.strip() for line in output.split("\n") if line.strip()]
         if len(lines) < 1:
             errors.append("Expected at least 1 generated question, got empty output")
         # Number of questions should match question_count
@@ -173,7 +173,7 @@ async def run_test(name: str, sim_input: QuestionSimInput, expect_stop: bool):
             print(f"  FAIL: {e}")
         return False
     else:
-        print(f"  PASS")
+        print("  PASS")
         return True
 
 
@@ -192,7 +192,7 @@ async def main():
     results = {}
     for name, sim_input, expect_stop in test_cases:
         # Each run needs a fresh workflow instance (MAF doesn't allow concurrent runs)
-        from workflow import VerifyAndSimulateExecutor, _format_chat_history
+        from workflow import VerifyAndSimulateExecutor
         from agent_framework import WorkflowBuilder
 
         executor = VerifyAndSimulateExecutor(id=f"test_{name}")

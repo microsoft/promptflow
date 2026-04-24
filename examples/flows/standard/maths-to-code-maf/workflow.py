@@ -42,7 +42,8 @@ _USER_TEMPLATE = """\
 This a set of examples including question and the final answer:
 {examples}
 
-Now come to the real task, make sure return a valid json. The json should contain a key named "code" and the value is the python code. For example:
+Now come to the real task, make sure return a valid json. The json should \
+contain a key named "code" and the value is the python code. For example:
 {{
     "code": "print(1+1)"
 }}

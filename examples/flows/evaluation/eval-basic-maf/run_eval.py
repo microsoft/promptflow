@@ -46,11 +46,11 @@ async def main(data_path: Path, concurrency: int) -> EvalResult:
 
     result = await runner.run(dataset)
 
-    print(f"\n--- Per-row outputs ---")
+    print("\n--- Per-row outputs ---")
     for i, output in enumerate(result.per_row_outputs):
         print(f"  Row {i}: {output}")
 
-    print(f"\n--- Metrics ---")
+    print("\n--- Metrics ---")
     for key, value in result.metrics.items():
         print(f"  {key}: {value}")
 

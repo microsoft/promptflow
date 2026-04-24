@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from workflow import ChatInput, workflow
+from workflow import ChatInput, workflow  # noqa: E402
 
 
 async def test_single_turn():
@@ -29,7 +29,10 @@ async def test_multi_turn():
     chat_history = [
         {
             "inputs": {
-                "question": [{"data:image/png;url": "https://uhf.microsoft.com/images/microsoft/RE1Mu3b.png"}, "What is in this image?"]
+                "question": [
+                    {"data:image/png;url": "https://uhf.microsoft.com/images/microsoft/RE1Mu3b.png"},
+                    "What is in this image?",
+                ]
             },
             "outputs": {"answer": "This is a logo."},
         }

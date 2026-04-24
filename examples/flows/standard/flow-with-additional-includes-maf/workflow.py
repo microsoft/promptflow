@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-from dataclasses import dataclass
 
 import bs4
 import requests

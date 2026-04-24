@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 from jinja2 import Template
 from openai import AsyncAzureOpenAI
 from tenacity import (
-    RetryError,
     retry,
     stop_after_attempt,
     wait_random_exponential,

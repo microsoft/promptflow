@@ -22,7 +22,8 @@ In triple backticks below is the customer information and a list of orders.
 {customer_info}
 ```
 
-In triple backticks below are the is the chat history with customer statements and replies from the customer service agent:
+In triple backticks below are the is the chat history with customer \
+statements and replies from the customer service agent:
 
 ```
 {history}

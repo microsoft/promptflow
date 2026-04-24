@@ -1,13 +1,12 @@
 """Test script for the chat-math-variant MAF workflow."""
 
 import asyncio
-import os
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from workflow import ChatInput, build_workflow
+from workflow import ChatInput, build_workflow  # noqa: E402
 
 
 async def test_single_turn():

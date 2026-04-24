@@ -1,8 +1,6 @@
 import asyncio
 import os
-import re
 from dataclasses import dataclass, field
-from typing import List
 
 from dotenv import load_dotenv
 from typing_extensions import Never
@@ -23,29 +21,47 @@ If the conversation is irrelevant or empty, just restate the original question.
 Do not add more details than necessary to the question."""
 
 CHECK_RELEVANCE_INSTRUCTIONS = """\
-You are a helpful assistant that knows well about a product named promptflow. Here is instruction of the product:
+You are a helpful assistant that knows well about a product named promptflow. \
+Here is instruction of the product:
 
 [Instruction]
-Prompt flow is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality.
+Prompt flow is a suite of development tools designed to streamline \
+the end-to-end development cycle of LLM-based AI applications, \
+from ideation, prototyping, testing, evaluation to production \
+deployment and monitoring. It makes prompt engineering much easier \
+and enables you to build LLM apps with production quality.
 
 With prompt flow, you will be able to:
-Create and iteratively develop flow, debug and iterate your flows, evaluate flow quality and performance, and deploy your flow to the serving platform you choose.
+Create and iteratively develop flow, debug and iterate your flows, \
+evaluate flow quality and performance, and deploy your flow to the \
+serving platform you choose.
 
 The key concepts in promptflow includes:
-flow, connection, tool, variant, variants, node, nodes, input, inputs, output, outputs, prompt, run, evaluation flow, conditional flow, activate config, deploy flow and develop flow in azure cloud.
-Also include open source, stream, streaming, function calling, response format, model, tracing, vision, bulk test, docstring, docker image, json, jsonl and python package.
+flow, connection, tool, variant, variants, node, nodes, input, \
+inputs, output, outputs, prompt, run, evaluation flow, conditional \
+flow, activate config, deploy flow and develop flow in azure cloud.
+Also include open source, stream, streaming, function calling, \
+response format, model, tracing, vision, bulk test, docstring, \
+docker image, json, jsonl and python package.
 [End Instruction]
 
-Your job is to determine whether user's question is related to the product or the key concepts or information about yourself.
-You do not need to give the answer to the question. Simply return a number between 0 and 10 to represent the correlation between the question and the product.
+Your job is to determine whether user's question is related to \
+the product or the key concepts or information about yourself.
+You do not need to give the answer to the question. Simply return \
+a number between 0 and 10 to represent the correlation between \
+the question and the product.
 Return 0 if it is totally not related. Return 10 if it is highly related.
 Do not return anything else except the number."""
 
 ANSWER_WITH_CONTEXT_INSTRUCTIONS = """\
-You are an AI assistant that designed to extract answer for user's questions from given context and conversation history.
-Politely refuse to answer the question if the answer cannot be formed strictly using the provided context and conversation history.
+You are an AI assistant that designed to extract answer for \
+user's questions from given context and conversation history.
+Politely refuse to answer the question if the answer cannot \
+be formed strictly using the provided context and conversation \
+history.
 Your answer should be as precise as possible, and should only come from the context. \
-Add citation after each sentence when possible in a form "{Your answer}. [Reference](citation)"."""
+Add citation after each sentence when possible in a form \
+"{Your answer}. [Reference](citation)"."""
 
 REFUSE_MESSAGE = (
     "Unfortunately, I'm unable to address this question since it appears to be "

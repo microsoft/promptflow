@@ -16,7 +16,7 @@ async def main():
     print("Test 1: Single-turn (no history)")
     print("=" * 60)
     result = await workflow.run(ChatInput(question="What is ChatGPT?"))
-    print(f"Q: What is ChatGPT?")
+    print("Q: What is ChatGPT?")
     print(f"A: {result.get_outputs()[0]}\n")
 
     # Test 2: Multi-turn — with one prior exchange
@@ -35,7 +35,7 @@ async def main():
             chat_history=history,
         )
     )
-    print(f"Q: How is it different from GPT-4?")
+    print("Q: How is it different from GPT-4?")
     print(f"A: {result.get_outputs()[0]}\n")
 
     # Test 3: Multi-turn — longer conversation
@@ -58,11 +58,9 @@ async def main():
             chat_history=history,
         )
     )
-    print(f"Q: Now divide by 6")
+    print("Q: Now divide by 6")
     print(f"A: {result.get_outputs()[0]}\n")
 
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-

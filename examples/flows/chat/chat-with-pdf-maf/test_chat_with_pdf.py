@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from workflow import PdfChatInput, workflow
+from workflow import PdfChatInput, workflow  # noqa: E402
 
 
 async def test_single_turn():

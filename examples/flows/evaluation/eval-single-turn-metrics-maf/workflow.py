@@ -1,6 +1,5 @@
 import asyncio
 import json
-import math
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -36,7 +35,11 @@ class EvalInput:
     answer: str
     context: str
     ground_truth: str
-    metrics: str = "grounding,answer_relevance,answer_quality,context_precision,answer_similarity,creativity,context_recall,answer_correctness"
+    metrics: str = (
+        "grounding,answer_relevance,answer_quality,"
+        "context_precision,answer_similarity,creativity,"
+        "context_recall,answer_correctness"
+    )
 
 
 def _select_metrics(metrics_str: str) -> dict:
@@ -44,8 +47,9 @@ def _select_metrics(metrics_str: str) -> dict:
     return {m: (m in user_selected) for m in SUPPORTED_METRICS}
 
 
-def _validate_input(question: str, answer: str, context: str, ground_truth: str,
-                     selected_metrics: dict) -> dict:
+def _validate_input(question: str, answer: str, context: str,
+                    ground_truth: str,
+                    selected_metrics: dict) -> dict:
     dict_metric_required_fields = {
         "answer_relevance": {"question", "answer"},
         "answer_quality": {"question", "answer"},
@@ -178,16 +182,28 @@ class SingleTurnMetricsExecutor(Executor):
         raw = await self._eval_simple_llm("creativity", question=question, answer=answer)
         return _get_score(raw) if raw else None
 
-    async def _eval_context_precision(self, question: str, context: str, ground_truth: str) -> Optional[float]:
-        raw = await self._eval_simple_llm("context_precision", question=question, context=context, ground_truth=ground_truth)
+    async def _eval_context_precision(
+            self, question: str, context: str,
+            ground_truth: str) -> Optional[float]:
+        raw = await self._eval_simple_llm(
+            "context_precision", question=question,
+            context=context, ground_truth=ground_truth)
         return _get_score(raw) if raw else None
 
-    async def _eval_answer_similarity(self, question: str, answer: str, ground_truth: str) -> Optional[float]:
-        raw = await self._eval_simple_llm("answer_similarity", question=question, answer=answer, ground_truth=ground_truth)
+    async def _eval_answer_similarity(
+            self, question: str, answer: str,
+            ground_truth: str) -> Optional[float]:
+        raw = await self._eval_simple_llm(
+            "answer_similarity", question=question,
+            answer=answer, ground_truth=ground_truth)
         return _get_score(raw) if raw else None
 
-    async def _eval_context_recall(self, question: str, context: str, ground_truth: str) -> Optional[float]:
-        raw = await self._eval_simple_llm("context_recall", question=question, context=context, ground_truth=ground_truth)
+    async def _eval_context_recall(
+            self, question: str, context: str,
+            ground_truth: str) -> Optional[float]:
+        raw = await self._eval_simple_llm(
+            "context_recall", question=question,
+            context=context, ground_truth=ground_truth)
         if raw is None:
             return None
         return _calculate_context_recall(raw)
@@ -209,9 +225,13 @@ class SingleTurnMetricsExecutor(Executor):
         score = 5 * cosine_sim * int(not noncommittal)
         return max(score, 1)
 
-    async def _eval_answer_correctness(self, question: str, answer: str,
-                                        ground_truth: str, similarity_score: float) -> Optional[float]:
-        raw = await self._eval_simple_llm("answer_correctness", question=question, answer=answer, ground_truth=ground_truth)
+    async def _eval_answer_correctness(
+            self, question: str, answer: str,
+            ground_truth: str,
+            similarity_score: float) -> Optional[float]:
+        raw = await self._eval_simple_llm(
+            "answer_correctness", question=question,
+            answer=answer, ground_truth=ground_truth)
         if raw is None:
             return None
         return _calculate_answer_correctness(raw, similarity_score)

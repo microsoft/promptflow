@@ -1,10 +1,10 @@
 import asyncio
 import json
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from statistics import mean
-from typing import List, Optional
+from typing import Optional
 
 from dotenv import load_dotenv
 from jinja2 import Template

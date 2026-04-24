@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from workflow import ChatInput, workflow
+from workflow import ChatInput, workflow  # noqa: E402
 
 
 async def test_relevant_question():
@@ -24,7 +24,12 @@ async def test_irrelevant_question():
 async def test_multi_turn():
     print("\n--- multi turn ---")
     history = [
-        {"inputs": {"question": "What is promptflow?"}, "outputs": {"output": "Prompt flow is a suite of dev tools for LLM apps."}},
+        {
+            "inputs": {"question": "What is promptflow?"},
+            "outputs": {
+                "output": "Prompt flow is a suite of dev tools for LLM apps."
+            },
+        },
     ]
     result = await workflow.run(ChatInput(question="How do I create a flow?", chat_history=history))
     print("Answer:", result.get_outputs()[0])

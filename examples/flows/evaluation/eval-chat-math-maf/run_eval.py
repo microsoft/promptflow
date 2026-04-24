@@ -32,7 +32,7 @@ async def main(data_path: Path, concurrency: int):
     )
     result = await runner.run(dataset)
 
-    print(f"\n--- Metrics ---")
+    print("\n--- Metrics ---")
     for key, value in result.metrics.items():
         print(f"  {key}: {value}")
 
