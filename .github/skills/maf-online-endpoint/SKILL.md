@@ -1,14 +1,25 @@
 ---
 name: maf-online-endpoint
-description: "Deploy a Microsoft Agent Framework (MAF) workflow as an Azure ML managed online endpoint. Wraps any workflow into an init()/run() scoring script, creates conda environment, endpoint and deployment YAMLs, deploy script, and assigns RBAC. Supports managed identity auth and Application Insights tracing. WHEN: deploy MAF workflow, deploy agent-framework workflow, create online endpoint for MAF, deploy workflow to AML, managed online endpoint for agent workflow, wrap workflow in scoring script, deploy agent as endpoint."
+description: "Deploy a Microsoft Agent Framework (MAF) workflow as a managed online endpoint to an Azure ML workspace or an Azure AI Foundry hub-based project. Wraps any workflow into an init()/run() scoring script, creates conda environment, endpoint and deployment YAMLs, deploy script, and assigns RBAC. Supports managed identity auth and Application Insights tracing. WHEN: deploy MAF workflow, deploy agent-framework workflow, create online endpoint for MAF, deploy workflow to AML, deploy workflow to Foundry project, managed online endpoint for agent workflow, wrap workflow in scoring script, deploy agent as endpoint, realtime endpoint in Foundry project."
 ---
 
-# Deploy MAF Workflow as Azure ML Managed Online Endpoint
+# Deploy MAF Workflow as a Managed Online Endpoint
 
 This skill wraps a Microsoft Agent Framework (`agent-framework`) workflow into
-an Azure ML managed online endpoint using the standard scoring-script pattern
+a managed online endpoint using the standard scoring-script pattern
 (`init()` / `run()`), following the patterns from the
 [azureml-examples managed endpoint samples](https://github.com/Azure/azureml-examples/tree/main/sdk/python/endpoints/online/managed).
+
+The endpoint can be deployed to either:
+
+| Deployment Target | Description |
+|-------------------|-------------|
+| **Azure Machine Learning workspace** | Standalone AML workspace — user provides subscription, resource group, and workspace name |
+| **Azure AI Foundry hub-based project** | An AI project living under a Foundry hub — the project name is the workspace name for `az ml` commands |
+
+Both targets produce the **same generated files** (`online-deployment/` directory)
+and use the **same `az ml` CLI / `azure-ai-ml` Python SDK**.  The difference is
+in how the workspace is identified and RBAC scope.
 
 ## Overview
 
@@ -45,38 +56,53 @@ the project root:
 
 When the user asks to deploy a MAF workflow as an online endpoint:
 
-1. **Ask** for infrastructure variables (Step 0 §A) using `vscode_askQuestions`:
-   subscription, resource group, workspace, and the workflow file path.
-2. **Read** the workflow file. Inspect imports and `os.environ`/`os.getenv`
+1. **Ask** for the **deployment target** using `vscode_askQuestions`:
+   - **Azure Machine Learning workspace** — standalone AML workspace
+   - **Azure AI Foundry project** — hub-based project (the project name is the
+     workspace name)
+2. **Ask** for infrastructure variables (Step 0 §A) using `vscode_askQuestions`:
+   subscription, resource group, workspace/project name, and the workflow file
+   path.
+3. **Read** the workflow file. Inspect imports and `os.environ`/`os.getenv`
    calls to discover what the workflow needs (Step 0 §B).
-3. **Ask** the user to provide values for any workflow-specific variables that
+4. **Ask** the user to provide values for any workflow-specific variables that
    have no defaults.
-4. **Generate** the files from the templates in [./assets/](./assets/) into an
+5. **Generate** the files from the templates in [./assets/](./assets/) into an
    `online-deployment/` subdirectory under the project root.
-5. **Run** deployment commands via terminal.  On Windows, run `az` CLI commands
+6. **Run** deployment commands via terminal.  On Windows, run `az` CLI commands
    directly in PowerShell (the Bash `deploy.sh` won't work).  On Linux/macOS,
    use `deploy.sh` or run the commands directly.
-6. **Assign RBAC** (Step 7) — only needed for managed-identity workflows
-   (Foundry/DefaultAzureCredential).  Skip for API-key workflows.
-7. **Wait** 5–10 minutes for RBAC propagation (if applicable), then run smoke
+7. **Assign RBAC** (Step 7) — only needed for managed-identity workflows
+   (Foundry/DefaultAzureCredential).  Skip for API-key workflows.  For Foundry
+   hub-based projects, scope the role assignment to the hub's AI Services
+   resource.
+8. **Wait** 5–10 minutes for RBAC propagation (if applicable), then run smoke
    test.
-8. **Report** the scoring URI and remind user to `.gitignore` rendered YAML
+9. **Report** the scoring URI and remind user to `.gitignore` rendered YAML
    files that contain secrets.
 
 ## Step 0 — Gather Required Information
 
 ### A. Online Endpoint Infrastructure (always required)
 
+The same variables apply to both deployment targets.  For a **Foundry hub-based
+project**, `WORKSPACE_NAME` is the **AI project name** (not the hub name).
+
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `SUBSCRIPTION_ID` | Azure subscription containing the AML workspace | _(required)_ |
-| `RESOURCE_GROUP` | Resource group with the AML workspace | _(required)_ |
-| `WORKSPACE_NAME` | Azure ML workspace name | _(required)_ |
+| `SUBSCRIPTION_ID` | Azure subscription | _(required)_ |
+| `RESOURCE_GROUP` | Resource group containing the AML workspace or AI project | _(required)_ |
+| `WORKSPACE_NAME` | AML workspace name **or** AI Foundry project name | _(required)_ |
 | `ENDPOINT_NAME` | Name of the online endpoint | `maf-endpoint` |
 | `DEPLOYMENT_NAME` | Deployment name under the endpoint | `blue` |
 | `INSTANCE_TYPE` | VM SKU | `Standard_DS3_v2` |
 | `INSTANCE_COUNT` | Number of instances | `1` |
 | `REQUEST_TIMEOUT_MS` | Request timeout in ms | `60000` |
+
+> **Foundry project note:** An AI Foundry hub-based project is backed by an AML
+> workspace.  All `az ml` commands and the `MLClient` SDK work the same way —
+> just use the project name as `--workspace-name`.  The endpoint scoring URI
+> format is identical: `https://<endpoint-name>.<region>.inference.ml.azure.com/score`
 
 ### B. Workflow Requirements (depends on the workflow)
 
@@ -242,6 +268,21 @@ az ml online-endpoint invoke `
 After the endpoint is created, its system-assigned managed identity needs
 the **`Cognitive Services User`** role on the Foundry resource.
 
+### Finding the AI Services resource
+
+- **Standalone AML workspace:** The user must provide the AI Services
+  (Cognitive Services) resource name and resource group.
+- **Foundry hub-based project:** The AI Services resource is linked to the hub.
+  Find it via the Azure Portal (Hub → Connected resources) or via CLI:
+  ```bash
+  az ml workspace show \
+    --name <project-name> \
+    --resource-group <rg> \
+    --query "associated_workspaces" -o table
+  ```
+
+### Assign the role
+
 ```bash
 # Get principal ID
 PRINCIPAL_ID=$(az ml online-endpoint show \
@@ -264,6 +305,15 @@ az role assignment create \
 - `Cognitive Services User` has the wildcard `Microsoft.CognitiveServices/*`.
 - Allow **5–10 minutes** for RBAC data plane propagation.
 
+### Foundry hub-based project — additional considerations
+
+- The hub's **managed network** may restrict outbound access.  Ensure the
+  endpoint can reach the AI Services resource and any external APIs the workflow
+  calls.  If the hub uses a private endpoint, no extra steps are needed for
+  AI Services calls within the same VNet.
+- The user deploying must have the **Azure AI Developer** role (or equivalent)
+  on the resource group to create endpoints and deployments in the project.
+
 See [./references/managed-identity.md](./references/managed-identity.md) for full details.
 
 ## Troubleshooting
@@ -279,5 +329,7 @@ See [./references/managed-identity.md](./references/managed-identity.md) for ful
 | `$schema` missing after envsubst | Unrestricted envsubst eats `$schema` | Use restricted variable list |
 | `FileNotFoundError: az` (Windows subprocess) | `az` is a `.cmd` file on Windows | Use `shell=True` in `subprocess.run` |
 | `envsubst` not found (Windows) | `envsubst` is a Linux tool | Use PowerShell string replacement (see Step 6 Option B) |
+| Deployment fails in Foundry project with network error | Hub managed network blocks outbound access | Check hub network settings; add outbound rules for required endpoints |
+| Cannot create endpoint in Foundry project | Insufficient RBAC on the project | User needs `Azure AI Developer` role on the resource group |
 
 See [./references/troubleshooting.md](./references/troubleshooting.md) for extended diagnostics.
