@@ -12,6 +12,90 @@ Target audience: teams running Prompt Flow on Microsoft Foundry or Azure Machine
 
 ---
 
+## AI-Assisted Migration with the Copilot Skill
+
+This repository includes a **Copilot skill file** at [`.github/skills/promptflow-to-maf/SKILL.md`](../../.github/skills/promptflow-to-maf/SKILL.md) that enables AI coding agents (such as GitHub Copilot in VS Code) to **automatically convert** your Prompt Flow `flow.dag.yaml` into a runnable Microsoft Agent Framework project.
+
+### What the Skill Does
+
+The skill teaches the AI agent how to:
+
+1. **Parse your `flow.dag.yaml`** and all referenced source files (`.jinja2` templates, `.py` nodes, `requirements.txt`).
+2. **Map every Prompt Flow node** to its MAF equivalent (`Executor`, `Agent`, `WorkflowBuilder`, etc.) using a built-in conversion table.
+3. **Generate a complete MAF project** in a sibling `<your-flow>-maf/` folder — including workflow code, `.env.example`, `requirements.txt`, and a runnable test script.
+4. **Handle advanced patterns** — chat history, multimodal inputs, fan-out/fan-in, conditional branching, evaluation flows with aggregation, and multi-agent handoffs.
+5. **Preserve prompts verbatim** — system prompts, Jinja2 templates, and LLM parameters (`temperature`, `max_tokens`, etc.) are carried over exactly.
+
+### How to Use It
+
+#### Prerequisites
+
+- **VS Code** with the [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat) extension installed.
+- This repository cloned locally and opened as your workspace (the skill is auto-discovered from `.github/skills/`).
+
+#### Step-by-Step
+
+1. **Open your Prompt Flow folder** in VS Code — navigate to the directory containing your `flow.dag.yaml`.
+
+2. **Open GitHub Copilot Chat** (Ctrl+Shift+I or the Copilot icon in the sidebar).
+
+3. **Ask Copilot to convert your flow.** Use a prompt like:
+
+   ```
+   Convert this Prompt Flow to Microsoft Agent Framework
+   ```
+
+   or be more specific:
+
+   ```
+   Migrate the flow in examples/flows/chat/chat-basic to MAF
+   ```
+
+   The skill activates automatically when it detects migration-related intent (e.g., "convert promptflow", "migrate flow.dag.yaml", "PF to agent-framework").
+
+4. **Copilot reads your flow**, maps each node, and generates the MAF project files in a new `<flow-name>-maf/` folder alongside your original flow.
+
+5. **Review the generated code.** The output includes:
+   - `workflow.py` (or numbered sample files) — Executor classes and `WorkflowBuilder` wiring
+   - `requirements.txt` — only the needed `agent-framework-*` packages
+   - `.env.example` — environment variable template for your credentials
+   - `test_<name>.py` — runnable script to verify the workflow
+
+6. **Set up and run:**
+
+   ```bash
+   cd <flow-name>-maf/
+   pip install -r requirements.txt
+   cp .env.example .env   # fill in your credentials
+   python test_<name>.py
+   ```
+
+### What the Skill Covers
+
+| Prompt Flow Pattern | Skill Handles It? |
+|---|---|
+| Linear LLM chains | Yes |
+| Chat flows with history | Yes |
+| Conditional branching (`activate_config`) | Yes |
+| Parallel execution (fan-out / fan-in) | Yes |
+| RAG (Embed + Vector Lookup + LLM) | Yes |
+| Python tool nodes | Yes |
+| Multimodal inputs (images) | Yes |
+| Evaluation flows (`aggregation: true`) | Yes |
+| Multi-agent handoffs | Yes |
+| Custom Python packages imported by nodes | Yes — copied into output folder |
+
+### Tips
+
+- **Attach your flow files** — if Copilot doesn't read your flow automatically, attach `flow.dag.yaml` and key source files to the chat for context.
+- **Iterate** — you can ask follow-up questions like "add error handling to the LLM executor" or "switch from API key auth to managed identity".
+- **The original flow is never modified** — all generated files go into the new `-maf/` folder.
+- **Evaluation flows** are automatically split into a per-row workflow, an aggregation function, and an `EvalRunner` orchestrator.
+
+> **Note:** The skill file is designed for AI coding agents. You do not need to read or edit `SKILL.md` yourself — it is consumed by Copilot automatically when the workspace is loaded.
+
+---
+
 ## Repository Layout
 
 ```
@@ -160,7 +244,7 @@ When editing existing samples:
 
 - **FastAPI wrapper**: `phase-4-migrate-ops/4b-deployment/app.py`
 - **Dockerfile**: `phase-4-migrate-ops/4b-deployment/Dockerfile`
-- **Deploy script**: `phase-4-migrate-ops/4b-deployment/deploy.sh` (Azure Container Apps)
+- **Deploy script**: `phase-4-migrate-ops/4b-deployment/deploy.sh` (Azure ML Online Endpoints)
 - **CI/CD quality gate**: `phase-4-migrate-ops/4c-cicd/evaluate.yml` (GitHub Actions)
 - **Tracing**: Both `configure_azure_monitor()` and `configure_otel_providers()` must be called **before** any `workflow.run()`.
 
