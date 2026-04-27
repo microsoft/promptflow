@@ -109,7 +109,7 @@ envsubst "$SUBST_VARS" < deployment.yml > deployment-rendered.yml
 ### 8. Workflow import errors at container startup
 
 **Cause:** The `sys.path` depth in `score.py` doesn't match the project layout,
-so `workflow_loader` cannot be imported.
+so the workflow module cannot be imported.
 
 **Fix:** Adjust the `parents[N]` depth in `score.py`:
 ```python

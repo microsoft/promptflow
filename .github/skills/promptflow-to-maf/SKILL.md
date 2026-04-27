@@ -75,7 +75,7 @@ class PromptAndLLMExecutor(Executor):
 8. **Generate a test sample** — Always include a runnable `test_<name>.py` sample script.
 9. **Never modify the original flow** — All output goes into the new folder.
 10. **Evaluation flows use the EvalRunner pattern** — If any node has `aggregation: true`, the flow is an evaluation flow. Split it into a per-row MAF workflow + a standalone aggregation function + an `EvalRunner` orchestrator + a `run_eval.py` entry point. See the "Evaluation Flow Conversion" section below.
-11. **Workflow factory for concurrency** — MAF workflows do not support concurrent `run()` calls on a single instance (`RuntimeError: Workflow is already running`). For evaluation flows, always export a `create_workflow()` factory function that creates a fresh workflow instance per row.
+11. **Always export a `create_workflow()` factory** — MAF workflows do not support concurrent `run()` calls on a single instance (`RuntimeError: Workflow is already running`). Every generated `workflow.py` must export a `create_workflow()` factory function that creates a fresh workflow instance per call. Do NOT instantiate Executors or build the workflow at module level. This ensures callers can safely run multiple workflows concurrently (e.g., evaluation batches, parallel API requests, or test suites). For evaluation flows, `EvalRunner` relies on this factory to create one workflow per row.
 12. **Copy ALL referenced resources into the output folder** — The generated `-maf/` project must be fully self-contained with zero dependencies on the original Prompt Flow folder. Copy every resource file the flow references:
    - **Data files** (`.jsonl`, `.csv`, `.json`, `.tsv`) used for testing or evaluation
    - **Prompt / template files** (`.jinja2`, `.md` used as prompts)
@@ -162,7 +162,7 @@ Use this table to convert each Prompt Flow node type to its MAF equivalent:
 5. **Create output folder** — `<original-folder>-maf/`
 6. **Copy internal packages** — If nodes import from sibling Python packages (e.g., `from my_utils.helpers import ...`), copy those package directories into the output folder. Executors then import from the local copy directly (e.g., `from my_utils.helpers import build_index`). Do not rewrite working utility code — reuse it as-is.
 7. **Create one Executor per node** following the mapping table above.
-8. **Wire the workflow** using `WorkflowBuilder`:
+8. **Wire the workflow inside a `create_workflow()` factory function** using `WorkflowBuilder`. Executor instantiation and `WorkflowBuilder.build()` must happen inside this function — not at module level — so each call returns a fresh, independent workflow instance:
    - `.add_edge(source, target)` for linear connections
    - `.add_edge(source, target, condition=fn)` for conditionals
    - `.add_fan_out_edges(source, [targets])` for parallel branches
@@ -394,7 +394,7 @@ response = await self._agent.run(
    - **Dict format** (from CLI): `{"data:image/png;url": "https://example.com/img.png"}` — extract the URL from the dict value
    - **String format** (from YAML defaults): `"data:image/png;url: https://example.com/img.png"` — parse the URL after `url: `
    - Both must be converted to `Content.from_uri(url, media_type="image/png")`
-11. **MAF workflows do not support concurrent `run()` calls** — Calling `workflow.run()` on an instance that is already running throws `RuntimeError: Workflow is already running. Concurrent executions are not allowed.` For evaluation flows, always use a `create_workflow()` factory and create a fresh instance per row. For non-eval flows, sequential reuse of a single instance is fine.
+11. **MAF workflows do not support concurrent `run()` calls** — Calling `workflow.run()` on an instance that is already running throws `RuntimeError: Workflow is already running. Concurrent executions are not allowed.` Always export a `create_workflow()` factory function and create a fresh instance per invocation. This applies to ALL workflows — not just evaluation flows — so callers can safely parallelize.
 12. **Evaluation aggregation functions must return a dict** — The original PromptFlow aggregation nodes call `log_metric(key, value)` to report metrics. In MAF, replace these with a returned `dict` mapping metric names to values. Remove all `log_metric` imports and calls.
 13. **Never name a `@handler` method `execute`** — The base `Executor` class has an `execute()` method that the workflow engine calls with internal arguments (`message`, `source_executor_ids`, `state`, `runner_context`, `trace_contexts`, `source_span_ids`). If a subclass defines a `@handler` method also named `execute`, it shadows the base method, causing `TypeError: got an unexpected keyword argument 'trace_contexts'` at runtime. Use any other name (e.g., `run_code`, `process`, `handle`, `invoke`).
 14. **LLM responses wrapped in markdown fences** — Modern LLMs often wrap JSON output in ` ```json ... ``` ` code fences even when not asked to. When parsing JSON from `Agent.run()` responses, always strip markdown fences before calling `json.loads()`:
@@ -476,16 +476,22 @@ class ChatExecutor(Executor):
         response = await self._agent.run(question)
         await ctx.yield_output(response.text)
 
-_input = InputExecutor(id="input")
-_chat = ChatExecutor(id="chat")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="BasicChatWorkflow", start_executor=_input)
-    .add_edge(_input, _chat)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _input = InputExecutor(id="input")
+    _chat = ChatExecutor(id="chat")
+    return (
+        WorkflowBuilder(name="BasicChatWorkflow", start_executor=_input)
+        .add_edge(_input, _chat)
+        .build()
+    )
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run(ChatInput(question="What is ChatGPT?"))
     print(result.get_outputs()[0])
 
@@ -579,16 +585,22 @@ class ChatExecutor(Executor):
         await ctx.yield_output(response.text)
 
 
-_input = InputExecutor(id="input")
-_chat = ChatExecutor(id="chat")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="ChatWithImageWorkflow", start_executor=_input)
-    .add_edge(_input, _chat)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _input = InputExecutor(id="input")
+    _chat = ChatExecutor(id="chat")
+    return (
+        WorkflowBuilder(name="ChatWithImageWorkflow", start_executor=_input)
+        .add_edge(_input, _chat)
+        .build()
+    )
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run(
         ChatInput(question=[
             "How many colors can you see?",

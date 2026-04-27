@@ -2,7 +2,6 @@
 
 Validates:
 - score.py can be imported and has init/run functions
-- workflow_loader.py can be imported and has load_workflow
 - YAML templates are valid YAML
 - deploy.sh is syntactically valid bash
 - conda.yml has required packages
@@ -47,21 +46,6 @@ class TestScoreScript:
     def test_handles_empty_question(self):
         content = (ASSETS_DIR / "score.py").read_text()
         assert "must not be empty" in content
-
-
-class TestWorkflowLoader:
-    """Validate the workflow loader template."""
-
-    def test_file_exists(self):
-        assert (ASSETS_DIR / "workflow_loader.py").exists()
-
-    def test_has_load_workflow(self):
-        content = (ASSETS_DIR / "workflow_loader.py").read_text()
-        assert "def load_workflow(" in content
-
-    def test_checks_workflow_attribute(self):
-        content = (ASSETS_DIR / "workflow_loader.py").read_text()
-        assert 'hasattr(module, "workflow")' in content
 
 
 class TestCondaYml:

@@ -16,12 +16,12 @@ import sys
 
 logger = logging.getLogger(__name__)
 
-workflow = None
+_create_workflow = None
 
 
 def init():
     """Called once when the endpoint container starts."""
-    global workflow
+    global _create_workflow
 
     # Add the project root to sys.path so workflow modules can be imported.
     # score.py is in online-deployment/ (1 level deep), so parents[1] = project root.
@@ -38,15 +38,13 @@ def init():
         configure_azure_monitor(connection_string=appinsights_conn)
         configure_otel_providers()
 
-    # Direct import — assumes workflow.py at the project root defines a
-    # module-level 'workflow' object.  For complex projects with multiple
-    # workflow files, use workflow_loader.py instead:
-    #   from workflow_loader import load_workflow
-    #   workflow = load_workflow()
-    from workflow import workflow as wf
+    # Import the workflow factory.  Every run() call creates a fresh workflow
+    # instance to avoid "Workflow is already running" errors on concurrent
+    # requests.
+    from workflow import create_workflow
 
-    workflow = wf
-    logger.info("Workflow loaded successfully.")
+    _create_workflow = create_workflow
+    logger.info("Workflow factory loaded successfully.")
 
 
 def run(raw_data):
@@ -70,6 +68,7 @@ def run(raw_data):
     if not text:
         raise ValueError("'text' field must not be empty.")
 
+    workflow = _create_workflow()
     result = asyncio.get_event_loop().run_until_complete(workflow.run(text))
     outputs = result.get_outputs()
 

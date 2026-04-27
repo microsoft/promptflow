@@ -35,10 +35,11 @@ the project root:
     endpoint.yml           ← endpoint config
     deployment.yml         ← deployment template (${VAR} placeholders)
     deploy.sh              ← deploy script (Bash; see notes for Windows)
+    .gitignore             ← ignores rendered YAML with secrets
 ```
 
-1. **Scoring script** (`score.py`) — `init()` loads the workflow at startup;
-   `run()` handles each request.
+1. **Scoring script** (`score.py`) — `init()` imports the workflow factory;
+   `run()` creates a fresh workflow instance per request to avoid concurrency errors.
 2. **Conda environment** (`conda.yml`) — Python 3.11 with agent-framework and
    azureml-inference-server-http.
 3. **Endpoint YAML** (`endpoint.yml`) — endpoint name and auth mode.
@@ -72,7 +73,7 @@ When the user asks to deploy a MAF workflow as an online endpoint:
 6. **Run** deployment commands via terminal.  On Windows, run `az` CLI commands
    directly in PowerShell (the Bash `deploy.sh` won't work).  On Linux/macOS,
    use `deploy.sh` or run the commands directly.
-7. **Assign RBAC** (Step 7) — only needed for managed-identity workflows
+7. **Assign RBAC** (Step 6) — only needed for managed-identity workflows
    (Foundry/DefaultAzureCredential).  Skip for API-key workflows.  For Foundry
    hub-based projects, scope the role assignment to the hub's AI Services
    resource.
@@ -150,22 +151,12 @@ Use the template at [./assets/score.py](./assets/score.py).
 - Optional Application Insights tracing configured via env var.
 - **Input key:** Inspect the workflow to determine what key to parse from the
   request body (e.g. `"text"`, `"question"`).  Adapt accordingly.
-- **Direct import vs loader:** For simple projects with a single `workflow.py`
-  at the project root, use `from workflow import workflow as wf` directly.  For
-  complex projects with multiple workflow files, use `workflow_loader.py`
-  (Step 2).
+- **Factory import:** `init()` imports the `create_workflow` factory from
+  `workflow.py`.  Each `run()` call invokes the factory to get a fresh workflow
+  instance, avoiding `RuntimeError: Workflow is already running` on concurrent
+  requests.
 
-## Step 2 — Generate the Workflow Loader (Optional)
-
-If the project has multiple workflow files or needs runtime selection, generate
-`workflow_loader.py` at the project root.  It dynamically imports a Python file
-that defines a module-level `workflow` object.
-See [./assets/workflow_loader.py](./assets/workflow_loader.py).
-
-For simple projects with a single workflow, **skip this step** and import the
-workflow directly in `score.py`.
-
-## Step 3 — Generate `conda.yml`
+## Step 2 — Generate `conda.yml`
 
 Use the template at [./assets/conda.yml](./assets/conda.yml).
 
@@ -178,11 +169,11 @@ Use the template at [./assets/conda.yml](./assets/conda.yml).
   `agent-framework-azure-ai-search` and `azure-monitor-opentelemetry` unless
   needed.
 
-## Step 4 — Generate `endpoint.yml`
+## Step 3 — Generate `endpoint.yml`
 
 Use the template at [./assets/endpoint.yml](./assets/endpoint.yml).
 
-## Step 5 — Generate `deployment.yml` (Template)
+## Step 4 — Generate `deployment.yml` (Template)
 
 Use the template at [./assets/deployment.yml](./assets/deployment.yml).
 
@@ -212,9 +203,19 @@ Getting this wrong causes a double-nesting error like
 - Only include env vars the workflow actually needs; omit unused ones.
 
 **Security:** The rendered YAML (`deployment-rendered.yml`) may contain API
-keys in plaintext.  Add it to `.gitignore` or delete it after deployment.
+keys in plaintext.  A `.gitignore` file is generated automatically to exclude
+it (see Step 4b).
 
-## Step 6 — Deploy
+## Step 4b — Generate `.gitignore`
+
+Always create `online-deployment/.gitignore` to prevent rendered YAML files
+containing secrets from being committed:
+
+```gitignore
+deployment-rendered.yml
+```
+
+## Step 5 — Deploy
 
 ### Option A: Bash script (Linux/macOS)
 
@@ -263,7 +264,7 @@ az ml online-endpoint invoke `
 > resolves `code: ..` relative to the YAML file, but the CWD also matters for
 > finding the YAML file itself.
 
-## Step 7 — RBAC for Managed Identity
+## Step 6 — RBAC for Managed Identity
 
 After the endpoint is created, its system-assigned managed identity needs
 the **`Cognitive Services User`** role on the Foundry resource.
@@ -328,7 +329,7 @@ See [./references/managed-identity.md](./references/managed-identity.md) for ful
 | Image build fails on version constraints | Package not on PyPI with that version | Remove version pins from `conda.yml` |
 | `$schema` missing after envsubst | Unrestricted envsubst eats `$schema` | Use restricted variable list |
 | `FileNotFoundError: az` (Windows subprocess) | `az` is a `.cmd` file on Windows | Use `shell=True` in `subprocess.run` |
-| `envsubst` not found (Windows) | `envsubst` is a Linux tool | Use PowerShell string replacement (see Step 6 Option B) |
+| `envsubst` not found (Windows) | `envsubst` is a Linux tool | Use PowerShell string replacement (see Step 5 Option B) |
 | Deployment fails in Foundry project with network error | Hub managed network blocks outbound access | Check hub network settings; add outbound rules for required endpoints |
 | Cannot create endpoint in Foundry project | Insufficient RBAC on the project | User needs `Azure AI Developer` role on the resource group |
 
