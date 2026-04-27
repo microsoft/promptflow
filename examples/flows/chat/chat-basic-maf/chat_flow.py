@@ -80,18 +80,20 @@ class ChatExecutor(Executor):
 
 
 # ── Build the workflow ────────────────────────────────────────────────────────
-_input = InputExecutor(id="input")
-_chat = ChatExecutor(id="chat")
-
-workflow = (
-    WorkflowBuilder(name="BasicChatWorkflow", start_executor=_input)
-    .add_edge(_input, _chat)
-    .build()
-)
+def create_workflow():
+    """Return a fresh workflow instance (safe for concurrent / repeated runs)."""
+    _input = InputExecutor(id="input")
+    _chat = ChatExecutor(id="chat")
+    return (
+        WorkflowBuilder(name="BasicChatWorkflow", start_executor=_input)
+        .add_edge(_input, _chat)
+        .build()
+    )
 
 
 async def main():
     # Simple single-turn test (no history)
+    workflow = create_workflow()
     result = await workflow.run(ChatInput(question="What is ChatGPT?"))
     print("Answer:", result.get_outputs()[0])
     print()
@@ -103,7 +105,8 @@ async def main():
             "outputs": {"answer": "ChatGPT is a large language model chatbot developed by OpenAI."},
         }
     ]
-    result = await workflow.run(
+    workflow2 = create_workflow()
+    result = await workflow2.run(
         ChatInput(
             question="What is the difference between ChatGPT and GPT-4?",
             chat_history=history,

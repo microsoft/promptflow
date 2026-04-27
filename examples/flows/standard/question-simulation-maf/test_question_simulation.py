@@ -9,7 +9,7 @@ to be set (via .env or environment).
 
 import asyncio
 
-from workflow import QuestionSimInput, workflow
+from workflow import QuestionSimInput, create_workflow
 
 
 # ---------------------------------------------------------------------------
@@ -141,6 +141,7 @@ async def run_test(name: str, sim_input: QuestionSimInput, expect_stop: bool):
     print(f"  expect_stop: {expect_stop}")
     print(f"{'='*60}")
 
+    workflow = create_workflow()
     result = await workflow.run(sim_input)
     output = result.get_outputs()[0]
     print(f"  Output:\n    {output!r}")
@@ -191,21 +192,7 @@ async def main():
 
     results = {}
     for name, sim_input, expect_stop in test_cases:
-        # Each run needs a fresh workflow instance (MAF doesn't allow concurrent runs)
-        from workflow import VerifyAndSimulateExecutor
-        from agent_framework import WorkflowBuilder
-
-        executor = VerifyAndSimulateExecutor(id=f"test_{name}")
-        wf = WorkflowBuilder(name=f"TestWF_{name}", start_executor=executor).build()
-
-        # Rebind workflow module-level ref temporarily
-        import workflow as wf_module
-        original_wf = wf_module.workflow
-        wf_module.workflow = wf
-        try:
-            passed = await run_test(name, sim_input, expect_stop)
-        finally:
-            wf_module.workflow = original_wf
+        passed = await run_test(name, sim_input, expect_stop)
         results[name] = passed
 
     # Summary

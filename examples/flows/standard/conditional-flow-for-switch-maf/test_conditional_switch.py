@@ -1,5 +1,5 @@
 import asyncio
-from workflow import workflow
+from workflow import create_workflow
 
 
 async def main():
@@ -30,6 +30,7 @@ async def main():
         print(f"Test {i:2d}: {query}")
         print(f"         Expected intention: {expected_intention}")
 
+        workflow = create_workflow()
         result = await workflow.run(query)
         response = result.get_outputs()[0]
         print(f"         Response: {response}")

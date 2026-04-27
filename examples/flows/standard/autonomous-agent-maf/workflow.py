@@ -91,15 +91,21 @@ class AutoGPTExecutor(Executor):
         await ctx.yield_output(response.text)
 
 
-_executor = AutoGPTExecutor(id="autogpt")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="AutonomousAgentWorkflow", start_executor=_executor)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _executor = AutoGPTExecutor(id="autogpt")
+    return (
+        WorkflowBuilder(name="AutonomousAgentWorkflow", start_executor=_executor)
+        .build()
+    )
 
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run(
         AutoGPTInput(
             name="FilmTriviaGPT",

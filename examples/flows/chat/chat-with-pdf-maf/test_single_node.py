@@ -1,10 +1,11 @@
 import asyncio
 
-from workflow_single_node import ChatInput, workflow
+from workflow_single_node import ChatInput, create_workflow
 
 
 async def main():
     # Single-turn test
+    workflow = create_workflow()
     result = await workflow.run(
         ChatInput(
             question="what NLP tasks does it perform well?",
@@ -16,7 +17,8 @@ async def main():
     print(f"Context: {output['context']}")
 
     # Multi-turn test
-    result2 = await workflow.run(
+    workflow2 = create_workflow()
+    result2 = await workflow2.run(
         ChatInput(
             question="Can you elaborate on the fine-tuning approach?",
             pdf_url="https://arxiv.org/pdf/1810.04805.pdf",

@@ -53,17 +53,23 @@ class ChatWithPdfExecutor(Executor):
         await ctx.yield_output({"answer": answer, "context": context})
 
 
-_setup = SetupEnvExecutor(id="setup_env")
-_chat = ChatWithPdfExecutor(id="chat_with_pdf")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="ChatWithPdfSingleNode", start_executor=_setup)
-    .add_edge(_setup, _chat)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _setup = SetupEnvExecutor(id="setup_env")
+    _chat = ChatWithPdfExecutor(id="chat_with_pdf")
+    return (
+        WorkflowBuilder(name="ChatWithPdfSingleNode", start_executor=_setup)
+        .add_edge(_setup, _chat)
+        .build()
+    )
 
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run(
         ChatInput(question="what NLP tasks does it perform well?")
     )

@@ -7,7 +7,7 @@ Run:
 
 import asyncio
 
-from chat_flow import ChatInput, workflow
+from chat_flow import ChatInput, create_workflow
 
 
 async def main():
@@ -15,6 +15,7 @@ async def main():
     print("=" * 60)
     print("Test 1: Single-turn (no history)")
     print("=" * 60)
+    workflow = create_workflow()
     result = await workflow.run(ChatInput(question="What is ChatGPT?"))
     print("Q: What is ChatGPT?")
     print(f"A: {result.get_outputs()[0]}\n")
@@ -29,6 +30,7 @@ async def main():
             "outputs": {"answer": "ChatGPT is a large language model chatbot developed by OpenAI."},
         }
     ]
+    workflow = create_workflow()
     result = await workflow.run(
         ChatInput(
             question="How is it different from GPT-4?",
@@ -52,6 +54,7 @@ async def main():
             "outputs": {"answer": "12"},
         },
     ]
+    workflow = create_workflow()
     result = await workflow.run(
         ChatInput(
             question="Now divide by 6",

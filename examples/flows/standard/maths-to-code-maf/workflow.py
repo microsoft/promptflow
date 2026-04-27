@@ -151,19 +151,25 @@ class CodeExecutionExecutor(Executor):
         await ctx.yield_output(MathResult(code=code_snippet, answer=answer))
 
 
-_code_gen = CodeGenExecutor(id="code_gen")
-_code_refine = CodeRefineExecutor(id="code_refine")
-_code_exec = CodeExecutionExecutor(id="final_code_execution")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="MathsToCodeWorkflow", start_executor=_code_gen)
-    .add_edge(_code_gen, _code_refine)
-    .add_edge(_code_refine, _code_exec)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _code_gen = CodeGenExecutor(id="code_gen")
+    _code_refine = CodeRefineExecutor(id="code_refine")
+    _code_exec = CodeExecutionExecutor(id="final_code_execution")
+    return (
+        WorkflowBuilder(name="MathsToCodeWorkflow", start_executor=_code_gen)
+        .add_edge(_code_gen, _code_refine)
+        .add_edge(_code_refine, _code_exec)
+        .build()
+    )
 
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run(
         "If a rectangle has a length of 10 and width of 5, what is the area?"
     )

@@ -128,20 +128,26 @@ class ContextAndQnAExecutor(Executor):
 # Workflow: input → fan_out[index, rewrite] → fan_in → context_qna
 # ---------------------------------------------------------------------------
 
-_input = InputExecutor(id="input")
-_index = IndexExecutor(id="index")
-_rewrite = RewriteExecutor(id="rewrite")
-_context_qna = ContextAndQnAExecutor(id="context_qna")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="ChatWithPdfWorkflow", start_executor=_input)
-    .add_fan_out_edges(_input, [_index, _rewrite])
-    .add_fan_in_edges([_index, _rewrite], _context_qna)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _input = InputExecutor(id="input")
+    _index = IndexExecutor(id="index")
+    _rewrite = RewriteExecutor(id="rewrite")
+    _context_qna = ContextAndQnAExecutor(id="context_qna")
+    return (
+        WorkflowBuilder(name="ChatWithPdfWorkflow", start_executor=_input)
+        .add_fan_out_edges(_input, [_index, _rewrite])
+        .add_fan_in_edges([_index, _rewrite], _context_qna)
+        .build()
+    )
 
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run(
         PdfChatInput(
             question="What is BERT?",

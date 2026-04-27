@@ -6,11 +6,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from workflow import ChatInput, workflow  # noqa: E402
+from workflow import ChatInput, create_workflow  # noqa: E402
 
 
 async def test_weather_query():
     print("--- weather query ---")
+    workflow = create_workflow()
     result = await workflow.run(
         ChatInput(question="What is the weather like in Boston?")
     )
@@ -19,6 +20,7 @@ async def test_weather_query():
 
 async def test_forecast_query():
     print("\n--- forecast follow-up ---")
+    workflow = create_workflow()
     result = await workflow.run(
         ChatInput(
             question="How about London next week?",

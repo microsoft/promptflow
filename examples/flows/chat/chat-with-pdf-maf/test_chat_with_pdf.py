@@ -6,11 +6,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from workflow import PdfChatInput, workflow  # noqa: E402
+from workflow import PdfChatInput, create_workflow  # noqa: E402
 
 
 async def test_single_turn():
     print("--- single turn ---")
+    workflow = create_workflow()
     result = await workflow.run(
         PdfChatInput(
             question="What is BERT?",
@@ -30,6 +31,7 @@ async def test_multi_turn():
             "outputs": {"answer": "BERT is a language model by Google."},
         }
     ]
+    workflow = create_workflow()
     result = await workflow.run(
         PdfChatInput(
             question="How was it trained?",

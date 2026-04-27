@@ -105,22 +105,28 @@ class QnaExecutor(Executor):
         await ctx.yield_output({"answer": answer, "context": context})
 
 
-_input = InputExecutor(id="input")
-_download = DownloadExecutor(id="download")
-_build_index = BuildIndexExecutor(id="build_index")
-_rewrite = RewriteQuestionExecutor(id="rewrite_question")
-_qna = QnaExecutor(id="qna")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="ChatWithPdfMultiNode", start_executor=_input)
-    .add_fan_out_edges(_input, [_download, _rewrite])
-    .add_edge(_download, _build_index)
-    .add_fan_in_edges([_build_index, _rewrite], _qna)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _input = InputExecutor(id="input")
+    _download = DownloadExecutor(id="download")
+    _build_index = BuildIndexExecutor(id="build_index")
+    _rewrite = RewriteQuestionExecutor(id="rewrite_question")
+    _qna = QnaExecutor(id="qna")
+    return (
+        WorkflowBuilder(name="ChatWithPdfMultiNode", start_executor=_input)
+        .add_fan_out_edges(_input, [_download, _rewrite])
+        .add_edge(_download, _build_index)
+        .add_fan_in_edges([_build_index, _rewrite], _qna)
+        .build()
+    )
 
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run(
         ChatInput(question="what NLP tasks does it perform well?")
     )

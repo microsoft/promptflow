@@ -1,9 +1,10 @@
 import asyncio
 
-from workflow import NERInput, workflow
+from workflow import NERInput, create_workflow
 
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run(
         NERInput(
             text="Maxime is a data scientist at Auto Dataset and he lives in Paris, France.",
