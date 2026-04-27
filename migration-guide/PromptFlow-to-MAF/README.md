@@ -57,6 +57,12 @@ cp .env.example .env   # then fill in your values
 
 ---
 
+## Migrated Examples
+
+See [EXAMPLES.md](./EXAMPLES.md) for a full catalog of migrated flows with links to both the original Prompt Flow and MAF versions.
+
+---
+
 ## Next Steps
 
 Start with [Phase 1 — Audit & Map](./phase-1-audit/) to export and map your existing Prompt Flow.
