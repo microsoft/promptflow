@@ -19,7 +19,6 @@ Optional env vars:
 
 import json
 import os
-import sys
 from pathlib import Path
 
 from azure.ai.ml import MLClient
