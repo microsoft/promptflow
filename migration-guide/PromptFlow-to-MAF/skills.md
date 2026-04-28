@@ -12,6 +12,224 @@ Target audience: teams running Prompt Flow on Microsoft Foundry or Azure Machine
 
 ---
 
+## AI-Assisted Migration with the Copilot Skill
+
+This repository includes a **Copilot skill file** at [`.github/skills/promptflow-to-maf/SKILL.md`](../../.github/skills/promptflow-to-maf/SKILL.md) that enables AI coding agents (such as GitHub Copilot in VS Code) to **automatically convert** your Prompt Flow `flow.dag.yaml` into a runnable Microsoft Agent Framework project.
+
+### What the Skill Does
+
+The skill teaches the AI agent how to:
+
+1. **Parse your `flow.dag.yaml`** and all referenced source files (`.jinja2` templates, `.py` nodes, `requirements.txt`).
+2. **Map every Prompt Flow node** to its MAF equivalent (`Executor`, `Agent`, `WorkflowBuilder`, etc.) using a built-in conversion table.
+3. **Generate a complete MAF project** in a sibling `<your-flow>-maf/` folder — including workflow code, `.env.example`, `requirements.txt`, and a runnable test script.
+4. **Handle advanced patterns** — chat history, multimodal inputs, fan-out/fan-in, conditional branching, evaluation flows with aggregation, and multi-agent handoffs.
+5. **Preserve prompts verbatim** — system prompts, Jinja2 templates, and LLM parameters (`temperature`, `max_tokens`, etc.) are carried over exactly.
+
+### How to Use It
+
+#### Prerequisites
+
+- **VS Code** with the [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat) extension installed.
+- This repository cloned locally and opened as your workspace (the skill is auto-discovered from `.github/skills/`).
+
+#### Step-by-Step
+
+1. **Open your Prompt Flow folder** in VS Code — navigate to the directory containing your `flow.dag.yaml`.
+
+2. **Open GitHub Copilot Chat** (Ctrl+Shift+I or the Copilot icon in the sidebar).
+
+3. **Ask Copilot to convert your flow.** Use a prompt like:
+
+   ```
+   Convert this Prompt Flow to Microsoft Agent Framework
+   ```
+
+   or be more specific:
+
+   ```
+   Migrate the flow in examples/flows/chat/chat-basic to MAF
+   ```
+
+   The skill activates automatically when it detects migration-related intent (e.g., "convert promptflow", "migrate flow.dag.yaml", "PF to agent-framework").
+
+4. **Copilot reads your flow**, maps each node, and generates the MAF project files in a new `<flow-name>-maf/` folder alongside your original flow.
+
+5. **Review the generated code.** The output includes:
+   - `workflow.py` (or numbered sample files) — Executor classes and `WorkflowBuilder` wiring
+   - `requirements.txt` — only the needed `agent-framework-*` packages
+   - `.env.example` — environment variable template for your credentials
+   - `test_<name>.py` — runnable script to verify the workflow
+
+6. **Set up and run:**
+
+   ```bash
+   cd <flow-name>-maf/
+   pip install -r requirements.txt
+   cp .env.example .env   # fill in your credentials
+   python test_<name>.py
+   ```
+
+### What the Skill Covers
+
+| Prompt Flow Pattern | Skill Handles It? |
+|---|---|
+| Linear LLM chains | Yes |
+| Chat flows with history | Yes |
+| Conditional branching (`activate_config`) | Yes |
+| Parallel execution (fan-out / fan-in) | Yes |
+| RAG (Embed + Vector Lookup + LLM) | Yes |
+| Python tool nodes | Yes |
+| Multimodal inputs (images) | Yes |
+| Evaluation flows (`aggregation: true`) | Yes |
+| Multi-agent handoffs | Yes |
+| Custom Python packages imported by nodes | Yes — copied into output folder |
+
+### Tips
+
+- **Attach your flow files** — if Copilot doesn't read your flow automatically, attach `flow.dag.yaml` and key source files to the chat for context.
+- **Iterate** — you can ask follow-up questions like "add error handling to the LLM executor" or "switch from API key auth to managed identity".
+- **The original flow is never modified** — all generated files go into the new `-maf/` folder.
+- **Evaluation flows** are automatically split into a per-row workflow, an aggregation function, and an `EvalRunner` orchestrator.
+
+> **Note:** The skill file is designed for AI coding agents. You do not need to read or edit `SKILL.md` yourself — it is consumed by Copilot automatically when the workspace is loaded.
+
+---
+
+## AI-Assisted Online Endpoint Deployment with the Copilot Skill
+
+A second Copilot skill at [`.github/skills/maf-online-endpoint/SKILL.md`](../../.github/skills/maf-online-endpoint/SKILL.md) enables AI coding agents to **automatically generate deployment configuration files** and **deploy a MAF workflow** as an Azure ML managed online endpoint — to either an Azure Machine Learning workspace or an Azure AI Foundry hub-based project.
+
+### What the Skill Does
+
+The skill teaches the AI agent how to:
+
+1. **Inspect your workflow file** — read the `workflow.py` (or equivalent) to discover imports, environment variables, and credential patterns (API key vs. managed identity).
+2. **Gather deployment parameters** — interactively ask for subscription ID, resource group, workspace/project name, endpoint name, VM SKU, and workflow-specific environment variables.
+3. **Generate a complete `online-deployment/` directory** containing all files needed for a managed online endpoint:
+   - `score.py` — scoring script with `init()`/`run()` pattern, importing the workflow factory
+   - `conda.yml` — conda environment with Python 3.11, `agent-framework`, and workflow-specific packages
+   - `endpoint.yml` — endpoint configuration (name, auth mode)
+   - `deployment.yml` — deployment template with `${VAR}` placeholders for environment variables
+   - `deploy.sh` — Bash deploy script (Linux/macOS); on Windows, the agent runs `az` CLI commands directly in PowerShell
+   - `.gitignore` — prevents rendered YAML files containing secrets from being committed
+4. **Render and deploy** — substitute placeholders with actual values, create the endpoint, create the deployment, and run a smoke test.
+5. **Assign RBAC** (when needed) — for managed-identity workflows (Foundry/`DefaultAzureCredential`), assign `Cognitive Services User` on the AI Services resource.
+
+### Deployment Targets
+
+| Target | Description |
+|--------|-------------|
+| **Azure Machine Learning workspace** | Standalone AML workspace — provide subscription, resource group, and workspace name |
+| **Azure AI Foundry project** | Hub-based AI project — the project name is used as the workspace name for `az ml` commands |
+
+Both targets produce identical generated files and use the same `az ml` CLI commands.
+
+### How to Use It
+
+#### Prerequisites
+
+- **VS Code** with the [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat) extension installed.
+- This repository cloned locally and opened as your workspace.
+- **Azure CLI** installed with the `ml` extension (`az extension add -n ml`).
+- An existing MAF workflow (e.g., generated by the conversion skill above).
+
+#### Step-by-Step
+
+1. **Open your MAF workflow project** in VS Code — navigate to the directory containing your `workflow.py`.
+
+2. **Open GitHub Copilot Chat** (Ctrl+Shift+I or the Copilot icon in the sidebar).
+
+3. **Ask Copilot to deploy your workflow.** Use a prompt like:
+
+   ```
+   Deploy this workflow as an online endpoint
+   ```
+
+   or be more specific:
+
+   ```
+   Create a managed online endpoint for examples/flows/standard/describe-image-maf
+   ```
+
+   The skill activates automatically when it detects deployment-related intent (e.g., "deploy MAF workflow", "create online endpoint", "deploy agent as endpoint").
+
+4. **Copilot asks for deployment details** — it will interactively prompt you for:
+   - Deployment target (AML workspace or AI Foundry project)
+   - Subscription ID, resource group, workspace/project name
+   - Endpoint name and VM SKU
+   - Workflow-specific credentials (API keys, endpoints, model deployment names)
+
+5. **Copilot generates all deployment files** in an `online-deployment/` subdirectory:
+
+   ```
+   <your-workflow>/
+     workflow.py
+     online-deployment/
+       score.py
+       conda.yml
+       endpoint.yml
+       deployment.yml
+       deploy.sh
+       .gitignore
+   ```
+
+6. **Copilot renders and deploys** — it substitutes placeholders, runs `az ml online-endpoint create` and `az ml online-deployment create`, then invokes the endpoint with a smoke test.
+
+7. **Review the results.** Copilot reports the scoring URI and endpoint status.
+
+### Generated Files Reference
+
+| File | Purpose |
+|------|---------|
+| `score.py` | Scoring script — `init()` imports the workflow factory; `run()` creates a fresh workflow per request to avoid concurrency errors |
+| `conda.yml` | Conda environment — Python 3.11 with only the packages your workflow needs |
+| `endpoint.yml` | Endpoint name and auth mode (`key` by default) |
+| `deployment.yml` | Deployment template with `${VAR}` placeholders for environment variables, instance type, and request settings |
+| `deploy.sh` | Bash deploy script for Linux/macOS (on Windows, the agent runs commands directly in PowerShell) |
+| `.gitignore` | Excludes `deployment-rendered.yml` which may contain secrets |
+
+### Key Design Decisions
+
+- **One workflow per request** — `score.py` calls the `create_workflow()` factory on every request, avoiding `RuntimeError: Workflow is already running` on concurrent requests.
+- **Path resolution** — since `deployment.yml` lives in `online-deployment/`, it uses `conda_file: conda.yml` (same directory) and `code: ..` (parent = project root). The scoring script path is `online-deployment/score.py` relative to the code root.
+- **Request timeout** — set to 60 seconds (vs. the 5-second AML default) to accommodate LLM call latency.
+- **Security** — rendered YAML files with substituted secrets are `.gitignore`d. API keys are injected as deployment environment variables, not baked into code.
+
+### Credential Patterns
+
+| Pattern | Env Vars | RBAC Needed? |
+|---------|----------|--------------|
+| **Azure OpenAI (API key)** | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_KEY` | No |
+| **Foundry (managed identity)** | `FOUNDRY_PROJECT_ENDPOINT`, `FOUNDRY_MODEL` | Yes — `Cognitive Services User` on the AI Services resource |
+| **RAG (AI Search)** | Above + `AZURE_AI_SEARCH_ENDPOINT`, `AZURE_AI_SEARCH_INDEX_NAME`, `AZURE_AI_SEARCH_API_KEY` | Depends on LLM auth pattern |
+
+### Example Prompts
+
+```
+Deploy this MAF workflow as an online endpoint to my AI Foundry project
+```
+
+```
+Create an online endpoint deployment for the describe-image workflow
+```
+
+```
+I need to deploy my agent-framework workflow to Azure ML
+```
+
+### Tips
+
+- **Run from the project root** — the `az ml online-deployment create` command must be run from the directory containing `workflow.py`, not from inside `online-deployment/`.
+- **Windows users** — `deploy.sh` requires Bash; Copilot automatically uses PowerShell string replacement on Windows instead of `envsubst`.
+- **Check deployment logs** — if the endpoint returns errors, run `az ml online-deployment get-logs --name blue --endpoint-name <name>` to view container logs.
+- **RBAC propagation** — after assigning `Cognitive Services User` for managed-identity workflows, wait 5–10 minutes before invoking the endpoint.
+- **Iterate** — you can ask follow-up questions like "switch to managed identity auth" or "add Application Insights tracing to the endpoint".
+
+> **Note:** The skill file is designed for AI coding agents. You do not need to read or edit `SKILL.md` yourself — it is consumed by Copilot automatically when the workspace is loaded.
+
+---
+
 ## Repository Layout
 
 ```
@@ -33,7 +251,7 @@ migration-guide/PromptFlow-to-MAF/
 │   └── parity_check_batch.py  # Concurrent batch parity scorer
 ├── phase-4-migrate-ops/       # Tracing, deployment, CI/CD
 │   ├── 4a-tracing/            # OpenTelemetry + Application Insights setup
-│   ├── 4b-deployment/         # FastAPI wrapper, Dockerfile, Container Apps
+│   ├── 4b-deployment/         # AML managed online endpoint (score.py, conda.yml)
 │   └── 4c-cicd/               # GitHub Actions quality gate (evaluate.yml)
 └── phase-5-cutover/           # Traffic switch + PF decommissioning script
     ├── README.md
@@ -158,9 +376,7 @@ When editing existing samples:
 
 ## Deployment
 
-- **FastAPI wrapper**: `phase-4-migrate-ops/4b-deployment/app.py`
-- **Dockerfile**: `phase-4-migrate-ops/4b-deployment/Dockerfile`
-- **Deploy script**: `phase-4-migrate-ops/4b-deployment/deploy.sh` (Azure Container Apps)
+- **Deploy script**: `phase-4-migrate-ops/4b-deployment/deploy.sh` (Azure ML Online Endpoints)
 - **CI/CD quality gate**: `phase-4-migrate-ops/4c-cicd/evaluate.yml` (GitHub Actions)
 - **Tracing**: Both `configure_azure_monitor()` and `configure_otel_providers()` must be called **before** any `workflow.run()`.
 
@@ -170,7 +386,7 @@ When editing existing samples:
 
 | Symptom | Likely Cause | Fix |
 |---------|-------------|-----|
-| `ModuleNotFoundError: agent_framework` | Package not installed or RC conflict | `pip uninstall ... -y && pip install agent-framework>=1.0.0` |
+| `ModuleNotFoundError: agent_framework` | Package not installed or RC conflict | `pip uninstall ... -y && pip install agent-framework>=1.0.1` |
 | `401 Unauthorized` on Azure OpenAI | Missing/wrong API key or endpoint | Check `.env`; ensure endpoint ends with `/` |
 | `workflow.run()` returns empty outputs | Terminal executor not calling `ctx.yield_output()` | Use `WorkflowContext[Never, T]` and call `ctx.yield_output()` |
 | `TypeError` on `Message(text=...)` | Removed in 1.0 | Use `Message(role=..., contents=[...])` |
@@ -195,12 +411,12 @@ For the full list, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
 6. **Skipping Phase 3** — Always validate parity before migrating ops. Low-scoring outputs indicate unmigrated logic.
 7. **Instantiating one client per agent** — Share a single `FoundryChatClient()` instance across multiple agents. Creating separate clients wastes connection resources. See `07_multi_agent.py` for the pattern.
 8. **Forgetting `start_executor=`** — `WorkflowBuilder(...)` requires a `start_executor=` keyword argument. Also check for duplicate executor IDs, type mismatches on edges, and unreachable executors.
-10. **Each executor needs a unique `id`** — The `id=` kwarg passed to the executor constructor must be unique within the workflow. Duplicates cause silent overwrites or runtime errors.
-11. **Tool function docstrings drive agent behaviour** — When registering Python functions as agent tools via `tools=[fn]`, the agent uses the function's docstring to decide when and how to call it. Missing or vague docstrings lead to unreliable tool use.
-12. **Use `HandoffBuilder` for multi-agent routing** — `07_multi_agent.py` uses `HandoffBuilder` from `agent-framework-orchestrations` which automatically generates handoff tools for each participant. This is cleaner than manual tagged-string routing with condition functions.
-13. **Using `gpt_similarity` instead of `similarity`** — `SimilarityEvaluator` returns both keys. `gpt_similarity` is deprecated; always read from `similarity`.
-14. **API keys in production Container Apps** — Use managed identity (`ManagedIdentityCredential`) and Key Vault secret references (`secretref:kv-*`) instead of inline API keys. See `phase-4-migrate-ops/4b-deployment/managed_identity.md`.
-15. **`DefaultAzureCredential` for local + cloud portability** — Use `DefaultAzureCredential()` when code must run both locally (Azure CLI auth) and in Azure (managed identity). Avoid it in production-only paths where `ManagedIdentityCredential` is more predictable.
+9. **Each executor needs a unique `id`** — The `id=` kwarg passed to the executor constructor must be unique within the workflow. Duplicates cause silent overwrites or runtime errors.
+10. **Tool function docstrings drive agent behaviour** — When registering Python functions as agent tools via `tools=[fn]`, the agent uses the function's docstring to decide when and how to call it. Missing or vague docstrings lead to unreliable tool use.
+11. **Use `HandoffBuilder` for multi-agent routing** — `07_multi_agent.py` uses `HandoffBuilder` from `agent-framework-orchestrations` which automatically generates handoff tools for each participant. This is cleaner than manual tagged-string routing with condition functions.
+12. **Using `gpt_similarity` instead of `similarity`** — `SimilarityEvaluator` returns both keys. `gpt_similarity` is deprecated; always read from `similarity`.
+13. **API keys in production Container Apps** — Use managed identity (`ManagedIdentityCredential`) and Key Vault secret references (`secretref:kv-*`) instead of inline API keys. See `phase-4-migrate-ops/4b-deployment/managed_identity.md`.
+14. **`DefaultAzureCredential` for local + cloud portability** — Use `DefaultAzureCredential()` when code must run both locally (Azure CLI auth) and in Azure (managed identity). Avoid it in production-only paths where `ManagedIdentityCredential` is more predictable.
 
 ---
 

@@ -19,7 +19,7 @@ Teams running Prompt Flow workloads on Microsoft Foundry or Azure Machine Learni
 | **1 — Audit & Map** | Export your PF flow YAML; map every node to its MAF equivalent | [`phase-1-audit/`](./phase-1-audit/) |
 | **2 — Rebuild in MAF** | Re-implement the workflow using `WorkflowBuilder` and `Executor` | [`phase-2-rebuild/`](./phase-2-rebuild/) |
 | **3 — Validate Parity** | Run PF and MAF side-by-side; score similarity with Azure AI Evaluation SDK | [`phase-3-validate/`](./phase-3-validate/) |
-| **4 — Migrate Ops** | Wire up tracing (OTel), deploy to Container Apps, add CI/CD quality gate | [`phase-4-migrate-ops/`](./phase-4-migrate-ops/) |
+| **4 — Migrate Ops** | Wire up tracing (OTel), deploy as managed online endpoint (Azure ML / AI Foundry), add CI/CD quality gate | [`phase-4-migrate-ops/`](./phase-4-migrate-ops/) |
 | **5 — Cut Over** | Switch traffic to MAF; decommission PF endpoints and connections | [`phase-5-cutover/`](./phase-5-cutover/) |
 
 Work through the phases in order. Each folder has its own README with context, prerequisites, and expected outputs.
@@ -54,6 +54,12 @@ pip install -r requirements.txt
 
 cp .env.example .env   # then fill in your values
 ```
+
+---
+
+## Migrated Examples
+
+See [EXAMPLES.md](./EXAMPLES.md) for a full catalog of migrated flows with links to both the original Prompt Flow and MAF versions.
 
 ---
 

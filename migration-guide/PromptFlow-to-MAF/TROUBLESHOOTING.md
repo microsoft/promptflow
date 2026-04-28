@@ -15,7 +15,7 @@ The package was not installed, or an old RC install is conflicting.
 Uninstall any previous version first, then reinstall cleanly:
 
     pip uninstall agent-framework agent-framework-core agent-framework-foundry -y
-    pip install agent-framework>=1.0.0
+    pip install agent-framework>=1.0.1
 
 MAF core packages are GA (1.0.1) — `--pre` is no longer needed for
 `agent-framework` and `agent-framework-foundry`. However,
@@ -345,7 +345,7 @@ to call Foundry or other Azure services, ensure:
 1. A system-assigned or user-assigned managed identity is enabled on the
    online endpoint.
 2. The identity has the required role assignments (e.g.
-   `Cognitive Services OpenAI User` on the Foundry resource).
+   `Cognitive Services User` on the Foundry resource).
 
 See `phase-4-migrate-ops/4b-deployment/managed_identity.md` for full
 instructions.
