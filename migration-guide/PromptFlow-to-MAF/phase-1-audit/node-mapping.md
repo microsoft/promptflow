@@ -16,7 +16,7 @@
 | Connections (credentials) | Environment variables read automatically by MAF clients | `.env.example` |
 | Evaluation flow | `SimilarityEvaluator` from Azure AI Evaluation SDK | `phase-3-validate/` |
 | Multi-step specialist routing | `HandoffBuilder` from `agent-framework-orchestrations` | `07_multi_agent.py` |
-| Managed Online Endpoint | FastAPI wrapper + Azure Container Apps, or Foundry Agent Service | `phase-4-migrate-ops/4b-deployment/` |
+| Managed Online Endpoint | AML managed online endpoint via `score.py` init()/run() pattern | `phase-4-migrate-ops/4b-deployment/` |
 
 ---
 
