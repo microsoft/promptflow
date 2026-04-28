@@ -1,0 +1,12 @@
+name: basic-maf-env
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+    - agent-framework
+    - agent-framework-openai
+    - python-dotenv
+    - azure-identity
+    - azureml-inference-server-http
