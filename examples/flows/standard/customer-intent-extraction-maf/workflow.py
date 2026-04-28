@@ -72,17 +72,23 @@ class ExtractIntentExecutor(Executor):
         await ctx.yield_output(response.text)
 
 
-_prompt = PromptExecutor(id="chat_prompt")
-_extract = ExtractIntentExecutor(id="extract_intent")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="CustomerIntentWorkflow", start_executor=_prompt)
-    .add_edge(_prompt, _extract)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _prompt = PromptExecutor(id="chat_prompt")
+    _extract = ExtractIntentExecutor(id="extract_intent")
+    return (
+        WorkflowBuilder(name="CustomerIntentWorkflow", start_executor=_prompt)
+        .add_edge(_prompt, _extract)
+        .build()
+    )
 
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run(
         IntentInput(
             history="Customer: I want to return my order\nAgent: Sure, I can help with that.",

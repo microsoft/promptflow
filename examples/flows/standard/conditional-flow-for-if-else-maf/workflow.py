@@ -38,19 +38,25 @@ class DefaultResultExecutor(Executor):
         await ctx.yield_output(f"I'm not familiar with your query: {msg.question}.")
 
 
-_safety = ContentSafetyExecutor(id="content_safety_check")
-_llm = LLMResultExecutor(id="llm_result")
-_default = DefaultResultExecutor(id="default_result")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="ConditionalIfElseWorkflow", start_executor=_safety)
-    .add_edge(_safety, _llm, condition=lambda msg: msg.is_safe)
-    .add_edge(_safety, _default, condition=lambda msg: not msg.is_safe)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _safety = ContentSafetyExecutor(id="content_safety_check")
+    _llm = LLMResultExecutor(id="llm_result")
+    _default = DefaultResultExecutor(id="default_result")
+    return (
+        WorkflowBuilder(name="ConditionalIfElseWorkflow", start_executor=_safety)
+        .add_edge(_safety, _llm, condition=lambda msg: msg.is_safe)
+        .add_edge(_safety, _default, condition=lambda msg: not msg.is_safe)
+        .build()
+    )
 
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run("What is Prompt flow?")
     print(f"Answer: {result.get_outputs()[0]}")
 

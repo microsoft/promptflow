@@ -6,17 +6,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from workflow import ChatInput, workflow  # noqa: E402
+from workflow import ChatInput, create_workflow  # noqa: E402
 
 
 async def test_relevant_question():
     print("--- relevant question ---")
+    workflow = create_workflow()
     result = await workflow.run(ChatInput(question="How do I deploy a flow?"))
     print("Answer:", result.get_outputs()[0])
 
 
 async def test_irrelevant_question():
     print("\n--- irrelevant question ---")
+    workflow = create_workflow()
     result = await workflow.run(ChatInput(question="What is the weather today?"))
     print("Answer:", result.get_outputs()[0])
 
@@ -31,6 +33,7 @@ async def test_multi_turn():
             },
         },
     ]
+    workflow = create_workflow()
     result = await workflow.run(ChatInput(question="How do I create a flow?", chat_history=history))
     print("Answer:", result.get_outputs()[0])
 

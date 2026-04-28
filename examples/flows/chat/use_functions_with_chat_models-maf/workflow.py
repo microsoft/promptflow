@@ -105,24 +105,31 @@ class FunctionCallingExecutor(Executor):
 # Workflow: input → function_calling → output
 # ---------------------------------------------------------------------------
 
-_input = InputExecutor(id="input")
-_function_calling = FunctionCallingExecutor(id="function_calling")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="UseFunctionsWorkflow", start_executor=_input)
-    .add_edge(_input, _function_calling)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _input = InputExecutor(id="input")
+    _function_calling = FunctionCallingExecutor(id="function_calling")
+    return (
+        WorkflowBuilder(name="UseFunctionsWorkflow", start_executor=_input)
+        .add_edge(_input, _function_calling)
+        .build()
+    )
 
 
 async def main():
     # First turn: ask about weather
+    workflow = create_workflow()
     result = await workflow.run(
         ChatInput(question="What is the weather like in Boston?")
     )
     print("Answer:", result.get_outputs()[0])
 
     # Follow-up with chat history
+    workflow = create_workflow()
     result = await workflow.run(
         ChatInput(
             question="How about London next week?",

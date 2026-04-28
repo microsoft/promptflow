@@ -91,15 +91,21 @@ class FlipAndQuestionExecutor(Executor):
         })
 
 
-_executor = FlipAndQuestionExecutor(id="flip_and_question")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="DescribeImageWorkflow", start_executor=_executor)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _executor = FlipAndQuestionExecutor(id="flip_and_question")
+    return (
+        WorkflowBuilder(name="DescribeImageWorkflow", start_executor=_executor)
+        .build()
+    )
 
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run(
         ImageInput(
             question="How many colors are there in the image?",

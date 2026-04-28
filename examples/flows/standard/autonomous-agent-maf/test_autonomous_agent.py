@@ -1,10 +1,11 @@
 import asyncio
 
-from workflow import AutoGPTInput, workflow
+from workflow import AutoGPTInput, create_workflow
 
 
 async def main():
     print("--- Running autonomous agent ---")
+    workflow = create_workflow()
     result = await workflow.run(
         AutoGPTInput(
             name="FilmTriviaGPT",

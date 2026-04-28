@@ -60,17 +60,23 @@ class CleansingExecutor(Executor):
         await ctx.yield_output(entities)
 
 
-_ner = NERExecutor(id="NER_LLM")
-_cleansing = CleansingExecutor(id="cleansing")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="NERWorkflow", start_executor=_ner)
-    .add_edge(_ner, _cleansing)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _ner = NERExecutor(id="NER_LLM")
+    _cleansing = CleansingExecutor(id="cleansing")
+    return (
+        WorkflowBuilder(name="NERWorkflow", start_executor=_ner)
+        .add_edge(_ner, _cleansing)
+        .build()
+    )
 
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run(
         NERInput(
             text="Maxime is a data scientist at Auto Dataset and he lives in Paris, France.",

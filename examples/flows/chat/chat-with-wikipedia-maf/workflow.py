@@ -257,21 +257,27 @@ class AugmentedChatExecutor(Executor):
 # Workflow: input → extract_query → wiki_search → augmented_chat → output
 # ---------------------------------------------------------------------------
 
-_input = InputExecutor(id="input")
-_extract = ExtractQueryExecutor(id="extract_query")
-_wiki = WikiSearchExecutor(id="wiki_search")
-_chat = AugmentedChatExecutor(id="augmented_chat")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="ChatWithWikipediaWorkflow", start_executor=_input)
-    .add_edge(_input, _extract)
-    .add_edge(_extract, _wiki)
-    .add_edge(_wiki, _chat)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _input = InputExecutor(id="input")
+    _extract = ExtractQueryExecutor(id="extract_query")
+    _wiki = WikiSearchExecutor(id="wiki_search")
+    _chat = AugmentedChatExecutor(id="augmented_chat")
+    return (
+        WorkflowBuilder(name="ChatWithWikipediaWorkflow", start_executor=_input)
+        .add_edge(_input, _extract)
+        .add_edge(_extract, _wiki)
+        .add_edge(_wiki, _chat)
+        .build()
+    )
 
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run(ChatInput(question="What is ChatGPT?"))
     print("Answer:", result.get_outputs()[0])
 

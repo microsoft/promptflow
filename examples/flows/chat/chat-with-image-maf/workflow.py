@@ -87,17 +87,23 @@ class ChatExecutor(Executor):
         await ctx.yield_output(response.text)
 
 
-_input = InputExecutor(id="input")
-_chat = ChatExecutor(id="chat")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="ChatWithImageWorkflow", start_executor=_input)
-    .add_edge(_input, _chat)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _input = InputExecutor(id="input")
+    _chat = ChatExecutor(id="chat")
+    return (
+        WorkflowBuilder(name="ChatWithImageWorkflow", start_executor=_input)
+        .add_edge(_input, _chat)
+        .build()
+    )
 
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run(
         ChatInput(
             question=[

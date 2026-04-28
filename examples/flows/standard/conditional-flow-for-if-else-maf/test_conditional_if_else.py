@@ -1,5 +1,5 @@
 import asyncio
-from workflow import workflow
+from workflow import create_workflow
 
 
 async def main():
@@ -21,6 +21,7 @@ async def main():
     unsafe_count = 0
 
     for i, question in enumerate(test_questions, 1):
+        workflow = create_workflow()
         result = await workflow.run(question)
         output = result.get_outputs()[0]
 

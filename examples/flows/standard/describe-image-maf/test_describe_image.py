@@ -1,6 +1,6 @@
 import asyncio
 
-from workflow import ImageInput, workflow
+from workflow import ImageInput, create_workflow
 
 
 async def main():
@@ -16,6 +16,7 @@ async def main():
     ]
     for tc in test_cases:
         print(f"\n--- Question: {tc['question']} ---")
+        workflow = create_workflow()
         result = await workflow.run(ImageInput(question=tc["question"], input_image=tc["input_image"]))
         output = result.get_outputs()[0]
         print(f"Answer: {output['answer']}")

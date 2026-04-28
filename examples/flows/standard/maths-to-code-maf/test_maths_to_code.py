@@ -1,9 +1,10 @@
 import asyncio
 
-from workflow import workflow
+from workflow import create_workflow
 
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run(
         "If a rectangle has a length of 10 and width of 5, what is the area?"
     )

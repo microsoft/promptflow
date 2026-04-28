@@ -268,28 +268,35 @@ def _search_index(question: str) -> str:
 # Workflow
 # ---------------------------------------------------------------------------
 
-_input = InputExecutor(id="input")
-_modify_query = ModifyQueryExecutor(id="modify_query")
-_check_relevance = CheckRelevanceExecutor(id="check_relevance")
-_lookup_and_answer = LookupAndAnswerExecutor(id="lookup_and_answer")
-_answer = AnswerExecutor(id="answer")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="PromptflowCopilotWorkflow", start_executor=_input)
-    .add_edge(_input, _modify_query)
-    .add_edge(_modify_query, _check_relevance)
-    .add_edge(_check_relevance, _lookup_and_answer)
-    .add_edge(_lookup_and_answer, _answer)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _input = InputExecutor(id="input")
+    _modify_query = ModifyQueryExecutor(id="modify_query")
+    _check_relevance = CheckRelevanceExecutor(id="check_relevance")
+    _lookup_and_answer = LookupAndAnswerExecutor(id="lookup_and_answer")
+    _answer = AnswerExecutor(id="answer")
+    return (
+        WorkflowBuilder(name="PromptflowCopilotWorkflow", start_executor=_input)
+        .add_edge(_input, _modify_query)
+        .add_edge(_modify_query, _check_relevance)
+        .add_edge(_check_relevance, _lookup_and_answer)
+        .add_edge(_lookup_and_answer, _answer)
+        .build()
+    )
 
 
 async def main():
     # Relevant question
+    workflow = create_workflow()
     result = await workflow.run(ChatInput(question="How do I deploy a flow?"))
     print("Answer:", result.get_outputs()[0])
 
     # Irrelevant question
+    workflow = create_workflow()
     result = await workflow.run(ChatInput(question="What is the weather today?"))
     print("Answer:", result.get_outputs()[0])
 

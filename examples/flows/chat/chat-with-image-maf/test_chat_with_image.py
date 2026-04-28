@@ -6,11 +6,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from workflow import ChatInput, workflow  # noqa: E402
+from workflow import ChatInput, create_workflow  # noqa: E402
 
 
 async def test_single_turn():
     """Single-turn: ask about an image."""
+    workflow = create_workflow()
     result = await workflow.run(
         ChatInput(
             question=[
@@ -37,6 +38,7 @@ async def test_multi_turn():
             "outputs": {"answer": "This is a logo."},
         }
     ]
+    workflow = create_workflow()
     result = await workflow.run(
         ChatInput(
             question=["Describe it in more detail."],

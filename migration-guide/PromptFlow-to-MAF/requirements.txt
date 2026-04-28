@@ -21,7 +21,7 @@ uvicorn>=0.34.0
 python-dotenv>=1.0.0
 
 # Tracing (Phase 4a)
-azure-monitor-opentelemetry>=1.6.0
+azure-monitor-opentelemetry>=1.6.4
 
 # Azure identity — used by FoundryChatClient for authentication
 azure-identity>=1.19.0

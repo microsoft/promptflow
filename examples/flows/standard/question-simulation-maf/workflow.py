@@ -163,15 +163,21 @@ class VerifyAndSimulateExecutor(Executor):
         await ctx.yield_output("\n".join(questions))
 
 
-_executor = VerifyAndSimulateExecutor(id="verify_and_simulate")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="QuestionSimulationWorkflow", start_executor=_executor)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _executor = VerifyAndSimulateExecutor(id="verify_and_simulate")
+    return (
+        WorkflowBuilder(name="QuestionSimulationWorkflow", start_executor=_executor)
+        .build()
+    )
 
 
 async def main():
+    workflow = create_workflow()
     chat_history = [
         {
             "inputs": {"question": "Can you introduce something about large language model?"},

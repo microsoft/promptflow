@@ -166,17 +166,23 @@ class ClassifyExecutor(Executor):
         await ctx.yield_output(result)
 
 
-_fetch_summarize = FetchAndSummarizeExecutor(id="fetch_and_summarize")
-_classify = ClassifyExecutor(id="classify")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="WebClassificationWorkflow", start_executor=_fetch_summarize)
-    .add_edge(_fetch_summarize, _classify)
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _fetch_summarize = FetchAndSummarizeExecutor(id="fetch_and_summarize")
+    _classify = ClassifyExecutor(id="classify")
+    return (
+        WorkflowBuilder(name="WebClassificationWorkflow", start_executor=_fetch_summarize)
+        .add_edge(_fetch_summarize, _classify)
+        .build()
+    )
 
 
 async def main():
+    workflow = create_workflow()
     url = "https://arxiv.org/abs/2307.04767"
     result = await workflow.run(url)
     output = result.get_outputs()[0]

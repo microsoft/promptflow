@@ -77,23 +77,29 @@ class DefaultExecutor(Executor):
         await ctx.yield_output("Sorry, no results matching your search were found.")
 
 
-_classify = ClassifyExecutor(id="classify")
-_order = OrderSearchExecutor(id="order_search")
-_product = ProductInfoExecutor(id="product_info")
-_recommend = ProductRecommendationExecutor(id="product_recommendation")
-_default = DefaultExecutor(id="default")
+def create_workflow():
+    """Create a fresh workflow instance.
 
-workflow = (
-    WorkflowBuilder(name="ConditionalSwitchWorkflow", start_executor=_classify)
-    .add_edge(_classify, _order, condition=lambda m: m.intention == "order_search")
-    .add_edge(_classify, _product, condition=lambda m: m.intention == "product_info")
-    .add_edge(_classify, _recommend, condition=lambda m: m.intention == "product_recommendation")
-    .add_edge(_classify, _default, condition=lambda m: m.intention == "unknown")
-    .build()
-)
+    MAF workflows do not support concurrent execution, so each
+    concurrent caller needs its own workflow instance.
+    """
+    _classify = ClassifyExecutor(id="classify")
+    _order = OrderSearchExecutor(id="order_search")
+    _product = ProductInfoExecutor(id="product_info")
+    _recommend = ProductRecommendationExecutor(id="product_recommendation")
+    _default = DefaultExecutor(id="default")
+    return (
+        WorkflowBuilder(name="ConditionalSwitchWorkflow", start_executor=_classify)
+        .add_edge(_classify, _order, condition=lambda m: m.intention == "order_search")
+        .add_edge(_classify, _product, condition=lambda m: m.intention == "product_info")
+        .add_edge(_classify, _recommend, condition=lambda m: m.intention == "product_recommendation")
+        .add_edge(_classify, _default, condition=lambda m: m.intention == "unknown")
+        .build()
+    )
 
 
 async def main():
+    workflow = create_workflow()
     result = await workflow.run("When will my order be shipped?")
     print(f"Response: {result.get_outputs()[0]}")
 
