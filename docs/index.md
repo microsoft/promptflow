@@ -10,7 +10,7 @@ html_theme.sidebar_secondary.remove: true
 :class: warning
 Prompt Flow feature development ended on April 20, 2026. The feature will be fully retired on April 20, 2027. On the retirement date, Prompt Flow enters read-only mode. Your existing flows will continue to operate until that date.
 
-**Recommended action:** [Migrate your Prompt Flow workloads to Microsoft Agent Framework](https://github.com/microsoft/promptflow/migration-guide/PromptFlow-to-MAF) before April 20, 2027.
+**Recommended action:** [Migrate your Prompt Flow workloads to Microsoft Agent Framework](https://github.com/microsoft/promptflow/tree/main/migration-guide/PromptFlow-to-MAF) before April 20, 2027.
 :::
 
 # Prompt flow
