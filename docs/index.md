@@ -6,6 +6,13 @@ myst:
 html_theme.sidebar_secondary.remove: true
 ---
 
+:::{admonition} Prompt Flow Retirement Notice
+:class: warning
+Prompt Flow feature development ended on April 20, 2026. The feature will be fully retired on April 20, 2027. On the retirement date, Prompt Flow enters read-only mode. Your existing flows will continue to operate until that date.
+
+**Recommended action:** [Migrate your Prompt Flow workloads to Microsoft Agent Framework](https://github.com/microsoft/promptflow/tree/main/migration-guide/PromptFlow-to-MAF) before April 20, 2027.
+:::
+
 # Prompt flow
 
 [**Prompt flow**](https://github.com/microsoft/promptflow) is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality.

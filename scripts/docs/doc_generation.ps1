@@ -42,6 +42,7 @@ if (-not $SkipInstall){
     pip install myst-nb==0.17.1
     pip install numpydoc==1.5.0
     pip install myst-parser==0.18.1
+    pip install "numpy<1.25"
     pip install matplotlib==3.4.3
     pip install jinja2==3.0.1
     pip install jupyter-sphinx==0.4.0
