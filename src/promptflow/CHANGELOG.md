@@ -1,6 +1,18 @@
 # Release History
 
-## v1.18.2 (Unreleased)
+## v1.18.6 (Unreleased)
+
+### Improvements
+
+### Bugs fixed
+
+## v1.18.5 (2026.04.30)
+
+### Bugs fixed
+
+- promptflow-core was updated with RCE fix.
+
+## v1.18.2 (2025.12.5)
 
 ### Improvements
 
