@@ -1,6 +1,6 @@
 # promptflow-core package
 
-## v1.18.2 (2026.4.21)
+## v1.18.5 (2026.4.30)
 
 ### Bugs fixed
 
