@@ -1,0 +1,2 @@
+{"question": "How many colors are there in the image?", "input_image": {"data:image/png;url": "https://developer.microsoft.com/_devcom/images/logo-ms-social.png"}}
+{"question": "What's this image about?", "input_image": {"data:image/png;url": "https://developer.microsoft.com/_devcom/images/404.png"}}

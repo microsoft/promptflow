@@ -1,0 +1,4 @@
+agent-framework>=1.0.1
+openai
+python-dotenv
+jinja2

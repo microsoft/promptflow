@@ -1,0 +1,13 @@
+name: maf-env
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+    - agent-framework
+    - agent-framework-azure-ai-search
+    - python-dotenv
+    - azure-monitor-opentelemetry
+    - azure-identity
+    - azureml-inference-server-http

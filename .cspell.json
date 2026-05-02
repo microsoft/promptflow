@@ -81,6 +81,7 @@
     "KHTML",
     "Likert",
     "llmlingua",
+    "olleh",
     "logit",
     "logprobs",
     "meid",
@@ -103,6 +104,7 @@
     "Qdrant",
     "rediraffe",
     "retriable",
+    "envsubst",
     "ROBOCOPY",
     "serp",
     "Summ",
@@ -143,6 +145,10 @@
     "tcgetpgrp",
     "yamls",
     "fmt",
+    "parameterised",
+    "cicd",
+    "sphagettification",
+    "gaierror",
     "serpapi",
     "genutils",
     "metadatas",
@@ -260,7 +266,8 @@
     "GLEU",
     "fmeasure",
     "punkt",
-    "BYOI"
+    "BYOI",
+    "Neur"
   ],
   "flagWords": [
     "Prompt Flow"

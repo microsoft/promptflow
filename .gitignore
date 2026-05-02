@@ -201,3 +201,6 @@ src/promptflow-*/promptflow/__init__.py
 
 # benchmark results
 benchmark/promptflow-serve/test_runner/locust-results/
+
+.DS_Store
+.omc/
