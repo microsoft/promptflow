@@ -1,10 +1,10 @@
 ---
 name: promptflow-to-maf
-description: "Convert Prompt Flow flow definitions to Microsoft Agent Framework (MAF) workflows. Parses flow.dag.yaml, maps nodes to Executors, and generates runnable Python code using agent-framework 1.0.x. WHEN: convert promptflow, migrate promptflow, promptflow to MAF, promptflow to agent framework, convert flow.dag.yaml, migrate flow to MAF, convert PF flow, PF to agent-framework, convert DAG flow to workflow, migrate LLM flow."
+description: "Convert Prompt Flow flow definitions to Microsoft Agent Framework (MAF) workflows. Parses flow.dag.yaml, maps nodes to Executors, and generates runnable Python code using agent-framework 1.0.x. WHEN: convert promptflow, migrate promptflow, promptflow to MAF, promptflow to agent framework, convert flow.dag.yaml, migrate flow to MAF, convert PF flow, PF to agent-framework, convert DAG flow to workflow, migrate LLM flow. DO NOT USE FOR: writing new MAF workflows from scratch (no source flow), deploying MAF workflows (use maf-online-endpoint), enabling tracing (use maf-tracing), or general agent-framework Q&A."
 license: MIT
 metadata:
   author: Team
-  version: "1.0.0"
+  version: "2.0.0"
 ---
 
 # Prompt Flow → Microsoft Agent Framework Conversion
@@ -18,235 +18,55 @@ Activate this skill when the user wants to:
 - Migrate a `flow.dag.yaml` to MAF workflow code
 - Rebuild a Prompt Flow application using `agent-framework`
 
-## Rules
+---
+
+## What to Read When (Progressive Disclosure)
+
+This skill is split across multiple files. **Always read this file first.** Then read additional files based on what the source flow contains:
+
+| Situation | Required Reading |
+|---|---|
+| **Every conversion task** | This file + [references/gotchas.md](references/gotchas.md) |
+| Need to map a specific node type | [references/node-mapping.md](references/node-mapping.md) |
+| Writing Executor handlers / picking LLM client / setting `temperature`/`max_tokens` | [references/workflow-context.md](references/workflow-context.md) |
+| Source flow has a node with `source.type: package` | [topics/custom-tool-nodes.md](topics/custom-tool-nodes.md) |
+| Source flow has image / multimodal inputs | [topics/multimodal.md](topics/multimodal.md) + [examples/multimodal-chat.md](examples/multimodal-chat.md) |
+| Source flow has any node with `aggregation: true` | [topics/evaluation-flows.md](topics/evaluation-flows.md) + [templates/eval_runner.py](templates/eval_runner.py) + [examples/evaluation.md](examples/evaluation.md) |
+| Want a complete reference example | [examples/linear-chat.md](examples/linear-chat.md) (basic), [examples/multimodal-chat.md](examples/multimodal-chat.md), [examples/evaluation.md](examples/evaluation.md) |
+
+> **Don't pre-load everything.** Read each file lazily when its situation is detected during Phase 1 audit.
+
+---
+
+## Core Rules (apply to every conversion)
 
 1. **Read the source flow first** — Always parse `flow.dag.yaml`, all referenced source files (`.jinja2`, `.py`), and `requirements.txt` before generating anything.
 2. **Preserve prompts verbatim** — System prompts, user prompt templates, and any text from `.jinja2` or inline prompt nodes must be copied exactly as they appear in the original Prompt Flow. Do not rephrase, summarize, add, or remove any content — including examples, instructions, formatting, and preambles (e.g., "Read the following conversation and respond:"). The MAF workflow must send the identical prompt text to the LLM.
-3. **One Executor per node** — Each Prompt Flow node becomes one `Executor` subclass with a `@handler` method.
-
-### Node Collapsing Patterns
-
-While the default is 1:1 node-to-Executor mapping, certain node combinations can be safely merged into a single Executor to reduce complexity:
-
-**When to collapse nodes:**
-- **Prompt template + LLM node** → Merge into one Executor: extract system prompt to `Agent(instructions=...)`, format user prompt as a string with variables, then call `Agent.run()`
-  - Example: `hello_prompt` (`.jinja2`) + `llm` (LLM) → single `LLMExecutor` with both template and agent
-- **LLM + simple post-processing Python node** → Merge if post-processing is a few lines (e.g., extract substring, parse JSON, format output)
-- **Static-data Python node** → Inline as module-level constant (e.g., `prepare_examples()`, `math_example()`) if data is <50 lines
-
-**When to keep separate:**
-- Node would need concurrent execution (e.g., two branches from same source run in parallel)
-- Post-processing is complex (>20 lines) or calls external APIs
-- Output is consumed by multiple downstream nodes (keep it separate for clarity and reuse)
-- Node has stateful side effects that should be isolated
-
-**Example: Prompt + LLM collapse**
-```python
-# Instead of two Executors:
-class PromptExecutor(Executor):
-    @handler
-    async def receive(self, text: str, ctx: WorkflowContext[str]) -> None:
-        prompt = f"Write a simple {text} program..."
-        await ctx.send_message(prompt)
-
-class LLMExecutor(Executor):
-    @handler
-    async def call_llm(self, prompt: str, ctx: WorkflowContext[Never, str]) -> None:
-        response = await self._agent.run(prompt)
-        await ctx.yield_output(response.text)
-
-# Can merge into one:
-class PromptAndLLMExecutor(Executor):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._agent = Agent(client=..., instructions=...)
-
-    @handler
-    async def generate(self, text: str, ctx: WorkflowContext[Never, str]) -> None:
-        prompt = f"Write a simple {text} program..."
-        response = await self._agent.run(prompt)
-        await ctx.yield_output(response.text)
-```
-
+3. **One Executor per node** — Each Prompt Flow node becomes one `Executor` subclass with a `@handler` method. (Some node combinations may be safely merged — see [references/node-mapping.md](references/node-mapping.md) for "Node Collapsing Patterns".)
 4. **Preserve behaviour** — The MAF workflow must produce the same outputs for the same inputs as the original flow.
-5. **Use GA packages** — `agent-framework>=1.0.1`, `agent-framework-openai>=1.0.1`. Use preview packages (`--pre`) only for orchestrations, Azure AI Search, or multi-agent features.
+5. **Use GA packages** — `agent-framework>=1.0.1`, `agent-framework-openai>=1.0.1`. Use preview packages (`--pre`) only for orchestrations, Azure AI Search, or multi-agent features. (Full table in [references/workflow-context.md](references/workflow-context.md).)
 6. **Create output folder** — Place generated files in a sibling folder named `<original-folder>-maf/`.
 7. **Copy user-defined Python packages** — If the flow imports from internal packages (e.g., `my_utils/`, helper modules), copy the entire package directory into the output folder. The MAF workflow imports directly from the local copy — no `sys.path` manipulation needed.
 8. **Generate a test sample** — Always include a runnable `test_<name>.py` sample script.
 9. **Never modify the original flow** — All output goes into the new folder.
-10. **Evaluation flows use the EvalRunner pattern** — If any node has `aggregation: true`, the flow is an evaluation flow. Split it into a per-row MAF workflow + a standalone aggregation function + an `EvalRunner` orchestrator + a `run_eval.py` entry point. See the "Evaluation Flow Conversion" section below.
+10. **Evaluation flows use the EvalRunner pattern** — If any node has `aggregation: true`, the flow is an evaluation flow. See [topics/evaluation-flows.md](topics/evaluation-flows.md).
 11. **Always export a `create_workflow()` factory** — MAF workflows do not support concurrent `run()` calls on a single instance (`RuntimeError: Workflow is already running`). Every generated `workflow.py` must export a `create_workflow()` factory function that creates a fresh workflow instance per call. Do NOT instantiate Executors or build the workflow at module level. This ensures callers can safely run multiple workflows concurrently (e.g., evaluation batches, parallel API requests, or test suites). For evaluation flows, `EvalRunner` relies on this factory to create one workflow per row.
 12. **Copy ALL referenced resources into the output folder** — The generated `-maf/` project must be fully self-contained with zero dependencies on the original Prompt Flow folder. Copy every resource file the flow references:
-   - **Data files** (`.jsonl`, `.csv`, `.json`, `.tsv`) used for testing or evaluation
-   - **Prompt / template files** (`.jinja2`, `.md` used as prompts)
-   - **User-defined Python modules** (`.py` files or packages imported by nodes — see rule 7)
-   - **Any other non-code assets** (e.g., `samples.json`, config files, image assets)
-   Update all file path references (e.g., `DEFAULT_DATA`, `_TEMPLATES_DIR`, `_PROMPT_TEMPLATE`) to point to the local copy using `Path(__file__).parent / ...`. Never use `parent.parent` or relative paths that reach back into the original flow directory.
+    - **Data files** (`.jsonl`, `.csv`, `.json`, `.tsv`) used for testing or evaluation
+    - **Prompt / template files** (`.jinja2`, `.md` used as prompts)
+    - **User-defined Python modules** (`.py` files or packages imported by nodes — see rule 7)
+    - **Any other non-code assets** (e.g., `samples.json`, config files, image assets)
+
+    Update all file path references (e.g., `DEFAULT_DATA`, `_TEMPLATES_DIR`, `_PROMPT_TEMPLATE`) to point to the local copy using `Path(__file__).parent / ...`. Never use `parent.parent` or relative paths that reach back into the original flow directory.
 
 ---
 
-## Packages
+## Conversion Workflow (4 Phases)
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `agent-framework` | >=1.0.1 (GA) | Core: `Executor`, `WorkflowBuilder`, `WorkflowContext`, `Agent`, `@handler` |
-| `agent-framework-openai` | >=1.0.1 (GA) | `OpenAIChatClient`, `OpenAIChatOptions` — works for both OpenAI and Azure OpenAI |
-| `agent-framework-foundry` | >=1.0.1 (GA) | `FoundryChatClient` — for Microsoft Foundry endpoints |
-| `agent-framework-orchestrations` | preview | `HandoffBuilder` — for multi-agent handoffs |
-| `agent-framework-azure-ai-search` | preview | `AzureAISearchContextProvider` — for RAG pipelines |
-| `python-dotenv` | any | Load `.env` for credentials |
-
----
-
-## Node Mapping Reference
-
-Use this table to convert each Prompt Flow node type to its MAF equivalent:
-
-| Prompt Flow Concept | MAF Equivalent |
-|---|---|
-| `flow.dag.yaml` (flow definition) | `WorkflowBuilder(name=..., start_executor=...).add_edge(...).build()` |
-| Any node | `Executor` subclass with a `@handler` method |
-| LLM node (`type: llm`) | `Agent(client=OpenAIChatClient(...), instructions=...)` inside an Executor |
-| Python node (`type: python`, `source.type: code`) | Plain Python logic inside an `Executor` `@handler` |
-| Custom-tool node (`type: python`, `source.type: package`) | **Call the tool's underlying Python function directly inside an `Executor` `@handler`. Do NOT remap to `OpenAIChatClient` / `Agent`.** See "Custom-Tool Nodes" below. |
-| Prompt node (`.jinja2` template) | System prompt string passed to `Agent(instructions=...)`, or string formatting in `@handler` |
-| Conditional / If node (`activate_config`) | `.add_edge(source, target, condition=fn)` |
-| Parallel nodes (no shared deps) | `.add_fan_out_edges(source, [targetA, targetB])` |
-| Merge / aggregate node | `.add_fan_in_edges([sourceA, sourceB], target)` |
-| `aggregation: true` node (eval batch) | Standalone function + `EvalRunner` orchestrator (see Evaluation Flow Conversion) |
-| Embed Text + Vector Lookup + LLM (RAG) | `AzureAISearchContextProvider` via `context_providers=[...]` on `Agent` |
-| Python tool node | Plain function passed to `Agent(tools=[fn1, fn2])` |
-| Flow inputs | Type annotation on start Executor's `@handler` parameter (use `@dataclass` for multiple inputs) |
-| Flow outputs (`is_chat_output`) | `await ctx.yield_output(value)` in the terminal Executor |
-| Connections (credentials) | Environment variables + `OpenAIChatClient(azure_endpoint=..., api_key=...)` |
-| `chat_history` input | Format into prompt string in an InputExecutor before passing to Agent |
-| Variants | Separate Agent instances with different `instructions` strings |
-| Multimodal input (image URL) | `Content.from_uri(url, media_type="image/png")` inside a `Message` |
-| Multimodal input (base64 image) | `Content.from_data(data=bytes, media_type="image/png")` inside a `Message` |
-| `custom_llm` node with images | Executor that builds a `Message("user", [Content.from_uri(...), text])` and passes it to `Agent.run()` |
-
----
-
-## Custom-Tool Nodes (`source.type: package`)
-
-A node whose `source.type` is `package` (rather than `code`) is a **user-defined PromptFlow tool**, not a stock LLM/Python node. The YAML looks like:
-
-```yaml
-- name: my_node
-  type: python
-  source:
-    type: package
-    tool: my_pkg.my_module.MyToolClass.my_function   # ← package-qualified tool path
-  inputs:
-    connection: my_connection
-    prompt: ${upstream.output}
-    model: my-internal-model-name
-    # ...other tool-specific params (often vendor-specific: endpoint routing,
-    # quota, timeouts, custom auth, batch flags, etc.)
-```
-
-### Rule: keep the tool, replace only the runtime
-
-Custom tools wrap functionality that MAF **does not provide**:
-- Internal/proprietary LLM gateways (custom endpoints, auth, quota, batch routing)
-- Domain-specific clients (search backends, vector stores, internal APIs)
-- Org-specific connection types (`CustomConnection`, vendor SDK clients)
-- Special headers, model-name conventions, segmentation, retry policies
-
-**Re-pointing these calls to `OpenAIChatClient` / `Agent` silently changes the wire protocol, endpoint, model, auth, and quota system — and almost always breaks the deployment.** Even if the tool happens to wrap an OpenAI-compatible API, vendor-specific knobs (`inference_type`, `quota_app_id`, custom headers, model name conventions) will not survive the remap.
-
-### Conversion steps
-
-1. **Locate the tool implementation.** The `tool:` field is a Python import path. Open the source file and identify:
-   - The class / function name (the last segment after the final `.`)
-   - The class above it (second-to-last segment) — usually a `ToolProvider` subclass with a `@tool`-decorated method
-   - Whether the `@tool` method delegates to a plain underlying class (very common pattern) — prefer calling that underlying class directly to drop the PromptFlow runtime dependency
-2. **Read the function signature.** Note every parameter the YAML node passes, plus any defaults the tool applies internally (endpoints, headers, auth scopes, etc.).
-3. **Inspect the connection object.** If the tool takes a `connection: CustomConnection`, find out where it reads its credentials. Many custom tools resolve credentials from environment variables (managed identity, AAD, client secret) and ignore the `connection` arg entirely — in which case pass `None` or omit it.
-4. **Call the tool from inside an `Executor` `@handler`.** Instantiate the tool class once in `__init__` (so any credential/token caching is reused), then invoke it inside the handler.
-5. **Wrap synchronous I/O in `asyncio.to_thread`.** Most custom tools are synchronous (they call `requests.post`, vendor SDKs, etc.). Calling them directly from an `async def` handler blocks the event loop — wrap them so other executors can run concurrently:
-   ```python
-   result = await asyncio.to_thread(self._tool, **tool_kwargs)
-   ```
-6. **Pass parameters verbatim from the YAML.** Copy every input from the node's `inputs:` block — including vendor-specific ones (`inference_type`, `quota_app_id`, `endpoint`, custom headers). Do not drop them.
-7. **Add the tool's package to `requirements.txt`.** If the tool lives in an in-repo package, document the install path (e.g., `pip install -e ../path/to/package`).
-8. **Document credential env vars in `.env.example`.** Mirror whatever auth scheme the tool uses (managed identity, service principal, custom token endpoint).
-
-### Example
-
-Original PromptFlow node:
-
-```yaml
-- name: my_llm_call
-  type: python
-  source:
-    type: package
-    tool: my_pkg.tools.gateway.GatewayCompletion.completion
-  inputs:
-    connection: my_conn
-    prompt: ${prompt_node.output}
-    model: internal-model-v2
-    max_tokens: 500
-    temperature: 0
-    inference_type: batch
-    quota_app_id: my-app
-```
-
-MAF Executor:
-
-```python
-import asyncio
-from agent_framework import Executor, WorkflowContext, handler
-from my_pkg.tools.gateway import GatewayCompletion   # the underlying class
-
-class MyLLMExecutor(Executor):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        # Instantiate once so token/credential caching is reused across calls.
-        self._llm = GatewayCompletion()
-
-    @handler
-    async def call(self, prompt: str, ctx: WorkflowContext[str]) -> None:
-        text = await asyncio.to_thread(
-            self._llm,
-            prompt=prompt,
-            model="internal-model-v2",
-            max_tokens=500,
-            temperature=0,
-            inference_type="batch",
-            quota_app_id="my-app",
-        )
-        await ctx.send_message(text)
-```
-
-### Anti-patterns
-
-- ❌ Replacing the custom tool with `OpenAIChatClient` because "it's an LLM call too" — endpoint, auth, model names, and gateway-specific routing will all be wrong.
-- ❌ Re-implementing the tool's HTTP request inline — duplicates auth/header/retry logic that the original tool already handles correctly.
-- ❌ Importing the tool's `@tool`-decorated wrapper just to call it — pulls in PromptFlow as a runtime dependency. Prefer the underlying class.
-- ❌ Calling the synchronous tool directly from an `async` handler — blocks the event loop and kills fan-out concurrency. Always wrap in `asyncio.to_thread`.
-
----
-
-## WorkflowContext Type Parameters
-
-| Annotation | Behaviour |
-|---|---|
-| `WorkflowContext` | Side effects only — no output sent |
-| `WorkflowContext[str]` | Sends a `str` downstream via `ctx.send_message()` |
-| `WorkflowContext[Never, str]` | Yields a `str` as the final workflow output via `ctx.yield_output()` |
-| `WorkflowContext[str, str]` | Both sends downstream AND yields a workflow output |
-
-`Never` is imported from `typing_extensions`.
-
----
-
-## Conversion Steps
-
-### Phase 1: Audit the Prompt Flow
+### Phase 1 — Audit the Prompt Flow
 
 1. **Read `flow.dag.yaml`** — identify all inputs, outputs, nodes, their types, and edges (data references like `${node.output}`).
-   - For every node, record `type` AND `source.type`. **A node with `source.type: package` is a custom user-defined tool — read its implementation (see "Custom-Tool Nodes" below) and call it directly from the Executor; do NOT remap to `OpenAIChatClient`/`Agent`.**
+   - For every node, record `type` AND `source.type`. **A node with `source.type: package` is a custom user-defined tool — read [topics/custom-tool-nodes.md](topics/custom-tool-nodes.md) and call it directly from the Executor; do NOT remap to `OpenAIChatClient`/`Agent`.**
 2. **Read source files** — open every `.jinja2` template, every `.py` file referenced by `source.type: code` nodes, and the package source for every `source.type: package` node.
 3. **Read `requirements.txt`** — note any extra dependencies.
 4. **Map the graph** — draw the node dependency graph from `${...}` references. Identify:
@@ -254,594 +74,63 @@ class MyLLMExecutor(Executor):
    - Parallel branches (A → B, A → C)
    - Conditional branches (`activate_config`)
    - Fan-in / aggregation points
-5. **Detect evaluation flows** — Check if any node has `aggregation: true`. If yes, this is an evaluation flow. Identify:
-   - **Per-row nodes** — all nodes WITHOUT `aggregation: true`
-   - **Aggregation nodes** — all nodes WITH `aggregation: true`
-   - **Aggregation inputs** — which per-row node outputs feed into the aggregation node (e.g., `${grade.output}` → `grades: List[str]`)
-   - If the flow is an evaluation flow, follow Phase 2a instead of Phase 2.
+5. **Detect special cases — load the matching topic file:**
+   - Any node with `aggregation: true` → evaluation flow → load [topics/evaluation-flows.md](topics/evaluation-flows.md)
+   - Any node with `source.type: package` → custom tool → load [topics/custom-tool-nodes.md](topics/custom-tool-nodes.md)
+   - Any image inputs (dict with `data:image/*;url` key, or string starting with `data:image/`) → multimodal → load [topics/multimodal.md](topics/multimodal.md)
 
-### Phase 2: Generate MAF Code
+### Phase 2 — Generate MAF Code
 
-5. **Create output folder** — `<original-folder>-maf/`
-6. **Copy internal packages** — If nodes import from sibling Python packages (e.g., `from my_utils.helpers import ...`), copy those package directories into the output folder. Executors then import from the local copy directly (e.g., `from my_utils.helpers import build_index`). Do not rewrite working utility code — reuse it as-is.
-7. **Create one Executor per node** following the mapping table above.
-8. **Wire the workflow inside a `create_workflow()` factory function** using `WorkflowBuilder`. Executor instantiation and `WorkflowBuilder.build()` must happen inside this function — not at module level — so each call returns a fresh, independent workflow instance:
-   - `.add_edge(source, target)` for linear connections
-   - `.add_edge(source, target, condition=fn)` for conditionals
-   - `.add_fan_out_edges(source, [targets])` for parallel branches
-   - `.add_fan_in_edges([sources], target)` for aggregation
-9. **Handle LLM nodes**:
-   - Extract system prompt from `.jinja2` template → `Agent(instructions="...")`
-   - Use `OpenAIChatClient(azure_endpoint=..., model=..., api_key=...)` for Azure OpenAI
-   - Use `FoundryChatClient(project_endpoint=..., model=..., credential=...)` for Foundry
-   - `Agent.run()` returns an `AgentResponse` — extract text with `.text`
-   - **Preserve LLM parameters** — If the original flow sets `temperature`, `max_tokens`, `top_p`, or other chat parameters on an LLM node, pass them via `options=OpenAIChatOptions(temperature=..., max_tokens=...)` in the `Agent.run()` call. Import `OpenAIChatOptions` from `agent_framework.openai`.
-10. **Handle chat history** — format prior turns into a prompt string in an InputExecutor, not as raw message dicts.
-11. **Handle multimodal / image inputs**:
-    - Prompt Flow image references use two formats:
-      - **Dict** (CLI input): `{"data:image/png;url": "https://..."}`
-      - **String** (YAML default): `"data:image/png;url: https://..."`
-    - For dicts, match the key against `data:image/...;url` and extract the value as the URL
-    - For strings, parse the URL after `url: ` using a regex
-    - Create `Content.from_uri(url, media_type="image/png")` for each image
-    - For base64-encoded images, use `Content.from_data(data=image_bytes, media_type="image/...")`
-    - Combine image `Content` objects and text strings into a `Message("user", [content1, text1, ...])`
-    - Pass the `Message` (not a plain string) to `Agent.run()`
-    - The downstream Executor's `@handler` must accept `Message` (not `str`) and `WorkflowContext` must use `Message` as the send type
-12. **Handle Python tool nodes** — convert to plain functions and pass to `Agent(tools=[fn])`.
+6. **Create output folder** — `<original-folder>-maf/`.
+7. **Copy internal packages** — see Rule 7 above.
+8. **Copy all referenced resources** — see Rule 12 above.
+9. **Create one Executor per node** following [references/node-mapping.md](references/node-mapping.md).
+10. **Wire the workflow inside a `create_workflow()` factory function** using `WorkflowBuilder`. Executor instantiation and `WorkflowBuilder.build()` must happen inside this function — not at module level — so each call returns a fresh, independent workflow instance:
+    - `.add_edge(source, target)` for linear connections
+    - `.add_edge(source, target, condition=fn)` for conditionals
+    - `.add_fan_out_edges(source, [targets])` for parallel branches
+    - `.add_fan_in_edges([sources], target)` for aggregation
+11. **Handle LLM nodes**:
+    - Extract system prompt from `.jinja2` template → `Agent(instructions="...")`
+    - Pick the right client — see [references/workflow-context.md](references/workflow-context.md)
+    - `Agent.run()` returns an `AgentResponse` — extract text with `.text`
+    - **Preserve LLM parameters** — pass `temperature`, `max_tokens`, etc. via `OpenAIChatOptions` (see [references/workflow-context.md](references/workflow-context.md))
+12. **Handle chat history** — format prior turns into a prompt string in an InputExecutor, not as raw message dicts.
+13. **Handle Python tool nodes** — convert to plain functions and pass to `Agent(tools=[fn])`.
+14. **For evaluation flows / multimodal flows / custom-tool nodes** — follow the topic file you loaded in Phase 1 step 5.
 
-### Phase 2a: Generate Evaluation Flow Code
+### Phase 3 — Generate Supporting Files
 
-If the flow has `aggregation: true` nodes, generate these files instead of a single workflow:
+15. **`requirements.txt`** — include only needed `agent-framework-*` packages.
+16. **`.env.example`** — template with required environment variables (endpoint, key, model).
+17. **`test_<name>.py`** — runnable sample script exercising single-turn and multi-turn (if applicable).
+18. **`README.md`** — brief setup and run instructions (only if user requests documentation).
 
-1. **`workflow.py`** — Per-row MAF workflow containing only the non-aggregation nodes. Export a `create_workflow()` factory function (not a module-level singleton) so that `EvalRunner` can create a fresh instance per concurrent row.
+### Phase 4 — Validate
 
-2. **`aggregation.py`** — Extract each aggregation node's Python function as a standalone function:
-   - Remove the `@tool` decorator
-   - Remove `from promptflow.core import log_metric` and all `log_metric()` calls
-   - Instead of calling `log_metric(key, value)`, include the metric in the returned dict
-   - Keep the function signature (parameter names and types) identical to the original
-   - The function must return a `dict` mapping metric names to values
-
-3. **`eval_runner.py`** — Copy the `EvalRunner` template (see below) verbatim. This file is identical across all evaluation flows.
-
-4. **`run_eval.py`** — Entry point that loads the dataset, creates an `EvalRunner`, and prints results. Configure:
-   - `workflow_factory` → the `create_workflow` function from `workflow.py`
-   - `aggregate_fn` → the aggregation function from `aggregation.py`
-   - `input_mapping` → maps transposed key names to aggregation function parameter names
-
-#### Input mapping rules
-
-`EvalRunner._transpose()` converts per-row outputs into keyword args for the aggregation function:
-
-| Per-row output type | `_transpose()` produces | `input_mapping` needed? |
-|---|---|---|
-| Plain value (`str`, `int`, `float`) | `{"values": [v1, v2, ...]}` | Yes — map `"values"` → aggregation param name (e.g., `{"values": "processed_results"}`) |
-| Dict (e.g., `{"coherence": 4.2, "fluency": 2.5}`) | `{"coherence": [4.2, ...], "fluency": [2.5, ...]}` | Only if dict keys differ from aggregation param names |
-
-For multi-output flows (e.g., `eval-summarization` with 4 scores per row), the per-row workflow should yield a dict whose keys match the aggregation function's parameter names. Then no `input_mapping` is needed.
-
-#### EvalRunner Template
-
-Copy this file verbatim as `eval_runner.py` in the output folder:
-
-```python
-import asyncio
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
-
-
-@dataclass
-class EvalResult:
-    """Result of a batch evaluation run."""
-    per_row_outputs: List[Any]
-    metrics: Dict[str, Any]
-    errors: List[tuple] = field(default_factory=list)
-
-
-class EvalRunner:
-    """Runs a MAF workflow per row, collects outputs, then calls an aggregation function.
-
-    Mirrors PromptFlow's two-phase execution model:
-      Phase 1 — run each row through the workflow concurrently
-      Phase 2 — pass all collected outputs to the aggregation function
-
-    MAF workflows do not support concurrent execution on a single instance,
-    so workflow_factory creates a fresh workflow for each concurrent row.
-    """
-
-    def __init__(
-        self,
-        workflow_factory: Callable[[], Any],
-        aggregate_fn: Callable[..., dict],
-        concurrency: int = 5,
-        input_mapping: Optional[Dict[str, str]] = None,
-    ):
-        self._workflow_factory = workflow_factory
-        self._aggregate_fn = aggregate_fn
-        self._concurrency = concurrency
-        self._input_mapping = input_mapping
-
-    async def run(self, dataset: List[Any]) -> EvalResult:
-        semaphore = asyncio.Semaphore(self._concurrency)
-        per_row_outputs: List[Any] = [None] * len(dataset)
-        errors: List[tuple] = []
-
-        async def _run_row(index: int, row: Any) -> None:
-            async with semaphore:
-                wf = self._workflow_factory()
-                result = await wf.run(row)
-                per_row_outputs[index] = result.get_outputs()[0]
-
-        tasks = [_run_row(i, row) for i, row in enumerate(dataset)]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        succeeded_outputs: List[Any] = []
-        for i, r in enumerate(results):
-            if isinstance(r, Exception):
-                errors.append((i, r))
-            else:
-                succeeded_outputs.append(per_row_outputs[i])
-
-        aggregation_inputs = self._transpose(succeeded_outputs)
-        if self._input_mapping:
-            aggregation_inputs = {
-                self._input_mapping.get(k, k): v for k, v in aggregation_inputs.items()
-            }
-
-        metrics = self._aggregate_fn(**aggregation_inputs)
-        return EvalResult(
-            per_row_outputs=succeeded_outputs,
-            metrics=metrics,
-            errors=errors,
-        )
-
-    @staticmethod
-    def _transpose(outputs: List[Any]) -> Dict[str, Any]:
-        if not outputs:
-            return {"values": []}
-        if not isinstance(outputs[0], dict):
-            return {"values": outputs}
-        keys = outputs[0].keys()
-        return {k: [o[k] for o in outputs] for k in keys}
-```
-
-### Phase 3: Generate Supporting Files
-
-13. **`requirements.txt`** — include only needed `agent-framework-*` packages.
-14. **`.env.example`** — template with required environment variables (endpoint, key, model).
-15. **`test_<name>.py`** — runnable sample script exercising single-turn and multi-turn (if applicable).
-16. **`README.md`** — brief setup and run instructions (only if user requests documentation).
-
-### Phase 4: Validate
-
-17. **Create a virtual environment** and install dependencies.
-18. **Run the test sample** to verify the workflow produces output.
-19. **Fix any errors** — common issues:
-    - `Agent.run()` returns `AgentResponse`, not `str` — use `.text`
-    - `OpenAIChatClient` is the correct class (not `AzureOpenAIChatClient`)
-    - `@handler` methods must be `async` and accept `(self, message, ctx)`
-    - `@handler` methods must NOT be named `execute` — this shadows the base `Executor.execute()` and causes `TypeError: got an unexpected keyword argument 'trace_contexts'`
+19. **Create a virtual environment** and install dependencies.
+20. **Run the test sample** to verify the workflow produces output.
+21. **Fix errors** — see [references/gotchas.md](references/gotchas.md).
 
 ---
 
-## LLM Client Selection
+## Skill File Index
 
-| Scenario | Client | Constructor |
-|----------|--------|-------------|
-| Azure OpenAI (API key) | `OpenAIChatClient` | `OpenAIChatClient(azure_endpoint=..., model=..., api_key=...)` |
-| Azure OpenAI (Entra ID) | `OpenAIChatClient` | `OpenAIChatClient(azure_endpoint=..., model=..., credential=DefaultAzureCredential())` |
-| OpenAI (direct) | `OpenAIChatClient` | `OpenAIChatClient(model=..., api_key=...)` |
-| Microsoft Foundry | `FoundryChatClient` | `FoundryChatClient(project_endpoint=..., model=..., credential=DefaultAzureCredential())` |
-
-> `OpenAIChatClient` auto-routes to Azure when `azure_endpoint` is provided. There is no separate `AzureOpenAIChatClient` class.
-
----
-
-## Chat Options (LLM Parameters)
-
-Prompt Flow LLM nodes specify parameters like `temperature`, `max_tokens`, `top_p` in the YAML. In MAF, pass these via `OpenAIChatOptions` to `Agent.run()`:
-
-```python
-from agent_framework.openai import OpenAIChatClient, OpenAIChatOptions
-
-# In the @handler method:
-response = await self._agent.run(
-    prompt,
-    options=OpenAIChatOptions(temperature=0.2, max_tokens=128),
-)
 ```
-
-### Available Options
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `temperature` | `float` | Sampling temperature (0.0–2.0). Lower = more deterministic |
-| `max_tokens` | `int` | Maximum tokens in the response |
-| `top_p` | `float` | Nucleus sampling threshold |
-| `stop` | `str \| Sequence[str]` | Stop sequences |
-| `seed` | `int` | Deterministic sampling seed |
-| `frequency_penalty` | `float` | Penalize repeated tokens |
-| `presence_penalty` | `float` | Penalize tokens already present |
-| `response_format` | `type[BaseModel] \| dict` | Structured output schema |
-| `model` | `str` | Override the model for this call |
-| `tool_choice` | `str` | Tool selection mode (`auto`, `required`, `none`) |
-
-### Mapping from Prompt Flow YAML
-
-| Prompt Flow LLM node field | `OpenAIChatOptions` field |
-|---|---|
-| `temperature: '0.2'` | `temperature=0.2` |
-| `max_tokens: '128'` | `max_tokens=128` |
-| `top_p: '1.0'` | `top_p=1.0` |
-| `stop: ''` | (omit — empty means no stop sequence) |
-| `frequency_penalty: '0'` | (omit — 0 is the default) |
-| `presence_penalty: '0'` | (omit — 0 is the default) |
-
-> Note: Prompt Flow YAML stores these as strings (e.g., `'0.2'`). Convert to the appropriate numeric type in `OpenAIChatOptions`.
-
----
-
-## Gotchas
-
-1. **`Agent.run()` returns `AgentResponse`** — always use `response.text` to get the string output, then pass that to `ctx.yield_output()`.
-2. **No `AzureOpenAIChatClient`** — use `OpenAIChatClient` with `azure_endpoint` for Azure routing.
-3. **`@handler` message type must match upstream** — if the upstream executor sends a `str` via `ctx.send_message(str)`, the downstream `@handler` parameter must be typed as `str`.
-4. **Chat history cannot be passed as `list[dict]` to `Agent.run()`** — format it into a single prompt string instead.
-5. **Fan-in delivers `list[T]`** — the aggregator's `@handler` receives a list of all upstream messages.
-6. **Condition functions receive the message** — `condition=fn` where `fn(message) -> bool`.
-7. **Environment variables** — `OpenAIChatClient` can auto-read `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_CHAT_MODEL` from env, but explicit constructor args are clearer.
-8. **Multimodal inputs require `Message`, not `str`** — when a flow has image inputs (e.g., GPT-4V), you must build a `Message("user", [Content.from_uri(...), "text"])` and pass it to `Agent.run()`. Joining image URLs into a plain string will NOT send the image to the model.
-9. **Internal package imports** — When a flow imports from sibling Python packages (e.g., `from my_utils.helpers import build_index`), copy the entire package directory into the MAF output folder. Do not rewrite utility code. The Executor files import directly from the local copy since they live in the same directory. Do not use `sys.path` hacks.
-10. **Prompt Flow image format** — Prompt Flow image inputs come in two formats that must both be handled:
-   - **Dict format** (from CLI): `{"data:image/png;url": "https://example.com/img.png"}` — extract the URL from the dict value
-   - **String format** (from YAML defaults): `"data:image/png;url: https://example.com/img.png"` — parse the URL after `url: `
-   - Both must be converted to `Content.from_uri(url, media_type="image/png")`
-11. **MAF workflows do not support concurrent `run()` calls** — Calling `workflow.run()` on an instance that is already running throws `RuntimeError: Workflow is already running. Concurrent executions are not allowed.` Always export a `create_workflow()` factory function and create a fresh instance per invocation. This applies to ALL workflows — not just evaluation flows — so callers can safely parallelize.
-12. **Evaluation aggregation functions must return a dict** — The original PromptFlow aggregation nodes call `log_metric(key, value)` to report metrics. In MAF, replace these with a returned `dict` mapping metric names to values. Remove all `log_metric` imports and calls.
-13. **Never name a `@handler` method `execute`** — The base `Executor` class has an `execute()` method that the workflow engine calls with internal arguments (`message`, `source_executor_ids`, `state`, `runner_context`, `trace_contexts`, `source_span_ids`). If a subclass defines a `@handler` method also named `execute`, it shadows the base method, causing `TypeError: got an unexpected keyword argument 'trace_contexts'` at runtime. Use any other name (e.g., `run_code`, `process`, `handle`, `invoke`).
-14. **LLM responses wrapped in markdown fences** — Modern LLMs often wrap JSON output in ` ```json ... ``` ` code fences even when not asked to. When parsing JSON from `Agent.run()` responses, always strip markdown fences before calling `json.loads()`:
-    ```python
-    text = response.text.strip()
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-    result = json.loads(text)
-    ```
-    Without this, `json.loads()` raises `JSONDecodeError` and the fallback silently returns wrong results.
-15. **Preserve LLM parameters from the original flow** — If the Prompt Flow YAML sets `temperature`, `max_tokens`, etc. on an LLM node, these MUST be carried over to the MAF `Agent.run()` call via `OpenAIChatOptions`. Omitting them changes model behavior (e.g., higher temperature = less deterministic outputs, wrong or missing `max_tokens` = truncated/verbose responses).
-
----
-
-## Multimodal Content Reference
-
-`Agent.run()` accepts `AgentRunInputs = str | Content | Message | Sequence[str | Content | Message]`.
-
-For multimodal inputs (images + text), use `Message` with mixed content:
-
-| Input Type | How to Create |
-|---|---|
-| Image from URL | `Content.from_uri("https://example.com/img.png", media_type="image/png")` |
-| Image from bytes | `Content.from_data(data=image_bytes, media_type="image/png")` |
-| Image from base64 data URI | `Content.from_uri("data:image/png;base64,iVBOR...")` |
-| Mixed image + text | `Message("user", [Content.from_uri(url, media_type="image/png"), "Describe this"])` |
-
-When an upstream Executor sends a `Message`, the downstream `@handler` parameter must be typed as `Message` (not `str`), and the `WorkflowContext` send type must be `Message`.
-
----
-
-## Example: Linear Chat Flow
-
-This converts a Prompt Flow with one LLM node and chat history:
-
-```python
-import asyncio
-import os
-from dataclasses import dataclass
-from dotenv import load_dotenv
-from typing_extensions import Never
-from agent_framework import Agent, Executor, WorkflowBuilder, WorkflowContext, handler
-from agent_framework.openai import OpenAIChatClient
-
-load_dotenv()
-
-@dataclass
-class ChatInput:
-    question: str
-    chat_history: list | None = None
-
-class InputExecutor(Executor):
-    @handler
-    async def receive(self, chat_input: ChatInput, ctx: WorkflowContext[str]) -> None:
-        parts = []
-        if chat_input.chat_history:
-            for turn in chat_input.chat_history:
-                parts.append(f"User: {turn['inputs']['question']}")
-                parts.append(f"Assistant: {turn['outputs']['answer']}")
-        parts.append(chat_input.question)
-        await ctx.send_message("\n".join(parts))
-
-class ChatExecutor(Executor):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        client = OpenAIChatClient(
-            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-            model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
-            api_key=os.environ["AZURE_OPENAI_API_KEY"],
-        )
-        self._agent = Agent(
-            client=client,
-            name="ChatAgent",
-            instructions="You are a helpful assistant.",
-        )
-
-    @handler
-    async def call_llm(self, question: str, ctx: WorkflowContext[Never, str]) -> None:
-        response = await self._agent.run(question)
-        await ctx.yield_output(response.text)
-
-def create_workflow():
-    """Create a fresh workflow instance.
-
-    MAF workflows do not support concurrent execution, so each
-    concurrent caller needs its own workflow instance.
-    """
-    _input = InputExecutor(id="input")
-    _chat = ChatExecutor(id="chat")
-    return (
-        WorkflowBuilder(name="BasicChatWorkflow", start_executor=_input)
-        .add_edge(_input, _chat)
-        .build()
-    )
-
-async def main():
-    workflow = create_workflow()
-    result = await workflow.run(ChatInput(question="What is ChatGPT?"))
-    print(result.get_outputs()[0])
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
----
-
-## Example: Multimodal Chat Flow (Image + Text)
-
-This converts a Prompt Flow with a `custom_llm` node that accepts image URLs (e.g., GPT-4V):
-
-```python
-import asyncio
-import os
-import re
-from dataclasses import dataclass, field
-from dotenv import load_dotenv
-from typing_extensions import Never
-from agent_framework import Agent, Content, Executor, Message, WorkflowBuilder, WorkflowContext, handler
-from agent_framework.openai import OpenAIChatClient
-
-load_dotenv()
-
-# Matches Prompt Flow image key like "data:image/png;url"
-_IMAGE_KEY_RE = re.compile(r"^data:image/[^;]+;url$")
-# Matches Prompt Flow image string like "data:image/png;url: https://..."
-_IMAGE_STR_RE = re.compile(r"^data:image/[^;]+;url:\s*(.+)$")
-
-
-def _parse_question_parts(parts: list) -> list[Content | str]:
-    """Convert Prompt Flow multimodal question parts to Content objects.
-
-    Supports two formats:
-    - dict: {"data:image/png;url": "https://example.com/img.png"}
-    - string: "data:image/png;url: https://example.com/img.png"
-    """
-    contents: list[Content | str] = []
-    for part in parts:
-        if isinstance(part, dict):
-            for key, url in part.items():
-                if _IMAGE_KEY_RE.match(key):
-                    contents.append(Content.from_uri(url, media_type="image/png"))
-        elif isinstance(part, str):
-            m = _IMAGE_STR_RE.match(part)
-            if m:
-                contents.append(Content.from_uri(m.group(1).strip(), media_type="image/png"))
-            else:
-                contents.append(part)
-        else:
-            contents.append(str(part))
-    return contents
-
-
-@dataclass
-class ChatInput:
-    question: list  # e.g. [{"data:image/png;url": "<url>"}, "How many colors?"]
-    chat_history: list = field(default_factory=list)
-
-
-class InputExecutor(Executor):
-    @handler
-    async def receive(self, chat_input: ChatInput, ctx: WorkflowContext[Message]) -> None:
-        contents: list[Content | str] = []
-        if chat_input.chat_history:
-            for turn in chat_input.chat_history:
-                contents.append(f"User: {turn['inputs']['question']}")
-                contents.append(f"Assistant: {turn['outputs']['answer']}")
-        contents.extend(_parse_question_parts(chat_input.question))
-        await ctx.send_message(Message("user", contents))
-
-
-class ChatExecutor(Executor):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        client = OpenAIChatClient(
-            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-            model=os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-4v"),
-            api_key=os.environ["AZURE_OPENAI_API_KEY"],
-        )
-        self._agent = Agent(
-            client=client,
-            name="ChatImageAgent",
-            instructions="You are a helpful assistant.",
-        )
-
-    @handler
-    async def call_llm(self, prompt: Message, ctx: WorkflowContext[Never, str]) -> None:
-        response = await self._agent.run(prompt)
-        await ctx.yield_output(response.text)
-
-
-def create_workflow():
-    """Create a fresh workflow instance.
-
-    MAF workflows do not support concurrent execution, so each
-    concurrent caller needs its own workflow instance.
-    """
-    _input = InputExecutor(id="input")
-    _chat = ChatExecutor(id="chat")
-    return (
-        WorkflowBuilder(name="ChatWithImageWorkflow", start_executor=_input)
-        .add_edge(_input, _chat)
-        .build()
-    )
-
-async def main():
-    workflow = create_workflow()
-    result = await workflow.run(
-        ChatInput(question=[
-            "How many colors can you see?",
-            {"data:image/png;url": "https://example.com/image.png"},
-        ])
-    )
-    print(result.get_outputs()[0])
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
----
-
-## Example: Evaluation Flow (Batch with Aggregation)
-
-This converts an evaluation flow with a per-row `line_process` node and an `aggregation: true` node.
-
-Original `flow.dag.yaml`:
-```yaml
-nodes:
-- name: line_process
-  type: python
-  source:
-    type: code
-    path: line_process.py
-  inputs:
-    groundtruth: ${inputs.groundtruth}
-    prediction: ${inputs.prediction}
-- name: aggregate
-  type: python
-  source:
-    type: code
-    path: aggregate.py
-  inputs:
-    processed_results: ${line_process.output}
-  aggregation: true
-```
-
-### `workflow.py` — Per-row workflow with factory function
-
-```python
-import asyncio
-from dataclasses import dataclass
-from typing_extensions import Never
-from agent_framework import Executor, WorkflowBuilder, WorkflowContext, handler
-
-
-@dataclass
-class EvalInput:
-    groundtruth: str
-    prediction: str
-
-
-class LineProcessExecutor(Executor):
-    @handler
-    async def process(self, input: EvalInput, ctx: WorkflowContext[Never, str]) -> None:
-        result = "Correct" if input.groundtruth.lower() == input.prediction.lower() else "Incorrect"
-        await ctx.yield_output(result)
-
-
-def create_workflow():
-    """Create a fresh workflow instance.
-
-    MAF workflows do not support concurrent execution, so each batch row
-    needs its own workflow instance.
-    """
-    _line_process = LineProcessExecutor(id="line_process")
-    return WorkflowBuilder(name="EvalBasicRow", start_executor=_line_process).build()
-```
-
-### `aggregation.py` — Standalone aggregation function
-
-```python
-from typing import Dict, List
-
-
-def aggregate(processed_results: List[str]) -> Dict[str, int]:
-    results_num = len(processed_results)
-    correct_num = processed_results.count("Correct")
-    return {
-        "results_num": results_num,
-        "correct_num": correct_num,
-    }
-```
-
-### `eval_runner.py` — Copy the EvalRunner template verbatim (see Phase 2a above)
-
-### `run_eval.py` — Entry point
-
-```python
-import argparse
-import asyncio
-import json
-from pathlib import Path
-from aggregation import aggregate
-from eval_runner import EvalRunner
-from workflow import EvalInput, create_workflow
-
-DEFAULT_DATA = Path(__file__).parent / "data.jsonl"
-
-
-def load_dataset(path: Path) -> list[EvalInput]:
-    rows = []
-    with open(path, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                obj = json.loads(line)
-                rows.append(EvalInput(groundtruth=obj["groundtruth"], prediction=obj["prediction"]))
-    return rows
-
-
-async def main(data_path: Path, concurrency: int):
-    dataset = load_dataset(data_path)
-    print(f"Loaded {len(dataset)} rows from {data_path}")
-
-    runner = EvalRunner(
-        workflow_factory=create_workflow,
-        aggregate_fn=aggregate,
-        concurrency=concurrency,
-        input_mapping={"values": "processed_results"},
-    )
-    result = await runner.run(dataset)
-
-    print(f"\n--- Metrics ---")
-    for key, value in result.metrics.items():
-        print(f"  {key}: {value}")
-    if result.errors:
-        print(f"\n--- Errors ({len(result.errors)}) ---")
-        for idx, err in result.errors:
-            print(f"  Row {idx}: {err}")
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=Path, default=DEFAULT_DATA)
-    parser.add_argument("--concurrency", type=int, default=5)
-    args = parser.parse_args()
-    asyncio.run(main(args.data, args.concurrency))
+.github/skills/promptflow-to-maf/
+├── SKILL.md                       ← This file: rules + 4-phase workflow + routing
+├── references/
+│   ├── node-mapping.md            ← Prompt Flow node → MAF mapping table + collapse patterns
+│   ├── workflow-context.md        ← WorkflowContext types, LLM clients, ChatOptions, packages
+│   └── gotchas.md                 ← Common pitfalls, runtime errors, anti-patterns
+├── topics/
+│   ├── custom-tool-nodes.md       ← Handling source.type: package nodes
+│   ├── multimodal.md              ← Image/multimodal input handling
+│   └── evaluation-flows.md        ← aggregation: true + EvalRunner pattern
+├── templates/
+│   └── eval_runner.py             ← Reusable runner — copy verbatim into eval flow output
+└── examples/
+    ├── linear-chat.md             ← Single LLM node + chat history
+    ├── multimodal-chat.md         ← Image inputs (GPT-4V style)
+    └── evaluation.md              ← Per-row workflow + aggregation function + run_eval.py
 ```
