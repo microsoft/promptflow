@@ -1,6 +1,6 @@
 ---
 name: maf-prs-job
-description: "Convert an existing Prompt Flow Parallel Run Step (PRS) pipeline submission into an Azure ML PRS pipeline that runs a Microsoft Agent Framework (MAF) workflow. Wraps the MAF workflow into a PRS init()/run() entry script, generates the parallel component YAML and conda environment, and rewrites the pipeline submission script. Replaces what `load_component(flow.dag.yaml)` did automatically for Prompt Flow. WHEN: convert promptflow PRS to MAF PRS, migrate PRS pipeline to agent framework, wrap MAF workflow as parallel component, bulk run MAF workflow, run agent framework as parallel run step, batch run MAF workflow on AML, submit MAF workflow as pipeline component, replace flow.dag.yaml with MAF workflow in pipeline. DO NOT USE FOR: converting the flow itself (use promptflow-to-maf), deploying as online endpoint (use maf-online-endpoint), enabling tracing only (use maf-tracing)."
+description: "Convert an existing Prompt Flow Parallel Run Step (PRS) pipeline submission into an Azure ML PRS pipeline that runs a Microsoft Agent Framework (MAF) workflow. Wraps the MAF workflow into a PRS init()/run() entry script, generates the parallel component YAML and conda environment, and rewrites the pipeline submission script. Replaces what `load_component(flow.dag.yaml)` did automatically for Prompt Flow \u2014 produces the hand-built equivalent so that downstream pipeline code (`flow_node = flow_component(...)`, `flow_node.outputs.flow_outputs`, `flow_node.outputs.debug_info`, `flow_node.mini_batch_size`, scheduler, batch endpoint) stays unchanged. WHEN: convert promptflow PRS to MAF PRS, migrate PRS pipeline to agent framework, wrap MAF workflow as parallel component, bulk run MAF workflow, run agent framework as parallel run step, batch run MAF workflow on AML, submit MAF workflow as pipeline component, replace flow.dag.yaml with MAF workflow in pipeline, load_component equivalent for MAF workflow, MAF version of flow_component, load MAF workflow as component, wrap MAF workflow as flow component, MAF flow component, replace flow_node in pipeline with MAF workflow, keep flow_outputs and debug_info ports with MAF, MAF parallel component with connections={}, run MAF workflow as flow_node in AML pipeline, load_component('workflow.py') doesn't work. DO NOT USE FOR: converting the flow itself (use promptflow-to-maf), deploying as online endpoint (use maf-online-endpoint), enabling tracing only (use maf-tracing)."
 license: MIT
 metadata:
   author: Team
@@ -25,6 +25,27 @@ Activate this skill when the user wants to:
 - Run a MAF workflow as a parallel / bulk job on AML compute.
 - Replace `load_component(flow.dag.yaml)` with a hand-built parallel component
   that wraps a MAF workflow.
+
+Also activate on these PF-user phrasings (people who learned from the
+[run-flow-with-pipeline notebook](../../../examples/tutorials/run-flow-with-pipeline/pipeline.ipynb)
+will describe their need in PF terms):
+
+- "How do I `load_component` a MAF workflow?" / "`load_component('workflow.py')`
+  doesn't work — what's the right way?"
+- "Give me the MAF equivalent of `flow_component = load_component('flow.dag.yaml')`."
+- "Wrap my MAF workflow as a **flow component** / **parallel component** /
+  **PF-style component**."
+- "I want to use my MAF workflow as `flow_node` in my existing AML pipeline."
+- "My pipeline does `result_parser_node(pf_output_data=flow_node.outputs.flow_outputs,
+  pf_debug_data=flow_node.outputs.debug_info)` — keep that working with MAF."
+- "How do I pass `connections={...}` / `${data.url}` column mapping when the
+  step is a MAF workflow instead of a flow?"
+
+In all of these cases the user's mental model is the PF auto-converted **flow
+component** with predefined `data` / `flow_outputs` / `debug_info` ports.
+This skill produces the hand-built MAF equivalent and **preserves those names**
+so downstream pipeline DSL, scheduler, and batch-endpoint code copy-paste
+unchanged.
 
 Do **not** use this skill to convert the `flow.dag.yaml` itself — that is the
 job of [promptflow-to-maf](../promptflow-to-maf/SKILL.md). This skill assumes
@@ -167,8 +188,8 @@ overwriting.
 | `src/entry.py` | Copy verbatim. Do **not** edit. |
 | `src/maf_prs/{__init__,config,processor,executor}.py` | Copy verbatim. Do **not** edit unless the workflow needs an extra component input (then add a flag in `config.parse_args` and surface it in `component.yaml`). |
 | `src/hooks.py` | Apply auto-derived bodies for `build_workflow_input` / `serialize_output` per the verdict table; insert TODO stubs (template in [auto-derive-checks.md](references/auto-derive-checks.md)) where checks failed. If component inputs need to be turned into env vars / file paths before the workflow imports, fill the `setup(config)` body too. Add the matching `from workflow import ...` line at the top. |
-| `component.yaml` | Fill `inputs:` from check F; fill PRS settings from the audit table; set `program_arguments` to forward inputs + `--output_dir ${{outputs.debug_info}}`. Use `code: ./` and `entry_script: src/entry.py` so `workflow.py` (sibling of `src/`) is shipped to AML. **Set `data` input `type: uri_file`** and **always include the PF compatibility flag set** in `program_arguments` (`--amlbi_pf_enabled True --amlbi_pf_run_mode component --amlbi_file_format jsonl --amlbi_mini_batch_rows 1`) — PRS rejects bare `uri_file` without these flags (gotcha #12). **Do not** add `--pf_input_*` flags. |
-| `env/conda.yml` | Add any extra pip packages imported by the workflow. Keep `mltable>=1.2.0` and `setuptools<80` — even with `uri_file` input PRS internally uses `TabularMLTableProcessor`, which needs both (gotcha #14). |
+| `component.yaml` | Fill `inputs:` from check F; fill PRS settings from the audit table; set `program_arguments` to forward inputs + `--output_dir ${{outputs.debug_info}}`. Use `code: ./` and `entry_script: src/entry.py` so `workflow.py` (sibling of `src/`) is shipped to AML. **Set `data` input `type: uri_file`** and **always include the PF compatibility flag set** in `program_arguments` (`--amlbi_pf_enabled True --amlbi_pf_run_mode component --amlbi_file_format jsonl --amlbi_mini_batch_rows 1`) — PRS rejects bare `uri_file` without these flags (gotcha #12). **Wrap every `optional: true` input in `$[[--flag ${{inputs.X}}]]`** in `program_arguments` — bare `${{inputs.X}}` for an optional input fails registration with `Optional input X must be placed in nested argument: $[[]]` (gotcha #15). **Do not** add `--pf_input_*` flags. |
+| `env/conda.yml` | Add any extra pip packages imported by the workflow, **always with a lower-bound version pin** (`package>=X.Y.Z`) — bare entries trigger `error: resolution-too-deep` on the AML image build host and the job never reaches `init()` (gotcha #14). Keep the existing PRS runtime pins as-is. |
 | `submit_pipeline.py` | Fill `data_input` (check H) by **preserving the source `Input(path=..., type=..., mode=...)` verbatim** — same path, same type, same mode. Only rewrite the path to `data/sample.jsonl` if you also copied it locally per the rule below. Fill `MODEL_ENDPOINT` / `MODEL_DEPLOYMENT` (check G), and run-settings assignments. **Do not** pass `${data.col}` arguments. |
 | `data/sample.jsonl` | **Only** copy from the source `Input(path=...)` when (a) it points at a local file the agent can read, **and** (b) the user did not explicitly ask to keep the original input. For remote / `azureml://` / `Input(...)` already pointing at a workspace data asset, leave the source `Input(...)` unchanged in `submit_pipeline.py` and skip this file (do not invent a sample). Print a one-line note in the verdict table either way. |
 | `workflow.py` | **Default (consolidated):** already present in the target folder — do nothing. **Sibling-folder mode only:** copy from the source MAF folder. |

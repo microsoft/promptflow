@@ -92,10 +92,10 @@ class MafWorkflowProcessor:
         """Normalise the PRS mini_batch into a stream of row dicts.
 
         PRS dispatches one of three shapes:
-          * `pandas.DataFrame` when input is `mltable` (tabular).
+          * `pandas.DataFrame` for tabular inputs.
           * `list[dict]` when input is `uri_file` + `--amlbi_file_format jsonl`
             (PRS parses the jsonl and hands each row as a dict).  See
-            gotchas.md #15 for the PF-compat workaround that uses this path.
+            gotchas.md #12 for the PF-compat workaround that uses this path.
           * `list[str]` of file paths when input is `uri_folder` of opaque files.
         """
         if isinstance(mini_batch, pd.DataFrame):

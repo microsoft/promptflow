@@ -14,13 +14,10 @@ description: >-
   parallel run step.  Each row becomes one workflow invocation.
 
 inputs:
-  # PRS only declares `mltable` and `uri_folder` as supported types in its
-  # public schema, but it ALSO accepts `uri_file` when the PF compatibility
-  # flags below are present in `program_arguments`.  PF's runtime emits the
-  # same flag set when `load_component(flow.dag.yaml)` generates the parallel
-  # component; we replicate that here so callers can pass a plain `.jsonl`
-  # file (including a `uri_file` produced by an upstream pipeline step) with
-  # no MLTable spec required.  See gotchas.md #12.
+  # `uri_file` is accepted by PRS when the PF compatibility flag set below
+  # is present in `program_arguments`.  This lets callers pass a plain
+  # `.jsonl` file (including a `uri_file` produced by an upstream pipeline
+  # step) directly.  See gotchas.md #12.
   data:
     type: uri_file
     description: Single jsonl file; PRS parses each line into a row dict.
@@ -84,12 +81,11 @@ task:
     --amlbi_mini_batch_rows 1
     --model_endpoint ${{inputs.model_endpoint}}
     --model_deployment ${{inputs.model_deployment}}
-    --api_version ${{inputs.api_version}}
+    $[[--api_version ${{inputs.api_version}}]]
     --output_dir ${{outputs.debug_info}}
   # === PF compatibility flag set ============================================
   # `--amlbi_pf_enabled True`        flips PRS's ArgValidator gate so that
-  #                                  `type: uri_file` is accepted (the public
-  #                                  schema only lists mltable/uri_folder).
+  #                                  `type: uri_file` is accepted.
   # `--amlbi_pf_run_mode component`  PF "I am a flow component" signal; PRS
   #                                  uses it to extract the `output` field
   #                                  from each returned JSON string into the

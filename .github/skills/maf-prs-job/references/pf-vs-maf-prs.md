@@ -33,7 +33,7 @@ five artefacts by hand (entry script + processor/executor + component YAML
 | Plumbing layer | `promptflow.parallel` (`AbstractParallelRunProcessor` + `ComponentRunExecutor`) | `src/maf_prs/{processor,executor,config}.py` (mirrors the same split) |
 | Environment | Inherited from latest promptflow runtime image | `env/conda.yml` declared in the component |
 | Component parameters | Auto-derived from flow inputs + `connections` | Declared explicitly under `inputs:` in `component.yaml` |
-| Input port type | PF accepted `uri_file` directly (runtime emitted the `--amlbi_pf_*` flag set automatically) | Vanilla PRS only declares `mltable` / `uri_folder` in its public schema, but accepts `uri_file` when `program_arguments` carries the same PF compatibility flag set (`--amlbi_pf_enabled True --amlbi_pf_run_mode component --amlbi_file_format jsonl --amlbi_mini_batch_rows 1`). Default for this skill (gotcha #12). |
+| Input port type | PF accepted `uri_file` directly (runtime emitted the `--amlbi_pf_*` flag set automatically) | Vanilla PRS rejects `uri_file` unless `program_arguments` carries the same PF compatibility flag set (`--amlbi_pf_enabled True --amlbi_pf_run_mode component --amlbi_file_format jsonl --amlbi_mini_batch_rows 1`). Default for this skill (gotcha #12). |
 | Output ports | `flow_outputs` (jsonl), `debug_info` (folder) | Same names, declared explicitly |
 | Append rule | `parallel_run_step.jsonl` | `append_row_to: ${{outputs.flow_outputs}}` |
 
