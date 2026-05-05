@@ -21,7 +21,7 @@
 | Python tool node | Plain function passed to `Agent(tools=[fn1, fn2])` |
 | Flow inputs | Type annotation on start Executor's `@handler` parameter (use `@dataclass` for multiple inputs) |
 | Flow outputs (`is_chat_output`) | `await ctx.yield_output(value)` in the terminal Executor |
-| Connections (credentials) | Environment variables + `OpenAIChatClient(azure_endpoint=..., api_key=...)` for key auth, or `credential=DefaultAzureCredential()` for Microsoft Entra / managed identity. See [topics/connections.md](../topics/connections.md). |
+| Connections (credentials) | Environment variables + `OpenAIChatClient(azure_endpoint=..., api_key=...)` for key auth, or `credential=DefaultAzureCredential()` for Microsoft Entra / managed identity. |
 | `chat_history` input | Format into prompt string in an InputExecutor before passing to Agent |
 | Variants | Separate Agent instances with different `instructions` strings |
 | Multimodal input (image URL) | `Content.from_uri(url, media_type="image/png")` inside a `Message` (see [topics/multimodal.md](../topics/multimodal.md)) |

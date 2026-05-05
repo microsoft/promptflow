@@ -32,7 +32,6 @@ This skill is split across multiple files. **Always read this file first.** Then
 | Source flow has a node with `source.type: package` | [topics/custom-tool-nodes.md](topics/custom-tool-nodes.md) |
 | Source flow has image / multimodal inputs | [topics/multimodal.md](topics/multimodal.md) + [examples/multimodal-chat.md](examples/multimodal-chat.md) |
 | Source flow has any node with `aggregation: true` | [topics/evaluation-flows.md](topics/evaluation-flows.md) + [templates/eval_runner.py](templates/eval_runner.py) + [examples/evaluation.md](examples/evaluation.md) |
-| Source flow references PF connections (LLM node `connection:` field, or custom-tool input `connection: ...`) | [topics/connections.md](topics/connections.md) |
 | Want a complete reference example | [examples/linear-chat.md](examples/linear-chat.md) (basic), [examples/multimodal-chat.md](examples/multimodal-chat.md), [examples/evaluation.md](examples/evaluation.md) |
 
 > **Don't pre-load everything.** Read each file lazily when its situation is detected during Phase 1 audit.
@@ -79,7 +78,6 @@ This skill is split across multiple files. **Always read this file first.** Then
    - Any node with `aggregation: true` → evaluation flow → load [topics/evaluation-flows.md](topics/evaluation-flows.md)
    - Any node with `source.type: package` → custom tool → load [topics/custom-tool-nodes.md](topics/custom-tool-nodes.md)
    - Any image inputs (dict with `data:image/*;url` key, or string starting with `data:image/`) → multimodal → load [topics/multimodal.md](topics/multimodal.md)
-   - Any LLM node has a `connection:` field, or any custom-tool node passes a `connection: ...` input → load [topics/connections.md](topics/connections.md). For each unique connection name, resolve the auth mode (key vs Microsoft Entra / managed identity vs custom) by inspecting any local connection YAML in the repo, otherwise running `pf connection show` / `az ml connection show`, otherwise inferring from `.env` / deployment files. Record the result for use in Phase 2.
 
 ### Phase 2 — Generate MAF Code
 
@@ -95,7 +93,6 @@ This skill is split across multiple files. **Always read this file first.** Then
 11. **Handle LLM nodes**:
     - Extract system prompt from `.jinja2` template → `Agent(instructions="...")`
     - Pick the right client — see [references/workflow-context.md](references/workflow-context.md)
-    - **Pick the right auth template** based on the connection auth mode resolved in Phase 1 step 5: emit the key template (`api_key=os.environ[...]`) or the identity template (`credential=DefaultAzureCredential()`). See [topics/connections.md](topics/connections.md) for both templates and edge cases.
     - `Agent.run()` returns an `AgentResponse` — extract text with `.text`
     - **Preserve LLM parameters** — pass `temperature`, `max_tokens`, etc. via `OpenAIChatOptions` (see [references/workflow-context.md](references/workflow-context.md))
 12. **Handle chat history** — format prior turns into a prompt string in an InputExecutor, not as raw message dicts.
@@ -105,9 +102,9 @@ This skill is split across multiple files. **Always read this file first.** Then
 ### Phase 3 — Generate Supporting Files
 
 15. **`requirements.txt`** — include only needed `agent-framework-*` packages. Add `azure-identity>=1.15.0` if any LLM client uses the identity template.
-16. **`.env.example`** — template with required environment variables (endpoint, model, key only if the connection uses key auth). Group entries by the original PF connection name in comments. See [topics/connections.md](topics/connections.md) §3a.
+16. **`.env.example`** — template with required environment variables (endpoint, model, key only if the connection uses key auth).
 17. **`test_<name>.py`** — runnable sample script exercising single-turn and multi-turn (if applicable).
-18. **`README.md`** — brief setup and run instructions. Always include a **Configuration** section mapping each old PF connection to its new env vars when the flow had any connections — see [topics/connections.md](topics/connections.md) §3b. (Other documentation only if the user requests it.)
+18. **`README.md`** — brief setup and run instructions. (Other documentation only if the user requests it.)
 
 ### Phase 4 — Validate
 
@@ -129,8 +126,7 @@ This skill is split across multiple files. **Always read this file first.** Then
 ├── topics/
 │   ├── custom-tool-nodes.md       ← Handling source.type: package nodes
 │   ├── multimodal.md              ← Image/multimodal input handling
-│   ├── evaluation-flows.md        ← aggregation: true + EvalRunner pattern
-│   └── connections.md             ← PF connections → env vars / DefaultAzureCredential / customer setup
+│   └── evaluation-flows.md        ← aggregation: true + EvalRunner pattern
 ├── templates/
 │   └── eval_runner.py             ← Reusable runner — copy verbatim into eval flow output
 └── examples/

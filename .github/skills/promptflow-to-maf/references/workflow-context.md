@@ -27,8 +27,6 @@
 
 > `OpenAIChatClient` auto-routes to Azure when `azure_endpoint` is provided. There is no separate `AzureOpenAIChatClient` class.
 
-> **Picking key vs Entra ID for a converted PF flow:** detect the auth mode from the PF connection (YAML `auth_mode` field, `pf connection show`, or `az ml connection show`) and emit the matching template. See [topics/connections.md](../topics/connections.md).
-
 ---
 
 ## Chat Options (LLM Parameters)
