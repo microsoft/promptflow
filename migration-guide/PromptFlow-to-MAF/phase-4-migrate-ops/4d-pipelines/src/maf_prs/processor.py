@@ -1,22 +1,18 @@
 """
-Mini-batch orchestration.
+Mini-batch orchestration. Equivalent of the Prompt Flow PRS processor:
 
-Equivalent of promptflow-parallel's `AbstractParallelRunProcessor`:
-    PF                                              MAF (this file)
-    -----------------------------------------       --------------------------------
-    create_processor(working_dir, args)             create_processor(working_dir, args)
-    Row.from_dict(data, row_number=base+i)          executor.execute(row, base+i)
-    self._executor.execute(row)                     await executor.execute(...)
-    json.dumps(result_dict, cls=DataClassEncoder)   json.dumps(result, default=str)
-    AggregationFinalizer + _ComponentRunFinalizer   executor.finalize() + loop.close()
+  PF                                          MAF (this file)
+  ----------------------------------          ----------------------------------
+  load_component(flow.dag.yaml)               create_processor(working_dir, args)
+  Row.from_dict(data, row_number=base+i)      executor.execute(row, base+i)
+  json.dumps(result, cls=DataClassEncoder)    json.dumps(result, default=str)
 
 The processor:
-  * holds the asyncio event loop (created once in init(), reused across all
-    run() calls — see references/gotchas.md #2 for why);
+  * holds a single asyncio event loop (created in init(), reused across all
+    run() calls — calling asyncio.run() per row leaks Azure SDK transports);
   * dispatches rows to the executor with `asyncio.gather` for in-process row
     concurrency (bounded by `max_concurrency_per_instance` in component.yaml);
-  * preserves PRS row-order and row-count so the appended JSONL lines match
-    the input data.
+  * preserves PRS row order so appended JSONL lines match the input file.
 """
 from __future__ import annotations
 
@@ -47,8 +43,6 @@ class MafWorkflowProcessor:
     # ---- PRS: init ----------------------------------------------------
     def init(self) -> None:
         self._cfg = parse_args(self._args)
-        # Re-use a single event loop across all run() invocations.  Calling
-        # asyncio.run() per row leaks transports inside many Azure SDK clients.
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
         self._executor = MafWorkflowExecutor(self._working_dir, self._cfg)
@@ -59,8 +53,8 @@ class MafWorkflowProcessor:
 
     # ---- PRS: process(mini_batch, context) ----------------------------
     def process(self, mini_batch: Any, context: Any) -> List[str]:
-        """Returns one JSON string per input row.  PRS appends each as a
-        line to outputs.flow_outputs (the AML equivalent of PF's
+        """Returns one JSON string per input row. PRS appends each as a
+        line to outputs.flow_outputs (AML equivalent of PF's
         `parallel_run_step.jsonl`)."""
         assert self._executor is not None and self._loop is not None, "init() was not called"
         base = getattr(context, "global_row_index_lower_bound", 0)
@@ -92,10 +86,9 @@ class MafWorkflowProcessor:
         """Normalise the PRS mini_batch into a stream of row dicts.
 
         PRS dispatches one of three shapes:
-          * `pandas.DataFrame` for tabular inputs.
+          * `pandas.DataFrame` when input is `mltable` (tabular).
           * `list[dict]` when input is `uri_file` + `--amlbi_file_format jsonl`
-            (PRS parses the jsonl and hands each row as a dict).  See
-            gotchas.md #12 for the PF-compat workaround that uses this path.
+            (PRS parses the jsonl and hands each row as a dict).
           * `list[str]` of file paths when input is `uri_folder` of opaque files.
         """
         if isinstance(mini_batch, pd.DataFrame):

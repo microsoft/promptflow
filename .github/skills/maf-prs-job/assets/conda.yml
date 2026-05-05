@@ -3,6 +3,11 @@
 # The PF runtime image was inherited automatically when using
 # `load_component(flow.dag.yaml)`.  For MAF we declare the env explicitly.
 # Add any packages your workflow imports below the marked section.
+#
+# All packages have lower-bound version pins because pip's resolver hits
+# `resolution-too-deep` on the AML image build host without them; without
+# constraints the image build aborts before the workflow ever runs.
+# See gotchas.md #14.
 name: maf-prs-env
 channels:
   - conda-forge
@@ -11,28 +16,22 @@ dependencies:
   - pip
   - pip:
       # --- AML PRS runtime requirements ---
-      - azureml-core
-      - azureml-mlflow
-      - azureml-dataset-runtime
-      - mldesigner
-      - mltable>=1.2.0
-      # `setuptools<80` is required because setuptools 80+ removed the
-      # bundled `pkg_resources` module, and `azureml-dataprep` (transitive
-      # dep of `mltable`) imports `pkg_resources` at module load.  Without
-      # this pin, PRS fails every mini-batch with the misleading
-      # "RequireMLTablePackageException" — the real cause is
-      # `ModuleNotFoundError: No module named 'pkg_resources'`.
-      # See gotchas.md #14.
+      - azureml-core>=1.59.0
+      - azureml-mlflow>=1.59.0
+      - azureml-dataset-runtime>=1.59.0
+      - mltable>=1.6.0
       - setuptools<80
-      - pandas
+      - pandas>=2.2.0
       # --- Microsoft Agent Framework (GA) ---
       - agent-framework>=1.0.1
       - agent-framework-openai>=1.0.1
-      - azure-identity
+      - azure-identity>=1.19.0
       # --- Optional: Application Insights tracing (see maf-tracing skill) ---
-      - azure-monitor-opentelemetry
+      - azure-monitor-opentelemetry>=1.6.4
       # --- CUSTOMISE: your workflow's extra dependencies -------------------
-      # - azure-ai-projects        # if the workflow targets a Foundry project
-      # - azure-search-documents   # if the workflow uses Azure AI Search
-      # - <your-internal-package>
+      # Pin every addition with a lower bound (e.g. `package>=X.Y.Z`) to
+      # keep pip's resolver below its depth limit on the AML build host.
+      # - azure-ai-projects>=1.0.0
+      # - azure-search-documents>=11.5.0
+      # - <your-internal-package>>=1.0.0
       # ---------------------------------------------------------------------

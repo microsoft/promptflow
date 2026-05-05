@@ -145,9 +145,8 @@ PRS runtime versions.
 ## 12. `ArgumentException: Input format UriFile is not supported.`
 
 **Cause:** The pipeline's `data` Input was declared as
-`Input(type=AssetTypes.URI_FILE, ...)`. The
-[public PRS parallel job YAML schema](https://learn.microsoft.com/azure/machine-learning/reference-yaml-job-parallel)
-declares only `mltable` and `uri_folder`, and PRS's
+`Input(type=AssetTypes.URI_FILE, ...)` and `program_arguments` does not
+carry the PF compatibility flag set, so PRS's
 `ArgValidator._assert_uri_file_enabled` rejects `uri_file` at boot.
 
 **The PRS runtime, however, has an undocumented compatibility mode** that
@@ -155,10 +154,9 @@ PF used to ship `uri_file` jsonl inputs. When the parallel component's
 `program_arguments` carries the **PF compatibility flag set**, PRS:
 
 1. Skips the `uri_file` validator gate.
-2. Selects `TabularMLTableProcessor` (not `FilesPathsRowProvider`).
-3. Parses the jsonl file line-by-line and dispatches **`list[dict]`**
+2. Parses the jsonl file line-by-line and dispatches **`list[dict]`**
    row mini-batches into `entry.run(mini_batch, context)`.
-4. Reads each returned JSON string and writes only the `output` field
+3. Reads each returned JSON string and writes only the `output` field
    into `parallel_run_step.jsonl` (matching PF's "your flow's output IS
    the row output" semantic).
 
@@ -206,63 +204,13 @@ already does — see the `isinstance(item, dict)` branch).
 - The flags live in PRS's runtime arg parser but are **not part of the
   public schema**. They have worked unchanged across multiple PRS
   releases (PF used them in production), but Microsoft does not publish
-  an SLA for them. If a future PRS release breaks them, fall back to
-  `mltable` (see "Alternative" below).
-- PRS still loads `mltable` internally (you'll see `TabularMLTableProcessor`
-  in the worker logs) so you must keep `mltable>=1.2.0` and `setuptools<80`
-  in `env/conda.yml` even though no user-authored `MLTable` file exists
-  (gotcha #14).
+  an SLA for them.
 - The output `parallel_run_step.jsonl` contains only the workflow output
   (extracted by PRS from each JSON line), not the full
   `{"line_number", "input", "output", "error"}` wrapper our `executor`
   returns. If downstream eval tooling needs the input echo or
-  `line_number`, switch to the mltable alternative below or have
-  `hooks.serialize_output` return a dict containing those fields.
-
-### Alternative — `mltable` (more verbose, schema-conformant)
-
-Use this when:
-- Your downstream tooling needs the full PRS result wrapper in the output
-  (`mltable` mode preserves whatever `executor.execute` returns).
-- You're nervous about depending on undocumented `--amlbi_*` flags.
-
-1. Add an `MLTable` spec next to your data file:
-
-   ```yaml
-   $schema: https://azuremlschemas.azureedge.net/latest/MLTable.schema.json
-   paths:
-     - file: ./sample.jsonl
-   transformations:
-     - read_json_lines:
-         include_path_column: false
-   ```
-
-   For csv/tsv, swap `read_json_lines` for
-   `read_delimited: { delimiter: ",", header: all_files_same_headers }`.
-
-2. In `submit_pipeline.py` point `Input` at the **folder** containing the
-   `MLTable` file:
-
-   ```python
-   data_input = Input(
-       path=str(HERE / "data"),       # folder, not .jsonl
-       type=AssetTypes.MLTABLE,
-       mode="direct",
-   )
-   ```
-
-3. In `component.yaml` mark the input as `mltable` and **drop the
-   `--amlbi_*` flags** from `program_arguments`:
-
-   ```yaml
-   inputs:
-     data:
-       type: mltable
-       mode: direct
-   ```
-
-4. `processor._iter_rows()` will receive a `pd.DataFrame` mini-batch
-   (template handles this branch unchanged).
+  `line_number`, have `hooks.serialize_output` return a dict containing
+  those fields.
 
 **Alternative — file-list input (`uri_folder`):** keep `type: uri_folder`
 in both `submit_pipeline.py` and `component.yaml`, and **drop the
@@ -301,49 +249,89 @@ create_processor` — PRS does not always load entry as part of a package,
 so the relative import will fail in some PRS runtime versions. The
 `sys.path` prepend is layout-agnostic and works in every PRS variant.
 
-## 14. `RequireMLTablePackageException` despite `mltable` being installed
+## 14. Image build aborts with `error: resolution-too-deep`
 
-**Cause:** PRS's `utility.load_input_mltables` does
-`from mltable import load` at worker boot **regardless of input type** \u2014
-even with `uri_file` + the PF compatibility flag set (gotcha #12), PRS
-still routes through `TabularMLTableProcessor` internally. On Python 3.11+
-the transitive dep `azureml-dataprep` (pulled in by `mltable`) imports
-`pkg_resources` at module load \u2014 but `pkg_resources` is no longer
-auto-installed because modern `setuptools` packaging removed it from the
-default install. The import fails with
-`ModuleNotFoundError: No module named 'pkg_resources'`, which PRS catches
-and re-raises with a misleading message telling you to install `mltable`
-(it is already installed).
+**Cause:** `env/conda.yml` lists pip dependencies without lower-bound
+version pins (e.g. bare `azureml-core`, `pandas`, `azure-identity`). Modern
+pip's resolver explores the version space exhaustively when there are no
+constraints; the AML build host hits its built-in
+`MAX_RESOLVER_DEPTH` and bails out before `conda env create` finishes.
 
-The full stack in `logs/user/error/0/process000.txt` looks like:
+The build log at `azureml-logs/20_image_build_log.txt` shows:
 
 ```
-File ".../mltable/mltable.py", line 19, in <module>
-    from azureml.dataprep.api._loggerfactory import track, ...
-File ".../azureml/dataprep/api/_loggerfactory.py", line 8, in <module>
-    import pkg_resources
-ModuleNotFoundError: No module named 'pkg_resources'
+DownloadPip subprocess error:
+error: resolution-too-deep
+
+× Dependency resolution exceeded maximum depth
+╰─> Pip cannot resolve the current dependencies as the dependency graph is
+    too complex for pip to solve efficiently.
+
+CondaEnvException: Pip failed
+ERROR: failed to solve: process "/bin/sh -c ldconfig ... conda env create ..."
+       did not complete successfully: exit code: 1
 ```
 
-PRS surfaces this as:
-> `RequireMLTablePackageException: The PRS run-time have migrated to use
-> mltable SDK ... Please install the latest 'mltable' package`.
+The job never reaches `init()` — the failure is purely an environment
+build problem, even though the AML run UI lists it as a generic
+"Image build failed".
 
-**Fix:** add `setuptools<80` to your `env/conda.yml` pip dependencies.
-Versions **<80 still bundle `pkg_resources`**; setuptools 80 (released
-March 2025) split it out, and the standalone `pkg_resources` package on
-PyPI is not a drop-in replacement (it's a placeholder). The template
-already does this:
+**Fix:** Pin every pip entry in `env/conda.yml` with a lower bound
+(`package>=X.Y.Z`). The skill's template `conda.yml` does this for every
+package; if you add a new dependency, add a lower bound for it too.
 
 ```yaml
-dependencies:
-  - python=3.11
-  - pip
-  - pip:
-      - mltable>=1.2.0
-      - setuptools<80     # provides pkg_resources for azureml-dataprep
+pip:
+  - azureml-core>=1.59.0
+  - azureml-mlflow>=1.59.0
+  - azureml-dataset-runtime>=1.59.0
+  - pandas>=2.2.0
+  - agent-framework>=1.0.1
+  - azure-identity>=1.19.0
+  - azure-monitor-opentelemetry>=1.6.4
 ```
 
-**Do not** install plain `setuptools` (latest) — that won't include
-`pkg_resources` and PRS will keep failing with the same misleading
-"RequireMLTablePackageException". The pin is the whole point.
+Upper bounds are not needed and can cause integrity-check failures with
+the AML pre-installed packages — keep them open-ended.
+
+## 15. `Optional input X must be placed in nested argument: $[[]]`
+
+**Cause:** `component.yaml` declares an input as `optional: true` but
+references it with a bare `${{inputs.X}}` placeholder in
+`program_arguments`. AML refuses to register the component, with this
+exact error from `managementfrontend`:
+
+```
+Error occurred when loading YAML file rootNode, details: Command "..."
+has error:
+Optional input X must be placed in nested argument: $[[]].
+```
+
+Optional inputs need the **nested-argument syntax** so PRS can omit the
+flag entirely when the caller does not pass it (otherwise the flag would
+appear with an empty value, which most argparse-based scripts treat as a
+parse error).
+
+**Fix:** Wrap the entire `--flag value` token in `$[[...]]`:
+
+```yaml
+inputs:
+  api_version:
+    type: string
+    default: "2024-08-01-preview"
+    optional: true
+
+task:
+  program_arguments: >-
+    --model_endpoint ${{inputs.model_endpoint}}
+    --model_deployment ${{inputs.model_deployment}}
+    $[[--api_version ${{inputs.api_version}}]]
+    --output_dir ${{outputs.debug_info}}
+```
+
+Required inputs (no `optional: true`) keep the bare `${{inputs.X}}`
+form — only optional inputs need `$[[...]]`. If you would rather avoid
+the special syntax, drop `optional: true` from the input declaration —
+a `default:` is enough to make callers' lives easy without making the
+input optional at the schema level.
+
