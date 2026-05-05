@@ -1,0 +1,88 @@
+# Azure ML Parallel Component that wraps `phase-2-rebuild/01_linear_flow.py`
+# as the per-row task. This is the MAF equivalent of what
+# `load_component(flow.dag.yaml)` auto-generated for Prompt Flow PRS jobs.
+#
+# Settings here mirror Prompt Flow PRS settings 1:1 — see README.md.
+$schema: https://azuremlschemas.azureedge.net/latest/parallelComponent.schema.json
+type: parallel
+name: maf_linear_flow_prs
+display_name: MAF Linear Flow as PRS
+version: 1
+description: >-
+  Run the phase-2-rebuild/01_linear_flow.py MAF workflow over a JSONL input
+  as a parallel run step. Each row becomes one workflow invocation.
+
+inputs:
+  # PRS only declares `mltable` and `uri_folder` as supported types in its
+  # public schema, but it ALSO accepts `uri_file` when the PF compatibility
+  # flags below are present in `program_arguments`. PF's runtime emits the
+  # same flag set when `load_component(flow.dag.yaml)` generates the parallel
+  # component; we replicate that here so callers can pass a plain `.jsonl`
+  # file with no MLTable spec required.
+  data:
+    type: uri_file
+    description: 'Single jsonl file with one {"question": "..."} object per line.'
+  # The workflow file (relative to the AML code snapshot root) wrapped by
+  # this component. Defaults to the linear flow sample but you can swap in
+  # any other phase-2-rebuild file.
+  maf_workflow_file:
+    type: string
+    default: phase-2-rebuild/01_linear_flow.py
+
+outputs:
+  # Equivalent of PF's auto-generated `flow_outputs` port — PRS appends one
+  # JSONL row per input row to this file.
+  flow_outputs:
+    type: uri_file
+  # Equivalent of PF's auto-generated `debug_info` port — free-form folder
+  # for the workflow to write intermediate artefacts to.
+  debug_info:
+    type: uri_folder
+
+# Tell PRS which input is the dataset to be split into mini-batches.
+input_data: ${{inputs.data}}
+
+# === PRS run settings (carry over from PF flow_node.* settings) =============
+mini_batch_size: "10"
+mini_batch_error_threshold: -1
+error_threshold: -1
+logging_level: DEBUG
+resources:
+  instance_count: 1
+max_concurrency_per_instance: 2
+retry_settings:
+  max_retries: 1
+  timeout: 1200
+# ============================================================================
+
+task:
+  type: run_function
+  # `code: ../..` ships the migration-guide root so workflow_loader.py and
+  # phase-2-rebuild/01_linear_flow.py are uploaded together with src/entry.py.
+  code: ../..
+  entry_script: phase-4-migrate-ops/4d-pipelines/src/entry.py
+  environment:
+    name: maf-prs-env
+    version: 1
+    image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu22.04:latest
+    conda_file: env/conda.yml
+  program_arguments: >-
+    --amlbi_pf_enabled True
+    --amlbi_pf_run_mode component
+    --amlbi_file_format jsonl
+    --amlbi_mini_batch_rows 1
+    --maf_workflow_file ${{inputs.maf_workflow_file}}
+    --output_dir ${{outputs.debug_info}}
+  # === PF compatibility flag set ============================================
+  # `--amlbi_pf_enabled True`        flips PRS's ArgValidator gate so that
+  #                                  `type: uri_file` is accepted (the public
+  #                                  schema only lists mltable/uri_folder).
+  # `--amlbi_pf_run_mode component`  PF "I am a flow component" signal.
+  # `--amlbi_file_format jsonl`      tells PRS to parse the input file as
+  #                                  jsonl and dispatch row dicts.
+  # `--amlbi_mini_batch_rows 1`      switch from file-count to row-count
+  #                                  batching (paired with --amlbi_file_format).
+  # ==========================================================================
+  # Equivalent of PF's `parallel_run_step.jsonl` — PRS appends each entry of
+  # the list returned by run() as a JSONL line to this output.
+  append_row_to: ${{outputs.flow_outputs}}
