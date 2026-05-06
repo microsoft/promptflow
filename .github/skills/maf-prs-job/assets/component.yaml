@@ -1,0 +1,101 @@
+# Azure ML Parallel Component that wraps a Microsoft Agent Framework workflow
+# as the per-row task.  This file is the MAF equivalent of the component that
+# `load_component(flow.dag.yaml)` auto-generated for Prompt Flow PRS jobs.
+#
+# Settings here mirror the Prompt Flow PRS settings table 1:1.  See the
+# accompanying SKILL.md for the mapping.
+$schema: https://azuremlschemas.azureedge.net/latest/parallelComponent.schema.json
+type: parallel
+name: maf_workflow_prs
+display_name: MAF Workflow as PRS
+version: 1
+description: >-
+  Run a Microsoft Agent Framework workflow over a tabular data input as a
+  parallel run step.  Each row becomes one workflow invocation.
+
+inputs:
+  # `uri_file` is accepted by PRS when the PF compatibility flag set below
+  # is present in `program_arguments`.  This lets callers pass a plain
+  # `.jsonl` file (including a `uri_file` produced by an upstream pipeline
+  # step) directly.  See gotchas.md #12.
+  data:
+    type: uri_file
+    description: Single jsonl file; PRS parses each line into a row dict.
+  # Each entry below replaces one PF "connection" field.  Add or remove as
+  # required by your workflow's chat client.
+  model_endpoint:
+    type: string
+    description: Azure OpenAI / Foundry endpoint URL (e.g. https://my-foundry.services.ai.azure.com).
+  model_deployment:
+    type: string
+    description: Deployment name (e.g. gpt-4o, gpt-35-turbo).
+  api_version:
+    type: string
+    default: "2024-08-01-preview"
+    optional: true
+
+outputs:
+  # Equivalent of PF's auto-generated `flow_outputs` port — PRS appends one
+  # JSONL row per input row to this file.
+  flow_outputs:
+    type: uri_file
+  # Equivalent of PF's auto-generated `debug_info` port — free-form folder for
+  # the workflow to write intermediate artefacts to.
+  debug_info:
+    type: uri_folder
+
+# Tell PRS which input is the dataset to be split into mini-batches.
+input_data: ${{inputs.data}}
+
+# === PRS run settings (carry over from PF flow_node.* settings) =============
+mini_batch_size: "10"
+mini_batch_error_threshold: -1
+error_threshold: -1
+logging_level: DEBUG
+resources:
+  instance_count: 1
+max_concurrency_per_instance: 2
+retry_settings:
+  max_retries: 1
+  timeout: 1200
+# ============================================================================
+
+task:
+  type: run_function
+  # `code: ./` ships the whole project root so `workflow.py` (sibling of
+  # `src/`) is uploaded together with `src/entry.py`.  See gotchas.md §3
+  # for context.  Works for both layouts:
+  #   * consolidated  : MAF folder containing workflow.py + src/ + ...
+  #   * sibling `-prs/`: copy of workflow.py at the same level as src/
+  code: ./
+  entry_script: src/entry.py
+  environment:
+    name: maf-prs-env
+    version: 1
+    image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu22.04:latest
+    conda_file: env/conda.yml
+  program_arguments: >-
+    --amlbi_pf_enabled True
+    --amlbi_pf_run_mode component
+    --amlbi_file_format jsonl
+    --amlbi_mini_batch_rows 1
+    --model_endpoint ${{inputs.model_endpoint}}
+    --model_deployment ${{inputs.model_deployment}}
+    $[[--api_version ${{inputs.api_version}}]]
+    --output_dir ${{outputs.debug_info}}
+  # === PF compatibility flag set ============================================
+  # `--amlbi_pf_enabled True`        flips PRS's ArgValidator gate so that
+  #                                  `type: uri_file` is accepted.
+  # `--amlbi_pf_run_mode component`  PF "I am a flow component" signal; PRS
+  #                                  uses it to extract the `output` field
+  #                                  from each returned JSON string into the
+  #                                  appended jsonl line.
+  # `--amlbi_file_format jsonl`      tells PRS to parse the input file as
+  #                                  jsonl and dispatch row dicts (otherwise
+  #                                  uri_file → list[file_path] mini-batch).
+  # `--amlbi_mini_batch_rows 1`      switch from file-count to row-count
+  #                                  batching (paired with --amlbi_file_format).
+  # ==========================================================================
+  # Equivalent of PF's `parallel_run_step.jsonl` — PRS appends each entry of
+  # the list returned by run() as a JSONL line to this output.
+  append_row_to: ${{outputs.flow_outputs}}
