@@ -23,6 +23,7 @@ from promptflow._sdk._constants import (
     PF_SERVICE_WORKER_NUM,
 )
 from promptflow._sdk._service.app import create_app
+from promptflow._sdk._service.utils.local_user_auth import LocalUserAuthMiddleware
 from promptflow._sdk._service.utils.utils import (
     check_pfs_service_status,
     dump_port_to_config,
@@ -47,10 +48,16 @@ logger = get_cli_sdk_logger()
 app = None
 
 
+def _create_app_with_local_user_auth():
+    flask_app, _ = create_app()
+    flask_app.wsgi_app = LocalUserAuthMiddleware(flask_app.wsgi_app)
+    return flask_app
+
+
 def get_app(environ, start_response):
     global app
     if app is None:
-        app, _ = create_app()
+        app = _create_app_with_local_user_auth()
     if os.environ.get(PF_SERVICE_DEBUG) == "true":
         app.logger.setLevel(logging.DEBUG)
     else:
@@ -255,7 +262,7 @@ def _prepare_app_for_foreground_service(port, force_start, service_host):
     port = validate_port(port, force_start, service_host)
     global app
     if app is None:
-        app, _ = create_app()
+        app = _create_app_with_local_user_auth()
     if os.environ.get(PF_SERVICE_DEBUG) == "true":
         app.logger.setLevel(logging.DEBUG)
     else:
