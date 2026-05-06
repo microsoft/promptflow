@@ -34,8 +34,13 @@ def get_harm_severity_level(harm_score: int) -> str:
         constants.HarmSeverityLevel.Medium: [4, 5],
         constants.HarmSeverityLevel.High: [6, 7],
     }
-    if harm_score == np.nan or harm_score is None:
+    if harm_score is None:
         return np.nan
+    try:
+        if np.isnan(harm_score):
+            return np.nan
+    except TypeError:
+        pass
     for harm_level, harm_score_range in HARM_SEVERITY_LEVEL_MAPPING.items():
         if harm_score_range[0] <= harm_score <= harm_score_range[1]:
             return harm_level.value
