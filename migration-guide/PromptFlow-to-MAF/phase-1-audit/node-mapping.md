@@ -13,7 +13,7 @@
 | Merge / aggregate node | `.add_fan_in_edges([sourceA, sourceB], target)` | `04_parallel_flow.py` |
 | Flow Inputs | Type annotation on the start `Executor`'s `@handler` parameter | All samples |
 | Flow Outputs | `await ctx.yield_output(value)` in the terminal `Executor` | All samples |
-| Connections (credentials) | Environment variables read automatically by MAF clients | `.env.example` |
+| Connections (credentials) | Identity-based auth, workspace connections, env vars, or Key Vault | [`connections-alternatives.md`](../connections-alternatives.md) |
 | Evaluation flow | `SimilarityEvaluator` from Azure AI Evaluation SDK | `phase-3-validate/` |
 | Multi-step specialist routing | `HandoffBuilder` from `agent-framework-orchestrations` | `07_multi_agent.py` |
 | Managed Online Endpoint | AML managed online endpoint via `score.py` init()/run() pattern | `phase-4-migrate-ops/4b-deployment/` |
