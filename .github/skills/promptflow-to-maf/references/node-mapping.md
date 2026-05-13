@@ -30,14 +30,16 @@
 
 ## Node Collapsing Patterns
 
-The default mapping is 1 node → 1 Executor, but certain combinations can be safely merged.
+The default mapping is **1 PF node → 1 MAF Executor**, and the graph topology must be preserved (see SKILL.md Rule 13). The patterns below are the **only** merges allowed. Any merge MUST be annotated in the Phase 1 node-mapping table with the pattern name (e.g., "Collapsed via: Prompt + LLM"). If a combination is not on this list, keep the nodes separate as 1:1 Executors — do not invent new merges.
 
-### When to collapse
+### Allowed merges (closed list)
 
 - **Prompt template + LLM node** → Merge into one Executor: extract system prompt to `Agent(instructions=...)`, format user prompt as a string with variables, then call `Agent.run()`
   - Example: `hello_prompt` (`.jinja2`) + `llm` (LLM) → single `LLMExecutor` with both template and agent
+  - Required: the prompt node must feed *only* the LLM node (no other downstream consumers).
 - **LLM + simple post-processing Python node** → Merge if post-processing is a few lines (e.g., extract substring, parse JSON, format output)
-- **Static-data Python node** → Inline as module-level constant (e.g., `prepare_examples()`, `math_example()`) if data is <50 lines
+  - Required: post-processing is ≤ ~20 lines, has no external API calls, and the LLM node feeds *only* this post-processing node.
+- **Static-data Python node** → Inline as module-level constant (e.g., `prepare_examples()`, `math_example()`) if data is <50 lines and the node has no inputs (pure constant producer).
 
 ### When to keep separate
 

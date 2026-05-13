@@ -58,6 +58,13 @@ This skill is split across multiple files. **Always read this file first.** Then
     - **Any other non-code assets** (e.g., `samples.json`, config files, image assets)
 
     Update all file path references (e.g., `DEFAULT_DATA`, `_TEMPLATES_DIR`, `_PROMPT_TEMPLATE`) to point to the local copy using `Path(__file__).parent / ...`. Never use `parent.parent` or relative paths that reach back into the original flow directory.
+13. **Preserve graph topology and conditions exactly** — The MAF workflow's graph structure MUST be equivalent to the original `flow.dag.yaml` graph. Specifically:
+    - **Node coverage** — Every Prompt Flow node must map to exactly one MAF Executor (or be merged via an explicitly allowed Collapsing Pattern; see [references/node-mapping.md](references/node-mapping.md)). No PF node may be silently dropped, and no extra Executors may be invented that don't correspond to a PF node or an allowed merge.
+    - **Edge coverage** — Every data reference `${node.output}` in `flow.dag.yaml` must correspond to a MAF edge (`add_edge` / `add_fan_out_edges` / `add_fan_in_edges`) connecting the equivalent Executors. No edges may be added or removed.
+    - **Parallelism preserved** — If two PF nodes run in parallel from a shared upstream node, they must remain parallel in MAF (`add_fan_out_edges`). Do NOT serialize parallel branches. If multiple PF nodes fan into one downstream node, they must use `add_fan_in_edges`.
+    - **Conditions preserved** — Every `activate_config` (when/is) in PF must become an `add_edge(..., condition=fn)` with semantically identical predicate logic. The truth value of the condition for any given input must match the original.
+    - **No reordering** — The execution order implied by the dependency graph must be preserved. Do not move logic from a downstream node into an upstream node (or vice versa) in a way that changes when work happens relative to other branches.
+    - **Mapping table required** — In Phase 1, produce an explicit PF-node → MAF-Executor / edge mapping table (see Phase 1 step 6) and verify it in Phase 4 (see Phase 4 step 22). Any allowed merge must be annotated with the matching Collapsing Pattern from [references/node-mapping.md](references/node-mapping.md).
 
 ---
 
@@ -78,39 +85,56 @@ This skill is split across multiple files. **Always read this file first.** Then
    - Any node with `aggregation: true` → evaluation flow → load [topics/evaluation-flows.md](topics/evaluation-flows.md)
    - Any node with `source.type: package` → custom tool → load [topics/custom-tool-nodes.md](topics/custom-tool-nodes.md)
    - Any image inputs (dict with `data:image/*;url` key, or string starting with `data:image/`) → multimodal → load [topics/multimodal.md](topics/multimodal.md)
+6. **Produce a node-mapping table** — Before writing any MAF code, emit (in your reasoning or as a comment block at the top of `workflow.py`) an explicit table that lists, for every PF node:
+   - PF node name and `type` (+ `source.type`)
+   - The MAF Executor it maps to (or the merged Executor name, with the matching Collapsing Pattern from [references/node-mapping.md](references/node-mapping.md))
+   - The incoming edges (PF `${...}` references → MAF `add_edge` / `add_fan_in_edges`)
+   - The outgoing edges (PF downstream consumers → MAF `add_edge` / `add_fan_out_edges`)
+   - Any `activate_config` → the MAF `condition=fn` it becomes
+
+   This table is the contract used to verify graph equivalence in Phase 4. Every PF node must appear; every `${...}` reference must appear as an edge.
 
 ### Phase 2 — Generate MAF Code
 
-6. **Create output folder** — `<original-folder>-maf/`.
-7. **Copy internal packages** — see Rule 7 above.
-8. **Copy all referenced resources** — see Rule 12 above.
-9. **Create one Executor per node** following [references/node-mapping.md](references/node-mapping.md).
-10. **Wire the workflow inside a `create_workflow()` factory function** using `WorkflowBuilder`. Executor instantiation and `WorkflowBuilder.build()` must happen inside this function — not at module level — so each call returns a fresh, independent workflow instance:
+7. **Create output folder** — `<original-folder>-maf/`.
+8. **Copy internal packages** — see Rule 7 above.
+9. **Copy all referenced resources** — see Rule 12 above.
+10. **Create one Executor per node** following the mapping table from Phase 1 step 6 and [references/node-mapping.md](references/node-mapping.md). Do not invent extra Executors and do not silently merge nodes outside of the explicitly allowed Collapsing Patterns.
+11. **Wire the workflow inside a `create_workflow()` factory function** using `WorkflowBuilder`. The edges you add MUST exactly match the edges listed in the Phase 1 mapping table. Executor instantiation and `WorkflowBuilder.build()` must happen inside this function — not at module level — so each call returns a fresh, independent workflow instance:
     - `.add_edge(source, target)` for linear connections
-    - `.add_edge(source, target, condition=fn)` for conditionals
-    - `.add_fan_out_edges(source, [targets])` for parallel branches
+    - `.add_edge(source, target, condition=fn)` for conditionals (one per PF `activate_config`, with semantically identical predicate)
+    - `.add_fan_out_edges(source, [targets])` for parallel branches (preserve PF parallelism — never serialize)
     - `.add_fan_in_edges([sources], target)` for aggregation
-11. **Handle LLM nodes**:
+12. **Handle LLM nodes**:
     - Extract system prompt from `.jinja2` template → `Agent(instructions="...")`
     - Pick the right client — see [references/workflow-context.md](references/workflow-context.md)
     - `Agent.run()` returns an `AgentResponse` — extract text with `.text`
     - **Preserve LLM parameters** — pass `temperature`, `max_tokens`, etc. via `OpenAIChatOptions` (see [references/workflow-context.md](references/workflow-context.md))
-12. **Handle chat history** — format prior turns into a prompt string in an InputExecutor, not as raw message dicts.
-13. **Handle Python tool nodes** — convert to plain functions and pass to `Agent(tools=[fn])`.
-14. **For evaluation flows / multimodal flows / custom-tool nodes** — follow the topic file you loaded in Phase 1 step 5.
+13. **Handle chat history** — format prior turns into a prompt string in an InputExecutor, not as raw message dicts.
+14. **Handle Python tool nodes** — convert to plain functions and pass to `Agent(tools=[fn])`.
+15. **For evaluation flows / multimodal flows / custom-tool nodes** — follow the topic file you loaded in Phase 1 step 5.
 
 ### Phase 3 — Generate Supporting Files
 
-15. **`requirements.txt`** — include only needed `agent-framework-*` packages. Add `azure-identity>=1.15.0` if any LLM client uses the identity template.
-16. **`.env.example`** — template with required environment variables (endpoint, model, key only if the connection uses key auth).
-17. **`test_<name>.py`** — runnable sample script exercising single-turn and multi-turn (if applicable).
-18. **`README.md`** — brief setup and run instructions. (Other documentation only if the user requests it.)
+16. **`requirements.txt`** — include only needed `agent-framework-*` packages. Add `azure-identity>=1.15.0` if any LLM client uses the identity template.
+17. **`.env.example`** — template with required environment variables (endpoint, model, key only if the connection uses key auth).
+18. **`test_<name>.py`** — runnable sample script exercising single-turn and multi-turn (if applicable).
+19. **`README.md`** — brief setup and run instructions. (Other documentation only if the user requests it.)
 
 ### Phase 4 — Validate
 
-19. **Create a virtual environment** and install dependencies.
-20. **Run the test sample** to verify the workflow produces output.
-21. **Fix errors** — see [references/gotchas.md](references/gotchas.md).
+20. **Create a virtual environment** and install dependencies.
+21. **Run the test sample** to verify the workflow produces output.
+22. **Verify graph topology equivalence against `flow.dag.yaml`** — re-open the source `flow.dag.yaml` and the Phase 1 mapping table, then check:
+    - [ ] Every PF node appears in the mapping table and is realized as exactly one MAF Executor (or is part of an explicitly annotated Collapsing Pattern).
+    - [ ] No MAF Executor exists that does not correspond to a PF node or an annotated merge.
+    - [ ] Every PF `${node.output}` reference is realized as a MAF edge between the corresponding Executors.
+    - [ ] No MAF edges exist that are not present in PF.
+    - [ ] PF parallel branches use `add_fan_out_edges`; PF fan-in points use `add_fan_in_edges`. No parallel branch has been serialized.
+    - [ ] Every PF `activate_config` has a matching `add_edge(..., condition=fn)` whose predicate is semantically identical (same truth value for the same inputs).
+
+    If any check fails, fix the workflow before proceeding.
+23. **Fix errors** — see [references/gotchas.md](references/gotchas.md).
 
 ---
 
