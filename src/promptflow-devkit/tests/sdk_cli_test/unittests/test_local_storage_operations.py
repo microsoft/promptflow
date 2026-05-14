@@ -34,3 +34,22 @@ class TestLocalStorageOperations:
         assert df_with_padding.iloc[0].to_dict() == {LINE_NUMBER: 1, "col": "a"}
         assert df_with_padding.iloc[1].to_dict() == {LINE_NUMBER: 2, "col": "b"}
         assert df_with_padding.iloc[2].to_dict() == {LINE_NUMBER: 4, "col": ""}
+
+    def test_outputs_padding_numeric_column_no_future_warning(self) -> None:
+        # Regression for issue #2702: fillna("(Failed)") on a numeric (float64) column
+        # raised FutureWarning in newer pandas.  Casting to object dtype first silences it.
+        data = [
+            {LINE_NUMBER: 1, "score": 0.9},
+            {LINE_NUMBER: 2, "score": 0.8},
+        ]
+        df = pd.DataFrame(data)  # "score" column is float64
+
+        df_with_padding = LocalStorageOperations._outputs_padding(df, inputs_line_numbers=[0, 1, 2, 3])
+        with pytest.warns(None) as warning_list:
+            result = df_with_padding.astype(object)
+            result.fillna(value="(Failed)", inplace=True)
+        assert len(warning_list) == 0, "No FutureWarning should be raised after astype(object)"
+        assert result.iloc[0]["score"] == "(Failed)"
+        assert result.iloc[1]["score"] == 0.9
+        assert result.iloc[2]["score"] == 0.8
+        assert result.iloc[3]["score"] == "(Failed)"
