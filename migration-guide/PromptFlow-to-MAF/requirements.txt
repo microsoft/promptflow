@@ -9,8 +9,10 @@ agent-framework-foundry>=1.0.1
 # Preview packages — install separately with --pre:
 #   pip install agent-framework-orchestrations --pre
 #   pip install agent-framework-azure-ai-search --pre
+#   pip install agent-framework-devui --pre  (Phase 2 visualization only)
 agent-framework-orchestrations>=1.0.0b260409
 agent-framework-azure-ai-search>=1.0.0b260409
+agent-framework-devui>=1.0.0b260409
 
 # Evaluation (Phase 3)
 azure-ai-evaluation>=1.16.0

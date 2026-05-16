@@ -1,0 +1,50 @@
+{"question": "What is retrieval-augmented generation?"}
+{"question": "Explain vector embeddings in one sentence."}
+{"question": "What is a transformer model?"}
+{"question": "Define Microsoft Agent Framework in one sentence."}
+{"question": "What is the difference between an agent and a workflow?"}
+{"question": "What is prompt engineering?"}
+{"question": "Explain the attention mechanism in plain English."}
+{"question": "What is fine-tuning of a language model?"}
+{"question": "Define context window for an LLM."}
+{"question": "What is a system prompt?"}
+{"question": "What is a chat completion?"}
+{"question": "What is a token in the context of LLMs?"}
+{"question": "Explain temperature and top-p sampling."}
+{"question": "What is hallucination in LLM outputs?"}
+{"question": "What is a vector database?"}
+{"question": "What is semantic search?"}
+{"question": "What is a chunking strategy in RAG?"}
+{"question": "Explain the difference between RAG and fine-tuning."}
+{"question": "What is an embedding model?"}
+{"question": "What is cosine similarity?"}
+{"question": "What is a function-calling LLM?"}
+{"question": "What is a tool in agent frameworks?"}
+{"question": "What is multi-agent orchestration?"}
+{"question": "What is a workflow executor in MAF?"}
+{"question": "What is a handler decorator in MAF?"}
+{"question": "What is the role of WorkflowContext in MAF?"}
+{"question": "What is yield_output used for?"}
+{"question": "What is send_message used for?"}
+{"question": "What is Azure AI Foundry?"}
+{"question": "What is Azure OpenAI Service?"}
+{"question": "What is the difference between Azure OpenAI and OpenAI?"}
+{"question": "What is a managed online endpoint?"}
+{"question": "What is Azure ML Parallel Run Step?"}
+{"question": "What is a parallel component in Azure ML?"}
+{"question": "What is mini_batch_size in PRS?"}
+{"question": "What is max_concurrency_per_instance?"}
+{"question": "What is OpenTelemetry?"}
+{"question": "What is Application Insights used for?"}
+{"question": "What is structured output in LLMs?"}
+{"question": "What is JSON mode in chat completions?"}
+{"question": "What is a guardrail for LLM applications?"}
+{"question": "What is content safety filtering?"}
+{"question": "What is a moderation model?"}
+{"question": "What is grounding in LLM responses?"}
+{"question": "Explain the difference between zero-shot and few-shot prompting."}
+{"question": "What is chain-of-thought prompting?"}
+{"question": "What is ReAct prompting?"}
+{"question": "What is an agentic loop?"}
+{"question": "What is Microsoft Foundry SDK?"}
+{"question": "What is Prompt Flow used for?"}
