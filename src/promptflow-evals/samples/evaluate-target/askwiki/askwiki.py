@@ -161,6 +161,8 @@ def augmented_qa(question, context):
             model=os.environ.get("AZURE_OPENAI_DEPLOYMENT"), messages=messages, temperature=0.7, max_tokens=800
         )
 
+        if not response.choices or response.choices[0].message is None:
+            raise ValueError("LLM returned empty or filtered response")
         return response.choices[0].message.content
 
 

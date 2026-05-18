@@ -83,6 +83,8 @@ def openai_chat(connection: dict, prompt: str, stream: bool = False):
                     yield chunk.choices[0].delta.content or ""
 
         return "".join(generator())
+    if not response.choices or response.choices[0].message is None:
+        return ""
     return response.choices[0].message.content or ""
 
 
@@ -117,6 +119,8 @@ async def openai_chat_async(connection: dict, prompt: str, stream: bool = False)
                     yield chunk.choices[0].delta.content or ""
 
         return "".join([chunk async for chunk in generator()])
+    if not response.choices or response.choices[0].message is None:
+        return ""
     return response.choices[0].message.content or ""
 
 
@@ -195,4 +199,6 @@ def prompt_tpl_chat(connection: dict, prompt_tpl: str, stream: bool = False, **k
                     yield chunk.choices[0].delta.content or ""
 
         return "".join(generator())
+    if not response.choices or response.choices[0].message is None:
+        return ""
     return response.choices[0].message.content or ""

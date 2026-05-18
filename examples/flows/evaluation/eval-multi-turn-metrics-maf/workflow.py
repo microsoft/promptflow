@@ -104,6 +104,8 @@ class MultiTurnMetricsExecutor(Executor):
             presence_penalty=0,
             frequency_penalty=0,
         )
+        if not response.choices or response.choices[0].message is None:
+            return ""
         return response.choices[0].message.content or ""
 
     async def _eval_answer_relevance(self, conversation: str) -> Optional[float]:

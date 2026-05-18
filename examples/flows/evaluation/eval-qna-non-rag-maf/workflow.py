@@ -115,6 +115,8 @@ class QnaNonRagExecutor(Executor):
             temperature=0, top_p=1, max_tokens=1,
             presence_penalty=0, frequency_penalty=0,
         )
+        if not response.choices or response.choices[0].message is None:
+            return ""
         return response.choices[0].message.content or ""
 
     async def _embed(self, text: str) -> List[float]:

@@ -69,6 +69,8 @@ def code_gen(client: AzureOpenAI, question: str) -> str:
             {"role": "user", "content": question},
         ],
     )
+    if not completion.choices or completion.choices[0].message is None:
+        raise ValueError("LLM returned empty or filtered response")
     raw_code = completion.choices[0].message.content
     result = code_refine(raw_code)
     return result

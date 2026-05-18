@@ -53,6 +53,8 @@ def my_llm_tool(
     )
 
     # get first element because prompt is single.
+    if not response.choices or response.choices[0].message is None:
+        raise ValueError("LLM returned empty or filtered response")
     return response.choices[0].message.content
 
 

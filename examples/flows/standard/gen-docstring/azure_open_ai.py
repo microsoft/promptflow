@@ -144,6 +144,8 @@ class ChatLLM(AOAI):
             stream=False,
             **kwargs,
         )
+        if not response.choices or response.choices[0].message is None:
+            raise ValueError("LLM returned empty or filtered response")
         response_role = response.choices[0].message.role
         full_response = response.choices[0].message.content
         self.add_to_conversation(text, "user", conversation_id=conversation_id)
@@ -189,6 +191,8 @@ class ChatLLM(AOAI):
             stream=False,
             **kwargs,
         )
+        if not response.choices or response.choices[0].message is None:
+            raise ValueError("LLM returned empty or filtered response")
         response_role = response.choices[0].message.role
         full_response = response.choices[0].message.content
         self.add_to_conversation(text, "user", conversation_id=conversation_id)
