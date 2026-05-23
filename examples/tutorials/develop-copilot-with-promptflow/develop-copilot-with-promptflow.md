@@ -87,7 +87,7 @@ The context retrieval is the most important part of RAG based approach, the qual
 
 ![index-lookup-tool](index-lookup-tool.png)
 
-There are two paramters can be adjusted in the 'Index Lookup' tool: 'query_type' and 'top_k'. The initial copilot flow used 'query_type' as 'vector' and 'top_k' as 2. Try to adjust these two parameters and then run the evaluation to see which one can achieve the best metrics.
+There are two parameters that can be adjusted in the 'Index Lookup' tool: 'query_type' and 'top_k'. The initial copilot flow used 'query_type' as 'vector' and 'top_k' as 2. Try to adjust these two parameters and then run the evaluation to see which one can achieve the best metrics.
 
 ### Tune the prompt
 There are two LLM nodes in the initial copilot flow: the 'modify_query_with_history' node is used for rewriting the question with the history to make it more clear; the 'answer_the_question_with_context' node is used for generating the answer based on the question and context.
