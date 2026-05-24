@@ -26,7 +26,7 @@ This question simulation flow is used to generate suggestions for the next quest
 * __question_count__: an integer is used to determine the number of questions to be generated. These generated question can be displayed in UX, allowing users to select the one that best suits their needs.
 
 ## Flow outputs
-* If the conversation should go on, the output the suggestions for next question: multiple questions are seperated by '\n', for instance:
+* If the conversation should go on, the output the suggestions for next question: multiple questions are separated by '\n', for instance:
     "question": "question_1\nquestion_2\nquestion_3"
 * If the conversation should ended, not more question will be generated, the output is a stop signal: [STOP]
 
