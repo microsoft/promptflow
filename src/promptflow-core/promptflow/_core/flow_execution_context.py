@@ -206,7 +206,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
             raise ToolExecutionError(node_name=node_name, module=module) from e
 
     def bypass_node(self, node: Node):
-        """Update teh bypassed node run info."""
+        """Update the bypassed node run info."""
         node_run_id = self._generate_node_run_id(node)
         flow_logger.info(f"Bypassing node {node.name}. node run id: {node_run_id}")
         parent_run_id = f"{self._run_id}_{self._line_number}" if self._line_number is not None else self._run_id
