@@ -11,7 +11,7 @@ from promptflow.executor._service.contracts.execution_request import BaseExecuti
 
 
 class InitializationRequest(BaseExecutionRequest):
-    """Request model for teh batch run initialization."""
+    """Request model for the batch run initialization."""
 
     worker_count: Optional[int] = None
     line_timeout_sec: Optional[int] = LINE_TIMEOUT_SEC
