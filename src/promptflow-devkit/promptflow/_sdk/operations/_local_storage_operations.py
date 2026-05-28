@@ -515,6 +515,14 @@ class LocalStorageOperations(AbstractBatchRunStorage):
                 outputs = self._outputs_padding(outputs, inputs[LINE_NUMBER].tolist())
                 outputs.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
                 outputs = outputs.set_index(LINE_NUMBER)
+        # Sort inputs by line_number so their row order matches the sorted
+        # outputs index.  Without this, get_details() merges inputs and
+        # outputs positionally and rows become misaligned whenever the
+        # async executor wrote results in a different order than the input
+        # data was originally listed.
+        # See https://github.com/microsoft/promptflow/issues/2646
+        if LINE_NUMBER in inputs.columns:
+            inputs = inputs.sort_values(LINE_NUMBER, ascending=True).reset_index(drop=True)
         return inputs, outputs
 
     def _collect_io_from_debug_info(self) -> Tuple["DataFrame", "DataFrame"]:
