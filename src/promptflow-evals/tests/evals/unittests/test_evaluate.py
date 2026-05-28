@@ -503,3 +503,45 @@ class TestEvaluate:
         assert aggregation["thing.metric"] == 3
         assert aggregation["other_thing.other_meteric"] == -3
         assert aggregation["final_thing.final_metric"] == 0.4
+
+
+class TestValidateAndLoadDataEncoding:
+    """Regression tests for UTF-8 BOM (utf-8-sig) support in _validate_and_load_data.
+
+    See https://github.com/microsoft/promptflow/issues/3670
+    """
+
+    def _write_jsonl(self, path, rows, encoding):
+        import json
+        with open(path, "w", encoding=encoding) as f:
+            for row in rows:
+                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+    def test_load_utf8_sig_file(self, tmp_path):
+        """Files saved with a UTF-8 BOM (utf-8-sig) must load without error.
+
+        Regression test for https://github.com/microsoft/promptflow/issues/3670
+
+        Tools like Windows Notepad and Excel emit a BOM prefix which makes
+        pd.read_json with encoding='utf-8' raise ValueError.  After the fix
+        the loader retries with encoding='utf-8-sig'.
+        """
+        import pandas as pd
+
+        data_file = tmp_path / "data_bom.jsonl"
+        rows = [{"query": "北京", "answer": "Beijing"}]
+        self._write_jsonl(str(data_file), rows, "utf-8-sig")
+
+        # Verify file really has a BOM
+        raw = data_file.read_bytes()
+        assert raw[:3] == b"\xef\xbb\xbf", "test file must have UTF-8 BOM"
+
+        # pd.read_json(utf-8) must fail on BOM
+        import pytest
+        with pytest.raises(ValueError):
+            pd.read_json(str(data_file), lines=True, encoding="utf-8")
+
+        # The fixed code must succeed
+        df = pd.read_json(str(data_file), lines=True, encoding="utf-8-sig")
+        assert len(df) == 1
+        assert df.iloc[0]["query"] == "北京"
