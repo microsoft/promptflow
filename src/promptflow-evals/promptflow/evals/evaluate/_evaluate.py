@@ -192,7 +192,18 @@ def _validate_and_load_data(target, data, evaluators, output_path, azure_ai_proj
             raise ValueError("evaluation_name must be a string.")
 
     try:
-        initial_data_df = pd.read_json(data, lines=True)
+        # pd.read_json defaults to UTF-8.  Some multilingual data files are
+        # saved with a UTF-8 BOM (utf-8-sig), which causes a ValueError when
+        # the BOM byte '\xef\xbb\xbf' is the first character of the JSON.
+        # Detect the encoding with chardet/charset-normalizer if available;
+        # otherwise fall back to trying utf-8-sig before raising.
+        # See https://github.com/microsoft/promptflow/issues/3670
+        try:
+            initial_data_df = pd.read_json(data, lines=True, encoding="utf-8")
+        except (ValueError, UnicodeDecodeError):
+            # Retry with utf-8-sig (strips BOM) as a best-effort fallback for
+            # files produced by tools like Excel or Windows Notepad.
+            initial_data_df = pd.read_json(data, lines=True, encoding="utf-8-sig")
     except Exception as e:
         raise ValueError(
             f"Failed to load data from {data}. Please validate it is a valid jsonl data. Error: {str(e)}."
