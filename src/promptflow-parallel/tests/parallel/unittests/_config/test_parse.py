@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 from pathlib import Path
 
-from promptflow.parallel._config.parser import parse
+from promptflow.parallel._config.parser import _parse_prefixed_args, parse
 
 
 def test_parse_correct_type():
@@ -51,3 +51,9 @@ def test_parse_correct_type():
     assert config.debug_output_dir == Path("/test_debug")
     assert config.logging_level == "INFO"
     assert not config.is_debug_enabled
+
+
+def test_parse_prefixed_args_value_with_equals():
+    # Values containing '=' (e.g. base64 padding) must not crash with ValueError.
+    result = _parse_prefixed_args(["--pf_input_token=SGVsbG8gV29ybGQ="], "--pf_input_")
+    assert result == {"token": "SGVsbG8gV29ybGQ="}
