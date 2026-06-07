@@ -6,7 +6,6 @@ from typing import Callable, Tuple
 
 from azure.ai.ml import MLClient
 from azure.ai.ml._azure_environments import _get_storage_endpoint_from_metadata
-from azure.ai.ml._restclient.v2022_10_01.models import DatastoreType
 from azure.ai.ml.constants._common import LONG_URI_FORMAT, STORAGE_ACCOUNT_URLS
 from azure.ai.ml.entities._credentials import AccountKeyConfiguration
 from azure.ai.ml.entities._datastore.datastore import Datastore
@@ -14,6 +13,7 @@ from azure.ai.ml.operations import DatastoreOperations
 from azure.storage.blob import ContainerClient
 
 from promptflow.exceptions import UserErrorException
+from promptflow.azure._utils._datastore_type import DatastoreType
 
 _datastore_cache = {}
 _thread_lock = threading.Lock()

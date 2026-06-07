@@ -13,7 +13,6 @@ from typing import Dict, Optional, TypeVar, Union
 from azure.ai.ml._artifacts._blob_storage_helper import BlobStorageClient
 from azure.ai.ml._artifacts._gen2_storage_helper import Gen2StorageClient
 from azure.ai.ml._azure_environments import _get_storage_endpoint_from_metadata
-from azure.ai.ml._restclient.v2022_10_01.models import DatastoreType
 from azure.ai.ml._scope_dependent_operations import OperationScope
 from azure.ai.ml._utils._arm_id_utils import (
     AMLNamedArmId,
@@ -44,6 +43,7 @@ from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 from azure.storage.filedatalake import FileSasPermissions, generate_file_sas
 
 from promptflow._utils.logger_utils import LoggerFactory
+from promptflow.azure._utils._datastore_type import DatastoreType
 
 from ._fileshare_storeage_helper import FlowFileStorageClient
 
