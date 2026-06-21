@@ -6,7 +6,16 @@ from typing import Callable, Tuple
 
 from azure.ai.ml import MLClient
 from azure.ai.ml._azure_environments import _get_storage_endpoint_from_metadata
-from azure.ai.ml._restclient.v2022_10_01.models import DatastoreType
+try:
+    from azure.ai.ml._restclient.v2022_10_01.models import DatastoreType
+except ImportError:
+    # azure-ai-ml >= 1.33.0 removed this private versioned restclient module.
+    # Define the needed constants locally; the string values are part of the
+    # stable Azure REST API and have not changed.
+    class DatastoreType:  # type: ignore[no-redef]
+        AZURE_BLOB = "AzureBlob"
+        AZURE_DATA_LAKE_GEN2 = "AzureDataLakeGen2"
+        AZURE_FILE = "AzureFile"
 from azure.ai.ml.constants._common import LONG_URI_FORMAT, STORAGE_ACCOUNT_URLS
 from azure.ai.ml.entities._credentials import AccountKeyConfiguration
 from azure.ai.ml.entities._datastore.datastore import Datastore
