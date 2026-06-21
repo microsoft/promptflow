@@ -13,7 +13,16 @@ from typing import Dict, Optional, TypeVar, Union
 from azure.ai.ml._artifacts._blob_storage_helper import BlobStorageClient
 from azure.ai.ml._artifacts._gen2_storage_helper import Gen2StorageClient
 from azure.ai.ml._azure_environments import _get_storage_endpoint_from_metadata
-from azure.ai.ml._restclient.v2022_10_01.models import DatastoreType
+try:
+    from azure.ai.ml._restclient.v2022_10_01.models import DatastoreType
+except ImportError:
+    # azure-ai-ml >= 1.33.0 removed this private versioned restclient module.
+    # Define the needed constants locally; the string values are part of the
+    # stable Azure REST API and have not changed.
+    class DatastoreType:  # type: ignore[no-redef]
+        AZURE_BLOB = "AzureBlob"
+        AZURE_DATA_LAKE_GEN2 = "AzureDataLakeGen2"
+        AZURE_FILE = "AzureFile"
 from azure.ai.ml._scope_dependent_operations import OperationScope
 from azure.ai.ml._utils._arm_id_utils import (
     AMLNamedArmId,
