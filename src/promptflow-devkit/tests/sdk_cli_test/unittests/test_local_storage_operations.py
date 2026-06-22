@@ -2,6 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import warnings
+
 import pandas as pd
 import pytest
 
@@ -34,3 +36,18 @@ class TestLocalStorageOperations:
         assert df_with_padding.iloc[0].to_dict() == {LINE_NUMBER: 1, "col": "a"}
         assert df_with_padding.iloc[1].to_dict() == {LINE_NUMBER: 2, "col": "b"}
         assert df_with_padding.iloc[2].to_dict() == {LINE_NUMBER: 4, "col": ""}
+
+    def test_outputs_padding_fill_failed_without_dtype_warning(self) -> None:
+        data = [
+            {LINE_NUMBER: 1, "score": 0.5},
+        ]
+        df = pd.DataFrame(data)
+
+        df_with_padding = LocalStorageOperations._outputs_padding(df, inputs_line_numbers=[0, 1])
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            warnings.simplefilter("always")
+            df_with_padding = LocalStorageOperations._fill_failed_outputs(df_with_padding)
+
+        assert len(caught_warnings) == 0
+        assert df_with_padding.iloc[0].to_dict() == {LINE_NUMBER: 0, "score": "(Failed)"}
+        assert df_with_padding.iloc[1].to_dict() == {LINE_NUMBER: 1, "score": 0.5}

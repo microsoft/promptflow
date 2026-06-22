@@ -504,6 +504,13 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         res = res.sort_values(by=LINE_NUMBER, ascending=True)
         return res
 
+    @staticmethod
+    def _fill_failed_outputs(df: "DataFrame") -> "DataFrame":
+        output_columns = [column for column in df.columns if column != LINE_NUMBER]
+        df = df.copy()
+        df[output_columns] = df[output_columns].astype(object)
+        return df.fillna(value="(Failed)")
+
     def load_inputs_and_outputs(self) -> Tuple["DataFrame", "DataFrame"]:
         if not self._sdk_inputs_path.is_file() or not self._sdk_output_path.is_file():
             inputs, outputs = self._collect_io_from_debug_info()
@@ -513,7 +520,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             # if all line runs are failed, no need to fill
             if len(outputs) > 0:
                 outputs = self._outputs_padding(outputs, inputs[LINE_NUMBER].tolist())
-                outputs.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
+                outputs = self._fill_failed_outputs(outputs)  # replace nan with explicit prompt
                 outputs = outputs.set_index(LINE_NUMBER)
         return inputs, outputs
 
