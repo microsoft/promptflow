@@ -11,7 +11,12 @@ from pandas.testing import assert_frame_equal
 from promptflow.client import PFClient
 from promptflow.evals._constants import DEFAULT_EVALUATION_RESULTS_FILE_NAME
 from promptflow.evals.evaluate import evaluate
-from promptflow.evals.evaluate._evaluate import _aggregate_metrics, _apply_target_to_data, _rename_columns_conditionally
+from promptflow.evals.evaluate._evaluate import (
+    _aggregate_metrics,
+    _apply_target_to_data,
+    _rename_columns_conditionally,
+    _validate_and_load_data,
+)
 from promptflow.evals.evaluate._utils import _apply_column_mapping, _trace_destination_from_project_scope
 from promptflow.evals.evaluators import (
     ContentSafetyEvaluator,
@@ -122,6 +127,19 @@ class TestEvaluate:
 
         assert "Failed to load data from " in exc_info.value.args[0]
         assert "Please validate it is a valid jsonl data" in exc_info.value.args[0]
+
+    def test_validate_and_load_data_accepts_utf8_sig_jsonl(self, tmp_path):
+        data_file = tmp_path / "evaluate_test_data_utf8_sig.jsonl"
+        data_file.write_text(
+            '{"question": "How are you?", "answer": "Fine", "ground_truth": "Fine"}\n',
+            encoding="utf-8-sig",
+        )
+
+        data = _validate_and_load_data(None, str(data_file), {"g": F1ScoreEvaluator()}, None, None, None)
+
+        assert data.to_dict(orient="records") == [
+            {"question": "How are you?", "answer": "Fine", "ground_truth": "Fine"}
+        ]
 
     def test_evaluate_missing_required_inputs(self, missing_columns_jsonl_file):
         with pytest.raises(ValueError) as exc_info:
