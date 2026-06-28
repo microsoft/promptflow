@@ -17,12 +17,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
     - name: Set up Python 3.11
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
       with:
         python-version: 3.11
-    - uses: snok/install-poetry@v1
+    - uses: snok/install-poetry@a783c322200f0519c7926aa6faa857c4e23e9263 # v1
     - name: Install all packages
       run: |
         touch src/promptflow-tracing/promptflow/__init__.py

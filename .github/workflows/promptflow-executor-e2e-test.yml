@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       with:
         ref: ${{ github.event.pull_request.head.sha || github.ref }}
         fetch-depth: 0
@@ -53,7 +53,7 @@ jobs:
         scriptPath: ${{ env.testWorkingDirectory }}
     - name: Upload Wheel
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
       with:
         name: wheel
         path: |
@@ -73,7 +73,7 @@ jobs:
     - name: Set test mode
       run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       with:
         ref: ${{ github.event.pull_request.head.sha || github.ref }}
         fetch-depth: 0
@@ -84,7 +84,7 @@ jobs:
       with:
         pythonVersion: 3.9
     - name: Download Artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3
       with:
         name: wheel
         path: artifacts
@@ -107,7 +107,7 @@ jobs:
         pip install .
       working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure Login
-      uses: azure/login@v1
+      uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d # v1
       with:
         subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
         tenant-id: ${{secrets.AZURE_TENANT_ID}}
@@ -117,7 +117,7 @@ jobs:
       with:
         targetFolder: ${{ env.testWorkingDirectory }}
     - name: Get number of CPU cores
-      uses: SimenB/github-actions-cpu-cores@v1
+      uses: SimenB/github-actions-cpu-cores@410541432439795d30db6501fb1d8178eb41e502 # v1
       id: cpu-cores
     - name: Run Coverage Test
       shell: pwsh
@@ -138,7 +138,7 @@ jobs:
           --disable-cov-branch
     - name: Upload Test Results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
       with:
         name: Test Results (Python 3.9) (OS ${{ matrix.os }})
         path: |
@@ -156,7 +156,7 @@ jobs:
     if: always()
     steps:
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       with:
         ref: ${{ github.event.pull_request.head.sha || github.ref }}
         fetch-depth: 0

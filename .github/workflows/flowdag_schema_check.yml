@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - run: env | sort >> $GITHUB_OUTPUT
       - name: Python Setup - ubuntu-latest - Python Version 3.9
         uses: "./.github/actions/step_create_python_environment"

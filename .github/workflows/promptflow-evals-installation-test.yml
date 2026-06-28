@@ -18,12 +18,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: snok/install-poetry@v1
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+    - uses: snok/install-poetry@a783c322200f0519c7926aa6faa857c4e23e9263 # v1
     - name: build
       run: poetry build
       working-directory: ${{ env.WORKING_DIRECTORY }}
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
       with:
         name: promptflow-evals
         path: ${{ env.WORKING_DIRECTORY }}/dist/promptflow_evals-*.whl
@@ -41,8 +41,8 @@ jobs:
         shell: bash
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4
         with:
           name: promptflow-evals
           path: ${{ env.WORKING_DIRECTORY }}

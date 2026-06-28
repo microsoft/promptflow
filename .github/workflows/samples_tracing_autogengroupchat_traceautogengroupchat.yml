@@ -26,7 +26,7 @@ jobs:
       internal
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Setup Python 3.9 environment
         uses: actions/setup-python@v4
         with:
@@ -87,7 +87,7 @@ jobs:
           papermill -k python trace-autogen-groupchat.ipynb trace-autogen-groupchat.output.ipynb
       - name: Upload artifact
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
         with:
           name: artifact
           path: examples/tutorials/tracing/autogen-groupchat

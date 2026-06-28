@@ -14,7 +14,7 @@ jobs:
       internal
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Setup Python 3.9 environment
         uses: actions/setup-python@v4
@@ -22,7 +22,7 @@ jobs:
           python-version: "3.9"
 
       - name: Azure Login
-        uses: azure/login@v1
+        uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d # v1
         with:
           subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           tenant-id: ${{secrets.AZURE_TENANT_ID}}
