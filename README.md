@@ -65,6 +65,13 @@ For OpenAI key, establish a connection by running the command, using the `openai
 pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_api_key> --name open_ai_connection
 ```
 
+For OpenAI-compatible providers, reuse the OpenAI connection and set `base_url`. For example, TokenLab's OpenAI-compatible
+endpoint can be configured with:
+
+```sh
+pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_tokenlab_api_key> base_url=https://api.tokenlab.sh/v1 --name open_ai_connection
+```
+
 For Azure OpenAI key, establish the connection by running the command, using the `azure_openai.yaml` file:
 
 ```sh
