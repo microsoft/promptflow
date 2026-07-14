@@ -65,6 +65,12 @@ For OpenAI key, establish a connection by running the command, using the `openai
 pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_api_key> --name open_ai_connection
 ```
 
+For OpenAI-compatible gateways, reuse the OpenAI connection and set `base_url`. For example, [DaoXE](https://daoxe.com) exposes an OpenAI-compatible Chat Completions endpoint at `https://daoxe.com/v1` (DaoXE is multi-protocol and also supports OpenAI Responses and Anthropic Messages for other clients; prompt flow uses the OpenAI connection path here). Use an exact model ID from your DaoXE account catalog. DaoXE is not available in mainland China.
+
+```sh
+pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_daoxe_api_key> base_url=https://daoxe.com/v1 --name open_ai_connection
+```
+
 For Azure OpenAI key, establish the connection by running the command, using the `azure_openai.yaml` file:
 
 ```sh
