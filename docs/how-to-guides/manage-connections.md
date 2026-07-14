@@ -206,7 +206,54 @@ On the VS Code primary sidebar > prompt flow pane. You can find the connections 
 :::
 ::::
 
+## OpenAI-compatible endpoint example (DaoXE)
+
+Prompt flow's `OpenAIConnection` accepts an optional `base_url`. Point it at any OpenAI-compatible Chat Completions endpoint so built-in LLM tools keep working without a custom tool.
+
+### DaoXE connection YAML
+
+```yaml
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
+name: daoxe_connection
+type: open_ai
+api_key: "<your-daoxe-api-key>"
+base_url: "https://daoxe.com/v1"
+```
+
+Create the connection with CLI:
+
+```bash
+pf connection create -f daoxe.yml --set api_key=<your-daoxe-api-key>
+# or override base_url explicitly:
+# pf connection create -f ./examples/connections/openai.yml --set api_key=<your-daoxe-api-key> base_url=https://daoxe.com/v1 --name daoxe_connection
+```
+
+### DaoXE connection with SDK
+
+```python
+from promptflow.client import PFClient
+from promptflow.entities import OpenAIConnection
+
+pf = PFClient()
+
+connection = OpenAIConnection(
+    name="daoxe_connection",
+    api_key="<your-daoxe-api-key>",
+    base_url="https://daoxe.com/v1",
+)
+result = pf.connections.create_or_update(connection)
+print(result)
+```
+
+### Notes for DaoXE
+
+- **Base URL:** `https://daoxe.com/v1` (OpenAI-compatible Chat Completions path used by prompt flow).
+- **Model IDs:** account-scoped — pick an exact model ID visible in your DaoXE account or current catalog; do not assume a fixed public list in this doc.
+- **Multi-protocol:** DaoXE is a multi-model, multi-protocol gateway. Besides OpenAI Chat Completions, it also exposes other APIs such as OpenAI Responses and Anthropic Messages. Those paths are outside prompt flow's built-in `OpenAIConnection`; use them with the matching client or a custom Python tool.
+- **Region:** DaoXE does not serve mainland China. Confirm access and pricing on [daoxe.com](https://daoxe.com).
+
 ## Load from environment variables
+
 With `promptflow>=1.8.0`, user is able to load a connection object from os environment variables with `<ConnectionType>.from_env` func.
 Note that the connection object will **NOT BE CREATED** to local database.
 

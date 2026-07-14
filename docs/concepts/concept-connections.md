@@ -20,6 +20,24 @@ Prompt flow provides a variety of pre-built connections, including Azure OpenAI,
 
 By leveraging connections in prompt flow, you can easily establish and manage connections to external APIs and data sources, facilitating efficient data exchange and interaction within their AI applications.
 
+## OpenAI-compatible providers
+
+`OpenAIConnection` can target OpenAI-compatible HTTP APIs by setting `base_url`. Prompt flow still uses the built-in OpenAI connection type and LLM tools; only the endpoint, API key, and model identifier change.
+
+### Example: DaoXE
+
+[DaoXE](https://daoxe.com) is a multi-model, multi-protocol AI API gateway. For OpenAI Chat Completions–compatible clients (including prompt flow's OpenAI connection), use:
+
+| Field | Value |
+| ----- | ----- |
+| `base_url` | `https://daoxe.com/v1` |
+| `api_key` | Your DaoXE API key from the dashboard |
+| Model ID | Use an exact model identifier available on your DaoXE account (account-scoped; do not hard-code a global list) |
+
+DaoXE also exposes other protocols outside this OpenAI connection path (for example OpenAI Responses and Anthropic Messages). Service availability does not include mainland China; check [daoxe.com](https://daoxe.com) for current access and model catalog details.
+
+See [Manage connections](../how-to-guides/manage-connections.md#openai-compatible-endpoint-example-daoxe) for YAML, CLI, and SDK samples.
+
 ## Next steps
 
 - [Create connections](../how-to-guides/manage-connections.md)

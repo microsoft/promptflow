@@ -14,6 +14,8 @@ pip install -r requirements.txt
 # Override keys with --set to avoid yaml file changes
 pf connection create -f custom.yml --set configs.key1='<your_api_key>'
 pf connection create -f azure_openai.yml --set api_key='<your_api_key>'
+# OpenAI-compatible provider example (DaoXE)
+pf connection create -f daoxe.yml --set api_key='<your_daoxe_api_key>'
 ```
 
 - To create a custom connection using an `.env` file, execute following command:
