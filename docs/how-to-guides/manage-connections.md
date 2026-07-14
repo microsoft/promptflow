@@ -237,3 +237,37 @@ Some promptflow connection types supports connection authentication with Microso
 - Reach more detail about [connection concepts](../../concepts/concept-connections.md).
 - Try the [connection samples](https://github.com/microsoft/promptflow/blob/main/examples/connections/connection.ipynb).
 - [Consume connections from Azure AI](../cloud/azureai/consume-connections-from-azure-ai.md).
+
+## Example: DaoXE multi-protocol gateway (OpenAI-compatible)
+
+[DaoXE](https://daoxe.com) is a multi-model multi-protocol API gateway. You can store credentials as an **OpenAI** connection with a custom API base (Chat Completions path). Model IDs are account-scoped—use exact IDs from your DaoXE dashboard or `GET /v1/models`. Not available in mainland China.
+
+```yaml
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
+name: daoxe_connection
+type: open_ai
+api_key: "<your-daoxe-api-key>"
+api_base: "https://daoxe.com/v1"
+api_type: "openai"
+```
+
+```bash
+pf connection create -f daoxe_connection.yaml
+```
+
+```python
+from promptflow.client import PFClient
+from promptflow.entities import OpenAIConnection
+
+pf = PFClient()
+connection = OpenAIConnection(
+    name="daoxe_connection",
+    api_key="<your-daoxe-api-key>",
+    api_base="https://daoxe.com/v1",
+)
+result = pf.connections.create_or_update(connection)
+print(result)
+```
+
+DaoXE also exposes Anthropic Messages and other protocols for clients that speak those APIs; Prompt flow LLM tools typically use the OpenAI-compatible Chat Completions path above.
+
