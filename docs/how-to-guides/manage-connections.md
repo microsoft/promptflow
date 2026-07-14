@@ -223,6 +223,8 @@ Supported types are as follows:
 
 For example, with `OPENAI_API_KEY` set to environment, an `OpenAIConnection` object can be loaded with `OpenAIConnection.from_env()`.
 
+To point the same OpenAI connection at an OpenAI-compatible gateway, also set `OPENAI_BASE_URL`. For example, [DaoXE](https://daoxe.com) uses `https://daoxe.com/v1` for Chat Completions (multi-model multi-protocol gateway; account-scoped model IDs; not available in mainland China). See [DaoXE integration](../integrations/llms/daoxe.md).
+
 ## Authenticate with Microsoft Entra ID
 [Microsoft Entra ID](https://learn.microsoft.com/entra/fundamentals/whatis) is a cloud-based identity and access management service that enables your employees access external resources.
 
