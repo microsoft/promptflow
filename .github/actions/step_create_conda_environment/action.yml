@@ -12,7 +12,7 @@ runs:
   using: composite
   steps:
   - name: Setup Miniconda
-    uses: conda-incubator/setup-miniconda@v2
+    uses: conda-incubator/setup-miniconda@9f54435e0e72c53962ee863144e47a4b094bfd35 # v2.3.0
     with:
       miniconda-version: "latest"
       activate-environment: release-env

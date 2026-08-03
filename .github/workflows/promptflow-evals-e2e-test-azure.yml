@@ -30,15 +30,15 @@ jobs:
         shell: bash
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: set test mode
         # Always run in replay mode for now until we figure out the test resource to run live mode
         run: echo "PROMPT_FLOW_TEST_MODE=replay" >> $GITHUB_ENV
         #run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: snok/install-poetry@v1
+      - uses: snok/install-poetry@a783c322200f0519c7926aa6faa857c4e23e9263 # v1.4.2
       - name: install test dependency group
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -58,7 +58,7 @@ jobs:
       - name: generate end-to-end test config from secret
         run: echo '${{ secrets.PF_EVALS_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}
-      - uses: azure/login@v1
+      - uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d # v1.6.1
         with:
           client-id: ${{ secrets.PF_EVALS_SP_CLIENT_ID }}
           tenant-id: ${{ secrets.PF_EVALS_SP_TENANT_ID }}
@@ -70,7 +70,7 @@ jobs:
           poetry run python ../../scripts/code_qa/report_to_app_insights.py --activity e2e_tests_azure --junit-xml test-results.xml --git-hub-action-run-id ${{ github.run_id }} --git-hub-workflow ${{ github.workflow }} --git-hub-action ${{ github.action }} --git-branch ${{ github.ref }}
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: report-${{ matrix.os }}-py${{ matrix.python-version }}
           path: |
@@ -86,15 +86,15 @@ jobs:
       contents: read
       issues: read
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: artifacts
-      - uses: EnricoMi/publish-unit-test-result-action@v2
+      - uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3 # v2.24.0
         with:
           check_name: promptflow-evals test result
           comment_title: promptflow-evals test result
           files: "artifacts/**/test-results.xml"  # align with `--junit-xml` in pyproject.toml
-      - uses: irongut/CodeCoverageSummary@v1.3.0
+      - uses: irongut/CodeCoverageSummary@51cc3a756ddcd398d447c044c02cb6aa83fdae95 # v1.3.0
         with:
           filename: "artifacts/report-ubuntu-latest-py3.11/coverage.xml"
           badge: true

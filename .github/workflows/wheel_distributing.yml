@@ -43,7 +43,7 @@ jobs:
           echo "ConfigsFolderPath: ${{ inputs.ConfigsFolderPath }}"
 
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
         with:
           ref: ${{ github.event_name == 'push' && 'main' || github.event.inputs.branch }}
           submodules: true
@@ -57,7 +57,7 @@ jobs:
           echo "version=0.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
       - name: Set up conda environment
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@9f54435e0e72c53962ee863144e47a4b094bfd35 # v2.3.0
         with:
           miniconda-version: "latest"
           activate-environment: release-env
