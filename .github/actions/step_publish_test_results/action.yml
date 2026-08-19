@@ -27,7 +27,7 @@ runs:
   using: composite
   steps:
   - name: Download Artifacts
-    uses: actions/download-artifact@v3
+    uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
     with:
       path: artifacts
   - name: Display and Set Environment Variables
@@ -35,14 +35,14 @@ runs:
     shell: bash -el {0}
     id: display_env
   - name: Publish Test Results
-    uses: EnricoMi/publish-unit-test-result-action@v2
+    uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3 # v2.24.0
     with:
       check_name: "${{ inputs.testResultTitle }} [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/${{ inputs.testActionFileName }}?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
       comment_title: "${{ inputs.testResultTitle }} [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/${{ inputs.testActionFileName }}?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
       files: "artifacts/**/test-*.xml"
   - name: Code Coverage Summary
     if: ${{ inputs.coverageThreshold != 0 }}
-    uses: irongut/CodeCoverageSummary@v1.3.0
+    uses: irongut/CodeCoverageSummary@51cc3a756ddcd398d447c044c02cb6aa83fdae95 # v1.3.0
     with:
       filename: "artifacts/Test Results (Python ${{ inputs.pythonVersion }}) (OS ${{ inputs.osVersion }})/coverage.xml"
       badge: true

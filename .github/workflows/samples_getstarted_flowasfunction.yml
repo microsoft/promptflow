@@ -26,9 +26,9 @@ jobs:
       internal
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Setup Python 3.9 environment
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         with:
           python-version: "3.9"
       - name: Prepare requirements
@@ -46,7 +46,7 @@ jobs:
           minimum: 1
           maximum: 99
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
         with:
           subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           tenant-id: ${{secrets.AZURE_TENANT_ID}}
@@ -68,7 +68,7 @@ jobs:
           papermill -k python flow-as-function.ipynb flow-as-function.output.ipynb -p api_key ${{ secrets.AOAI_API_KEY_TEST }} -p api_base ${{ secrets.AOAI_API_ENDPOINT_TEST }} -p api_version 2023-07-01-preview
       - name: Upload artifact
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         with:
           name: artifact
           path: examples/tutorials/get-started
