@@ -85,7 +85,7 @@ def _parse_prefixed_args(args: List[str], prefix: str) -> Dict[str, str]:
     for _, arg in enumerate(args):
         if arg.startswith(prefix):
             if "=" in arg:
-                arg_name, arg_value = arg.split("=")
+                arg_name, arg_value = arg.split("=", 1)
                 if len(arg_name) > len(prefix):
                     parsed[arg_name[len(prefix) :]] = arg_value
             elif pre_arg_name is None:

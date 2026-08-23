@@ -51,3 +51,9 @@ def test_parse_correct_type():
     assert config.debug_output_dir == Path("/test_debug")
     assert config.logging_level == "INFO"
     assert not config.is_debug_enabled
+
+
+def test_parse_input_value_preserves_equals_signs():
+    config = parse(["--pf_input_token=SGVsbG8gV29ybGQ="])
+
+    assert config.input_mapping == {"token": "SGVsbG8gV29ybGQ="}
