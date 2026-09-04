@@ -3,7 +3,10 @@
 # ---------------------------------------------------------
 from typing import Dict
 
-import httpx
+try:
+    import httpx2 as httpx
+except ImportError:
+    import httpx
 
 from promptflow._sdk._errors import RunHistoryInternalError, SDKError, UserAuthenticationError
 from promptflow._sdk._utilities.general_utils import get_promptflow_sdk_version

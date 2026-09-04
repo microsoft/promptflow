@@ -46,6 +46,7 @@ packages = [
 python = ">=3.9,<3.9.7 || >3.9.7,<3.14"
 promptflow-core = "<2.0.0"
 httpx = ">=0.25.1"  # used to send http requests asynchronously
+httpx2 = ">=2.12.0; python_version >= \"3.10\""  # adopted by HTTPXodus
 sqlalchemy = ">=1.4.48,<3.0.0"  # sqlite requirements
 pandas = ">=1.5.3,<3.0.0"  # load data requirements
 python-dotenv = ">=1.0.0,<2.0.0"  # control plane sdk requirements, to load .env file

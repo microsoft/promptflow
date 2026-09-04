@@ -5,7 +5,10 @@ import json
 from pathlib import Path
 from typing import Optional, Union
 
-import httpx
+try:
+    import httpx2 as httpx
+except ImportError:
+    import httpx
 from azure.core.exceptions import HttpResponseError
 from azure.storage.blob.aio import BlobServiceClient
 
