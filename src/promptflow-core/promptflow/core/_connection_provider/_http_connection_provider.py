@@ -3,7 +3,8 @@
 # ---------------------------------------------------------
 from typing import Any
 
-import httpx
+try:
+    import httpx2
 
 from ._connection_provider import ConnectionProvider
 from ._dict_connection_provider import DictConnectionProvider

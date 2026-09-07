@@ -9,7 +9,8 @@ from json import JSONDecodeError
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, NoReturn, Optional
 
-import httpx
+try:
+    import httpx2
 
 from promptflow._constants import DEFAULT_ENCODING, LINE_TIMEOUT_SEC
 from promptflow._core._errors import NotSupported, UnexpectedError
