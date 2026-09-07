@@ -6,9 +6,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 try:
-    import httpx2 as httpx
-except ImportError:
-    import httpx
+    import httpx2
 from azure.core.exceptions import HttpResponseError
 from azure.storage.blob.aio import BlobServiceClient
 

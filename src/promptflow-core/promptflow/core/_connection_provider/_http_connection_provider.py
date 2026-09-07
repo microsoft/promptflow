@@ -4,9 +4,7 @@
 from typing import Any
 
 try:
-    import httpx2 as httpx
-except ImportError:
-    import httpx
+    import httpx2
 
 from ._connection_provider import ConnectionProvider
 from ._dict_connection_provider import DictConnectionProvider

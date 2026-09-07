@@ -4,9 +4,7 @@
 from typing import Dict
 
 try:
-    import httpx2 as httpx
-except ImportError:
-    import httpx
+    import httpx2
 
 from promptflow._sdk._errors import AssetInternalError, SDKError, UserAuthenticationError
 from promptflow._sdk._utilities.general_utils import get_promptflow_sdk_version

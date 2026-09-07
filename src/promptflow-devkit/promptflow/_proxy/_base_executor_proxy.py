@@ -10,9 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, NoReturn, Optional
 
 try:
-    import httpx2 as httpx
-except ImportError:
-    import httpx
+    import httpx2
 
 from promptflow._constants import DEFAULT_ENCODING, LINE_TIMEOUT_SEC
 from promptflow._core._errors import NotSupported, UnexpectedError
