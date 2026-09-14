@@ -12,6 +12,7 @@ from typing import Any, Dict, List
 from promptflow._constants import (
     CONNECTION_NAME_PROPERTY,
     CONNECTION_SECRET_KEYS,
+    DEFAULT_ENCODING,
     PROMPTFLOW_CONNECTIONS,
     CustomStrongTypeConnectionConfigs,
 )
@@ -33,7 +34,8 @@ class ConnectionManager:
             connection_path = Path(os.environ[PROMPTFLOW_CONNECTIONS]).resolve().absolute()
             if not connection_path.exists():
                 raise ValueError(f"Connection file not exists. Path {connection_path.as_posix()}.")
-            _dict = json.loads(open(connection_path).read())
+            with open(connection_path, "r", encoding=DEFAULT_ENCODING) as f:
+                _dict = json.load(f)
         self._connections_dict = _dict or {}
         self._connections = self._build_connections(self._connections_dict)
 
