@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, Union
 
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import NODES
+from promptflow._sdk._constants import DEFAULT_ENCODING, NODES
 from promptflow._sdk.entities import FlowContext
 from promptflow._sdk.entities._flows import Flow
 from promptflow._utils.flow_utils import load_flow_dag, parse_variant
@@ -123,7 +123,7 @@ class FlowContextResolver:
         # dump to file since executor requires a file path to load flow
         with tempfile.TemporaryDirectory() as folder:
             flow_file = Path(folder) / "flow.dag.yaml"
-            with open(flow_file, "w") as fp:
+            with open(flow_file, "w", encoding=DEFAULT_ENCODING) as fp:
                 dump_yaml(self.flow_dag, fp)
             resolved_flow._path = flow_file.absolute().as_posix()
 
