@@ -33,7 +33,7 @@ After above setup process is finished. You can use `pytest` command to run test,
 
 1. Conda environment
   - Run all tests under a folder: `pytest src/promptflow/tests -v`, `pytest src/promptflow-devkit/tests -v`
-  - Run a single test: ` pytest src/promptflow/tests/promptflow_test/e2etests/test_executor.py::TestExecutor::test_executor_basic_flow -v`
+  - Run a single test: `pytest src/promptflow/tests/executor/e2etests/test_activate.py::TestExecutorActivate::test_invalid_activate_config -v`
 
 2. Poetry environment: there is limitation for running tests in src/promptflow folder, you can only run tests under other package folders.
   - for example: under the target folder `promptflow-devkit`, you can run `poetry run pytest tests/sdk_cli_test -v`
