@@ -35,15 +35,15 @@ jobs:
       internal
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: set test mode
         # Always run in replay mode for now until we figure out the test resource to run live mode
         run: echo "PROMPT_FLOW_TEST_MODE=replay" >> $GITHUB_ENV
         #run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: snok/install-poetry@v1
+      - uses: snok/install-poetry@a783c322200f0519c7926aa6faa857c4e23e9263 # v1.4.2
       - name: install promptflow packages in editable mode
         run: |
           set -xe
@@ -57,7 +57,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: Upload Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         with:
           name: Test Results (Python ${{ matrix.python-version }}) (OS ${{ matrix.os }})
           path: |
@@ -75,7 +75,7 @@ jobs:
     if: always()
     steps:
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
     - name: Publish Test Results
       uses: "./.github/actions/step_publish_test_results"
       with:

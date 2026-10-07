@@ -17,7 +17,7 @@ jobs:
       contents: write
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@0717577d45739eb3c851188b29f50ed6c0b2194e # v2.8.0
       - name: create branch
         run: |
           set -x -e
