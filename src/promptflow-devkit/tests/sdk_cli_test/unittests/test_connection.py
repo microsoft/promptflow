@@ -554,3 +554,47 @@ secrets:
         connection.type = "unknown"
         with pytest.raises(ConnectionClassNotFoundError):
             _Connection._from_core_connection(connection)
+
+    def test_cognitive_search_connection_meid_token(self):
+        from promptflow.connections import CognitiveSearchConnection as CoreCognitiveSearchConnection
+        from promptflow._core.token_provider import SEARCH_SCOPE
+
+        conn = CoreCognitiveSearchConnection(
+            api_base="https://mysearch.search.windows.net",
+            auth_mode=ConnectionAuthMode.MEID_TOKEN,
+        )
+        assert conn.SCOPE == SEARCH_SCOPE
+        assert not conn._has_api_key
+
+        mock_provider = mock.MagicMock()
+        mock_provider.get_token.return_value = "mock_search_token"
+        mock_provider.credential = mock.MagicMock()
+        conn._token_provider = mock_provider
+
+        assert conn.get_token() == "mock_search_token"
+        mock_provider.get_token.assert_called_once_with(SEARCH_SCOPE)
+        assert conn.token_credential == mock_provider.credential
+
+        # Custom scope override
+        conn.get_token("https://custom.scope/.default")
+        mock_provider.get_token.assert_called_with("https://custom.scope/.default")
+
+    def test_azure_openai_connection_meid_token(self):
+        from promptflow.connections import AzureOpenAIConnection as CoreAzureOpenAIConnection
+        from promptflow._core.token_provider import COGNITIVE_SCOPE
+
+        conn = CoreAzureOpenAIConnection(
+            api_base="https://myopenai.openai.azure.com",
+            auth_mode=ConnectionAuthMode.MEID_TOKEN,
+        )
+        assert conn.SCOPE == COGNITIVE_SCOPE
+        assert not conn._has_api_key
+
+        mock_provider = mock.MagicMock()
+        mock_provider.get_token.return_value = "mock_aoai_token"
+        mock_provider.credential = mock.MagicMock()
+        conn._token_provider = mock_provider
+
+        assert conn.get_token() == "mock_aoai_token"
+        mock_provider.get_token.assert_called_once_with(COGNITIVE_SCOPE)
+        assert conn.token_credential == mock_provider.credential

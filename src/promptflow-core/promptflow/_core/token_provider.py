@@ -1,11 +1,13 @@
 import threading
 from abc import ABC, abstractmethod
+from typing import Optional
 from promptflow.exceptions import UserErrorException
 from promptflow._utils.credential_utils import get_default_azure_credential
 
 
 # to access azure ai services, we need to get the token with this scope
 COGNITIVE_SCOPE = "https://cognitiveservices.azure.com/.default"
+SEARCH_SCOPE = "https://search.azure.com/.default"
 
 
 class TokenProviderABC(ABC):
@@ -13,7 +15,7 @@ class TokenProviderABC(ABC):
         super().__init__()
 
     @abstractmethod
-    def get_token(self) -> str:
+    def get_token(self, scope: Optional[str] = None) -> str:
         pass
 
 
@@ -22,7 +24,7 @@ class StaticTokenProvider(TokenProviderABC):
         super().__init__()
         self.token = token
 
-    def get_token(self) -> str:
+    def get_token(self, scope: Optional[str] = None) -> str:
         return self.token
 
 
@@ -47,6 +49,6 @@ class AzureTokenProvider(TokenProviderABC):
                 + f"Please try 'pip install azure.identity' to install dependency, {ex.msg}."
             )
 
-    def get_token(self):
-        scope = COGNITIVE_SCOPE
-        return self.credential.get_token(scope).token
+    def get_token(self, scope: Optional[str] = None):
+        target_scope = scope or COGNITIVE_SCOPE
+        return self.credential.get_token(target_scope).token

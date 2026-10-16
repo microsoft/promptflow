@@ -1,5 +1,11 @@
 # promptflow-core package
 
+## Upcoming Release
+
+### Features added
+
+- Added Managed Identity (RBAC / MEID token) authentication support for `CognitiveSearchConnection` with `SEARCH_SCOPE` and dynamic scope support in `AzureTokenProvider`. (#2102)
+
 ## v1.18.2 (2026.4.21)
 
 ### Bugs fixed
