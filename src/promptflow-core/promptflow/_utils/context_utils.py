@@ -4,6 +4,7 @@
 
 """!!!Note: context in this file only used for command line related logics,
 please avoid using them in service code!!!"""
+
 import contextlib
 import os
 import sys
@@ -22,9 +23,9 @@ def _change_working_dir(path, mkdir=True):
     Uses a module-level lock to prevent concurrent threads from observing
     each other's intermediate ``os.chdir`` state.
     """
-    if mkdir:
-        os.makedirs(path, exist_ok=True)
     with _working_dir_lock:
+        if mkdir:
+            os.makedirs(path, exist_ok=True)
         saved_path = os.getcwd()
         os.chdir(str(path))
         try:

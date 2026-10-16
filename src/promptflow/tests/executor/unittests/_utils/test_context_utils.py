@@ -6,6 +6,7 @@ import threading
 
 import pytest
 
+from promptflow._utils import context_utils
 from promptflow._utils.context_utils import _change_working_dir
 
 
@@ -28,6 +29,23 @@ class TestChangeWorkingDir:
         assert not new_dir.exists()
         with _change_working_dir(new_dir):
             assert new_dir.exists()
+
+    def test_mkdir_is_serialized_with_working_directory_change(
+        self, tmp_path, monkeypatch
+    ):
+        monkeypatch.chdir(tmp_path)
+        original_makedirs = os.makedirs
+
+        def assert_lock_held(path, *args, **kwargs):
+            assert context_utils._working_dir_lock.locked()
+            return original_makedirs(path, *args, **kwargs)
+
+        monkeypatch.setattr(context_utils.os, "makedirs", assert_lock_held)
+
+        with _change_working_dir("nested"):
+            assert os.getcwd() == str(tmp_path / "nested")
+
+        assert (tmp_path / "nested").is_dir()
 
     def test_thread_safety_no_cwd_leakage(self, tmp_path):
         """Regression test for https://github.com/microsoft/promptflow/issues/3553.
