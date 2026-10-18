@@ -9,8 +9,12 @@ import sys
 
 from azure.monitor.opentelemetry.exporter import AzureMonitorLogExporter
 from azure.monitor.opentelemetry.exporter._constants import _APPLICATION_INSIGHTS_EVENT_MARKER_ATTRIBUTE
-from azure.monitor.opentelemetry.exporter._generated.models import TelemetryItem
-from opentelemetry.sdk._logs import LogData, LoggerProvider, LoggingHandler
+
+try:
+    from azure.monitor.opentelemetry.exporter._generated.models import TelemetryItem
+except ImportError:
+    from azure.monitor.opentelemetry.exporter._generated.exporter.models import TelemetryItem
+from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler, ReadableLogRecord
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.util.types import Attributes
 
@@ -58,9 +62,9 @@ class PromptFlowSDKExporter(AzureMonitorLogExporter):
         super().__init__(**kwargs)
         self._custom_dimensions = custom_dimensions
 
-    def _log_to_envelope(self, log_data: LogData) -> TelemetryItem:
-        log_data.log_record.attributes.update(self._custom_dimensions)
-        envelope = super()._log_to_envelope(log_data=log_data)
+    def _log_to_envelope(self, log_record: ReadableLogRecord) -> TelemetryItem:
+        log_record.log_record.attributes.update(self._custom_dimensions)
+        envelope = super()._log_to_envelope(log_record)
         # scrub data before sending to appinsights
         role = get_scrubbed_cloud_role()
         envelope.tags["ai.cloud.role"] = role
