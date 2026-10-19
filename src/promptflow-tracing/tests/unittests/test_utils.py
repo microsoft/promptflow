@@ -74,7 +74,12 @@ def test_serialize_generator():
 
 @pytest.mark.unittest
 def test_get_input_names_for_prompt_template():
-    assert get_input_names_for_prompt_template("{{input}}") == []
+    try:
+        import jinja2  # noqa: F401
+
+        assert get_input_names_for_prompt_template("{{input}}") == ["input"]
+    except ImportError:
+        assert get_input_names_for_prompt_template("{{input}}") == []
 
 
 @pytest.mark.unittest
