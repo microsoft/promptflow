@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 
 from promptflow._constants import CONNECTION_SCRUBBED_VALUE as SCRUBBED_VALUE
 from promptflow._constants import CONNECTION_SCRUBBED_VALUE_NO_CHANGE, ConnectionType, CustomStrongTypeConnectionConfigs
-from promptflow._core.token_provider import AzureTokenProvider
+from promptflow._core.token_provider import AzureTokenProvider, COGNITIVE_SCOPE, SEARCH_SCOPE
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.constants import ConnectionAuthMode, ConnectionDefaultApiVersion
 from promptflow.contracts.types import Secret
@@ -140,9 +140,11 @@ class _StrongTypeConnection(_Connection):
 class _StrongTypeAADSupportedConnection(_StrongTypeConnection):
     """Base class for strong type connection that supports AAD token."""
 
+    SCOPE = COGNITIVE_SCOPE
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._token_provider = None
+        self._token_provider = kwargs.get("token_provider")
 
     @property
     def _has_api_key(self):
@@ -159,12 +161,20 @@ class _StrongTypeAADSupportedConnection(_StrongTypeConnection):
         """Set the connection auth mode."""
         self.configs["auth_mode"] = value
 
-    def get_token(self):
+    @property
+    def token_credential(self):
+        """Return the underlying token credential instance when using AAD auth mode."""
+        if not self._token_provider:
+            self._token_provider = AzureTokenProvider()
+        return getattr(self._token_provider, "credential", None)
+
+    def get_token(self, scope: Optional[str] = None):
         """Return the connection token."""
         if not self._token_provider:
             self._token_provider = AzureTokenProvider()
 
-        return self._token_provider.get_token()
+        target_scope = scope or getattr(self, "SCOPE", COGNITIVE_SCOPE)
+        return self._token_provider.get_token(target_scope)
 
 
 class AzureOpenAIConnection(_StrongTypeAADSupportedConnection):
@@ -445,6 +455,7 @@ class CognitiveSearchConnection(_StrongTypeAADSupportedConnection):
     """
 
     TYPE = ConnectionType.COGNITIVE_SEARCH.value
+    SCOPE = SEARCH_SCOPE
 
     def __init__(
         self,
