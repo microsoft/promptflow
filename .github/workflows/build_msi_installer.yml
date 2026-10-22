@@ -46,12 +46,12 @@ jobs:
           echo "set_msi_private_version: ${{ inputs.set_msi_private_version }}"
 
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
         with:
           submodules: true
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@34cfbaee7f672c76950673338facd8a73f637506 # v1.1.3
 
       - name: Install WIX Toolset
         shell:  pwsh
@@ -181,7 +181,7 @@ jobs:
           msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj
         shell: pwsh
 
-      - uses: azure/login@v1
+      - uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d # v1.6.1
         with:
           subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           tenant-id: ${{secrets.AZURE_TENANT_ID}}
