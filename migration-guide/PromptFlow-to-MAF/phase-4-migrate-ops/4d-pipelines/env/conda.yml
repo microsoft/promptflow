@@ -1,0 +1,31 @@
+# Conda environment for the MAF PRS parallel component sample.
+#
+# component.yaml sets `conda_file: env/conda.yml`. This file matches the
+# maf-prs-job skill template, with the packages 01_linear_flow.py actually
+# imports: agent-framework-foundry (FoundryChatClient) and python-dotenv.
+#
+# All packages have lower-bound version pins because pip's resolver hits
+# `resolution-too-deep` on the AML image build host without them; without
+# constraints the image build aborts before the workflow ever runs.
+# See .github/skills/maf-prs-job/references/gotchas.md #14.
+name: maf-prs-env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      # --- AML PRS runtime requirements ---
+      - azureml-core>=1.59.0
+      - azureml-mlflow>=1.59.0
+      - azureml-dataset-runtime>=1.59.0
+      - mltable>=1.6.0
+      - setuptools<80
+      - pandas>=2.2.0
+      # --- Microsoft Agent Framework (GA) ---
+      - agent-framework>=1.0.1
+      - agent-framework-foundry>=1.0.1
+      - azure-identity>=1.19.0
+      - python-dotenv>=1.0.0
+      # --- Optional: Application Insights tracing (see maf-tracing skill) ---
+      - azure-monitor-opentelemetry>=1.6.4
