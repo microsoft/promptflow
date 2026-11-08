@@ -129,6 +129,10 @@ celerybeat.pid
 .venv
 env/
 venv/
+# The phase-4 PRS sample ships its conda env at this path (`conda_file` in
+# component.yaml). Re-include it so the generic `env/` rule does not drop it.
+!migration-guide/PromptFlow-to-MAF/phase-4-migrate-ops/4d-pipelines/env/
+!migration-guide/PromptFlow-to-MAF/phase-4-migrate-ops/4d-pipelines/env/**
 ENV/
 env.bak/
 venv.bak/

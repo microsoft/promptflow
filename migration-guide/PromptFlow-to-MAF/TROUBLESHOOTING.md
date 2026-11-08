@@ -2,7 +2,7 @@
 
 Common issues encountered when migrating from Prompt Flow to MAF, grounded
 in the MAF 1.0 GA release (2 Apr 2026) and the official API documentation.
-If your issue is not listed here, open a GitHub issue using the [migration issue template](../.github/ISSUE_TEMPLATE/migration-issue.md).
+If your issue is not listed here, open a GitHub issue using the [migration issue template](.github/ISSUE_TEMPLATE/migration-issue.md).
 
 ---
 
@@ -378,4 +378,4 @@ create a second deployment and shift traffic:
 - [MAF GitHub Issues](https://github.com/microsoft/agent-framework/issues/)
 - [MAF Workflows documentation](https://learn.microsoft.com/en-us/agent-framework/workflows/executors)
 - [Azure AI Evaluation SDK reference](https://learn.microsoft.com/en-us/python/api/overview/azure/ai-evaluation-readme?view=azure-python)
-- Open an issue in this repo using the [migration issue template](../.github/ISSUE_TEMPLATE/migration-issue.md)
+- Open an issue in this repo using the [migration issue template](.github/ISSUE_TEMPLATE/migration-issue.md)

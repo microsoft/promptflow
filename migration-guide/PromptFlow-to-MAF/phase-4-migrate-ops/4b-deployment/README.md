@@ -4,7 +4,7 @@ This guide walks through deploying a Microsoft Agent Framework (MAF) workflow
 to an **Azure Machine Learning Managed Online Endpoint**, replacing the
 Prompt Flow Managed Online Endpoint pattern.
 
-> **Tip for AI agents / Copilot users:** Use the [`maf-online-endpoint`](../../../.github/skills/maf-online-endpoint/SKILL.md)
+> **Tip for AI agents / Copilot users:** Use the [`maf-online-endpoint`](../../../../.github/skills/maf-online-endpoint/SKILL.md)
 > skill to scaffold this deployment automatically. The skill wraps any MAF
 > workflow into an `init()` / `run()` scoring script and generates the
 > `endpoint.yml`, `deployment.yml`, `conda.yml`, `score.py`, and `deploy.sh`
