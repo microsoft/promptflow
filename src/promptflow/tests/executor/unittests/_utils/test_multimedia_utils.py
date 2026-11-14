@@ -93,6 +93,36 @@ class TestImageProcessor:
         assert image._mime_type == mime_type
         assert image.source_url == url
 
+    def test_create_image_from_url_follows_relative_redirect(self):
+        import http.server
+        import threading
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                if self.path == "/start.jpg":
+                    self.send_response(302)
+                    self.send_header("Location", "/final.jpg")
+                    self.end_headers()
+                else:
+                    self.send_response(200)
+                    self.end_headers()
+                    self.wfile.write(b"image content")
+
+            def log_message(self, *args):
+                pass
+
+        server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            # Pretend the host resolves to a public address so only the redirect handling is exercised.
+            with patch("promptflow._utils.multimedia_utils.AntiSSRF._resolve_hostname", return_value=["8.8.8.8"]):
+                image = ImageProcessor.create_image_from_url(f"http://localhost:{server.server_port}/start.jpg")
+        finally:
+            server.shutdown()
+            server.server_close()
+        assert bytes(image) == b"image content"
+
     @patch("promptflow._utils.multimedia_utils.AntiSSRF.validate_url", return_value=None)
     @patch("requests.get")
     def test_create_image_from_url_failure(self, mock_get, mock_validate):

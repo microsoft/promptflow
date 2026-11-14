@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod, abstractstaticmethod
 from functools import partial
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Union
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import requests
 
@@ -102,7 +102,8 @@ class ImageProcessor:
             if not response.is_redirect:
                 return
 
-            anti_ssrf.validate_url(response.headers["Location"])
+            # Location may be relative; resolve it the way requests does before validating.
+            anti_ssrf.validate_url(urljoin(response.url, response.headers["Location"]))
 
         try:
             anti_ssrf.validate_url(url)
