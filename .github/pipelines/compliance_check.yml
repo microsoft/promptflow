@@ -72,3 +72,47 @@ steps:
   displayName: 'CredScan'
   inputs:
     scanFolder: '$(sourceLocation)'
+
+# according to doc: https://github.com/microsoft/component-detection/blob/main/docs/feature-overview.md
+# CG does not support pyproject.toml, and will scan all requirements.txt
+# so we need this step to:
+#   1) create some requirements.txt from pyproject.toml
+#   2) remove unexpected requirements.txt
+- task: PowerShell@2
+  inputs:
+    targetType: inline
+    script: |
+      pip install toml-to-requirements
+      Write-Host "Generating requirements.txt from pyproject.toml..."
+      Write-Host "##########################################"
+      Write-Host "- promptflow-tracing:"
+      Set-Location "$(sourceLocation)/src/promptflow-tracing/"
+      toml-to-req --toml-file pyproject.toml --poetry
+      Get-Content requirements.txt
+      Write-Host "##########################################"
+      Write-Host "- promptflow-core:"
+      Set-Location "$(sourceLocation)/src/promptflow-core/"
+      toml-to-req --toml-file pyproject.toml --poetry
+      Get-Content requirements.txt
+      Write-Host "##########################################"
+      Write-Host "- promptflow-devkit:"
+      Set-Location "$(sourceLocation)/src/promptflow-devkit/"
+      toml-to-req --toml-file pyproject.toml --poetry
+      Get-Content requirements.txt
+      Write-Host "##########################################"
+      Write-Host "- promptflow-azure:"
+      Set-Location "$(sourceLocation)/src/promptflow-azure/"
+      toml-to-req --toml-file pyproject.toml --poetry
+      Get-Content requirements.txt
+      Write-Host "##########################################"
+
+      Write-Host "Removing requirements.txt..."
+      Set-Location "$(sourceLocation)/"
+      Write-Host "- src/promptflow/tests/*:"
+      Get-ChildItem -Path "src/promptflow/tests" -Recurse -Include requirements.txt | ForEach-Object { Remove-Item -Path $_.FullName -Force }
+  displayName: 'Preprocess before CG'
+
+- task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+  inputs:
+    sourceScanPath: '$(sourceLocation)\src'
+  displayName: 'Component Detection'
